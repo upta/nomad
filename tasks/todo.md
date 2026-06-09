@@ -30,3 +30,43 @@
 - [x] Run `.\setup.ps1` to create symlinks in `client/`
 - [x] Run `dotnet build` from `client/` — 0 warnings, 0 errors
 - [x] Verify no validation scenarios broken (none exist yet)
+
+---
+
+# Task 0.2: SpacetimeDB Server Scaffold
+
+## Convention Migration (SDK 2.4.x)
+- Lifecycle hooks: `OnConnect` / `OnDisconnect` (WITH "On" prefix per current SDK)
+- Attributes: `[PrimaryKey]`, `[AutoInc]`, `[Reducer]` (shorthand, no `SpacetimeDB.` prefix)
+- Tables nested inside `public static partial class Module`, split across files via `partial`
+- Module path: `server/src/` (not `spacetimedb/`)
+- `.csproj`: `Microsoft.NET.Sdk` + `wasi-wasm` + `SpacetimeDB.Runtime 2.4.*`
+
+## Subtask 0.2.1: Scaffold + reorganize
+- [x] Run `spacetime init` into `server/` (done)
+- [ ] Delete generated artifacts: `.cursor/`, `.windsurfrules`
+- [ ] Move module from `server/spacetimedb/` → `server/src/`
+- [ ] Rename `StdbModule.csproj` → `NomadServer.csproj`
+- [ ] Update `spacetime.json` module-path to `./src`
+- [ ] Add `server/.gitignore` for wasm artifacts
+
+## Subtask 0.2.2: Types + GlobalUsings
+- [ ] Create `server/src/GlobalUsings.cs` — `global using SpacetimeDB;`
+- [ ] Create `server/src/Types/EntityType.cs` — `enum EntityType : uint { Player }`
+
+## Subtask 0.2.3: Table definitions
+- [ ] Create `server/src/Tables/Player.cs` — Identity PK, IsConnected, PlayerEntityId (int)
+- [ ] Create `server/src/Tables/Entity.cs` — EntityId PK+AutoInc (int), EntityTypeId (uint), PositionX/Y (float)
+- [ ] Create `server/src/Tables/EntityOwnership.cs` — EntityId PK (int), Owner (Identity) with BTree index, Public=false
+
+## Subtask 0.2.4: Reducers
+- [ ] Create `server/src/Reducers/Connect.cs` — OnConnect: upsert player + spawn player entity + create ownership
+- [ ] Create `server/src/Reducers/Disconnect.cs` — OnDisconnect: mark player disconnected + deactivate owned entities
+- [ ] Create `server/src/Reducers/MoveEntity.cs` — ownership check + position update with `with` expression
+
+## Subtask 0.2.5: Build + publish + docs
+- [ ] `spacetime build` succeeds
+- [ ] `spacetime publish nomad --module-path ./server/src` succeeds
+- [ ] Generate client bindings
+- [ ] Update `server.instructions.md` for SDK 2.4.x conventions
+- [ ] Update `server-reducers.instructions.md` for SDK 2.4.x conventions

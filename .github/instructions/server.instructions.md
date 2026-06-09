@@ -17,11 +17,11 @@ This is a SpacetimeDB project. For detailed information see [spacetimedb.com/llm
 ## Build, Publish, Generate
 
 ```powershell
-spacetime build                                 # build module
-spacetime publish nomad --module-path ./src     # publish to local
+spacetime build --module-path ./src                 # build module
+spacetime publish nomad --module-path ./src          # publish to local
 spacetime publish nomad --clear-database -y --module-path ./src  # schema change republish
 spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src  # client bindings
-spacetime logs nomad                            # view server logs
+spacetime logs nomad                                # view server logs
 ```
 
 ## Table Definitions

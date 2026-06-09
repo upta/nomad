@@ -1,0 +1,6 @@
+# Build artifacts
+bin/
+obj/
+
+# Generated client bindings (occasionally copied to server as reference)
+*.wasm
