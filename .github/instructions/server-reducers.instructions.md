@@ -13,7 +13,7 @@ These instructions apply to files under `server/src/Reducers/**`.
 - **Reducers must be deterministic** — no filesystem, network, timers, or random
 - **Read data via tables/subscriptions** — not reducer return values
 - **`ctx.Sender` is the authenticated principal** — never trust identity args
-- **Lifecycle hooks must NOT start with "On"** — `ClientConnected`, not `OnClientConnected` (STDB0010 error)
+- **Lifecycle hooks must NOT start with "On"** — `ClientConnected`, not `OnConnect` (STDB0010 error, despite SDK template docs showing OnConnect)
 
 ## Update Pattern (CRITICAL)
 

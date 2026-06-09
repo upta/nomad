@@ -17,6 +17,9 @@ artifacts/
 client/addons/agentic_godot_validation
 tools
 
+# Generated SpacetimeDB client bindings
+client/Db/
+
 # Agent-skills symlinked skills (created by setup scripts)
 .github/skills/test-driven-development
 .github/skills/code-review-and-quality

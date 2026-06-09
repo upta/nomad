@@ -94,11 +94,11 @@ SpacetimeDB Scaffold + Client Connection
   - [x] 0.1.6: Recreate symlinks (`./setup.ps1`), run `dotnet build` from `client/`, verify
 
 - [ ] **Task 0.2: SpacetimeDB Server Scaffold** — Scaffold server via `spacetime init`, reorganize into `server/src/Tables/`, `Reducers/`, `Types/`. Use current SDK 2.4.x conventions (OnConnect lifecycle, shorthand attributes like [PrimaryKey], tables nested in partial class Module split across files). Define 3 tables + 3 reducers + 1 type. Build + publish. **Scope: M**
-  - [ ] 0.2.1: Scaffold via `spacetime init`, clean generated files, move `spacetimedb/`→`src/`, rename `.csproj` to `NomadServer.csproj`, update `spacetime.json`
-  - [ ] 0.2.2: Create `src/GlobalUsings.cs` + `src/Types/EntityType.cs`
-  - [ ] 0.2.3: Create table definitions — `Tables/Player.cs`, `Entity.cs`, `EntityOwnership.cs`
-  - [ ] 0.2.4: Create reducers — `Reducers/Connect.cs`, `Disconnect.cs`, `MoveEntity.cs`
-  - [ ] 0.2.5: `spacetime build` + `spacetime publish` + update `server.instructions.md` for SDK 2.4.x conventions
+  - [x] 0.2.1: Scaffold via `spacetime init`, clean generated files, move `spacetimedb/`→`src/`, rename `.csproj` to `StdbModule.csproj`, update `spacetime.json`
+  - [x] 0.2.2: Create `src/GlobalUsings.cs` + `src/Types/EntityType.cs`
+  - [x] 0.2.3: Create table definitions — `Tables/Player.cs`, `Entity.cs`, `EntityOwnership.cs`
+  - [x] 0.2.4: Create reducers — `Reducers/Connect.cs`, `Disconnect.cs`, `MoveEntity.cs`
+  - [x] 0.2.5: `spacetime build` + `spacetime publish` + update `server.instructions.md` for SDK 2.4.x conventions
 
 - [ ] **Task 0.3: SpacetimeDB client integration** — Add SpacetimeDB client SDK to Godot project. Create client-side connection manager that connects to local SpacetimeDB, subscribes to tables, and calls reducers. Verify end-to-end: client connects → reducer called → table updated → client sees update. Reference: untrailed client integration. **Scope: M**
 

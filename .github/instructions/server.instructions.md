@@ -17,11 +17,11 @@ This is a SpacetimeDB project. For detailed information see [spacetimedb.com/llm
 ## Build, Publish, Generate
 
 ```powershell
-spacetime build --module-path ./src                 # build module
-spacetime publish nomad --module-path ./src          # publish to local
-spacetime publish nomad --clear-database -y --module-path ./src  # schema change republish
+spacetime build --module-path ./src                          # build module
+spacetime publish nomad --delete-data=always --yes --server local --module-path ./src  # publish to local
+spacetime publish nomad --yes --server local --module-path ./src  # publish without clearing
 spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src  # client bindings
-spacetime logs nomad                                # view server logs
+spacetime logs nomad --server local                         # view server logs
 ```
 
 ## Table Definitions
@@ -93,6 +93,8 @@ public static void ClientConnected(ReducerContext ctx) { }
 [SpacetimeDB.Reducer(ReducerKind.ClientConnected)]
 public static void OnClientConnected(ReducerContext ctx) { }
 ```
+
+**Note:** The SpacetimeDB template documentation references `OnConnect`, `OnDisconnect` but the actual SDK 2.4.x enforces the no-"On" prefix rule. Use `ClientConnected`, `ClientDisconnected`, `Init`.
 
 ### Update Pattern (CRITICAL)
 
