@@ -1,13 +1,17 @@
-using Godot;
+namespace Nomad.Bootstrap;
+
 using System.Collections.Generic;
+using Godot;
 
 public partial class AppRoot : Node
 {
-    private static readonly PackedScene ProductionScene =
-        GD.Load<PackedScene>("res://game/main.tscn");
+    private static readonly PackedScene ProductionScene = GD.Load<PackedScene>(
+        "res://game/Main.tscn"
+    );
 
-    private static readonly PackedScene TestScene =
-        GD.Load<PackedScene>("res://addons/agentic_godot_validation/runtime/scenes/test_bootstrap.tscn");
+    private static readonly PackedScene TestScene = GD.Load<PackedScene>(
+        "res://addons/agentic_godot_validation/runtime/scenes/test_bootstrap.tscn"
+    );
 
     private static readonly Dictionary<string, Key> ActionKeys = new()
     {

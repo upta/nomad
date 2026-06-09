@@ -61,8 +61,8 @@ For every function or component:
 ## Godot Validation Specifics
 
 When testing Godot gameplay behavior, use the **godot-validation-testing** skill to:
-- Write scenario JSON contracts in `src/validation/scenarios/`
-- Create harness scenes in `src/validation/harnesses/`
+- Write scenario JSON contracts in `client/validation/scenarios/`
+- Create harness scenes in `client/validation/harnesses/`
 - Expose game state through harness controllers
 - Run scenarios headlessly with the validation runner
 

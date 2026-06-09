@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="My Prototype"
-run/main_scene="res://bootstrap/app_root.tscn"
+config/name="Nomad"
+run/main_scene="res://bootstrap/AppRoot.tscn"
 
 [display]
 
@@ -24,4 +24,4 @@ renderer/rendering_method="forward_plus"
 
 [dotnet]
 
-project/assembly_name="MyPrototype"
+project/assembly_name="Nomad"

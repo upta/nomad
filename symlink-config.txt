@@ -4,7 +4,7 @@
 # Run setup.ps1 (Windows) or setup.sh (Linux/macOS) to create these
 
 # Validation addon
-src/addons/agentic_godot_validation=submodules/agentic_godot_validation/addons/agentic_godot_validation
+client/addons/agentic_godot_validation=submodules/agentic_godot_validation/addons/agentic_godot_validation
 
 # Validation runner tools
 tools=submodules/agentic_godot_validation/tools

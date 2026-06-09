@@ -6,7 +6,7 @@ The goal: **humans playtest for fun, not for bugs.** Automated validation catche
 
 ## What's Included
 
-- **Godot 4.x C# project scaffold** (`src/`) — ready-to-run with test-mode routing and .NET 8.0
+- **Godot 4.x C# project scaffold** (`client/`) — ready-to-run with test-mode routing and .NET 8.0
 - **[Agentic Godot Validation Kit](https://github.com/upta/agentic-godot-validation)** — automated gameplay validation via scenario contracts (git submodule)
 - **[Agent Skills](https://github.com/addyosmani/agent-skills)** — production-grade development workflows for Copilot CLI (git submodule)
 - **Setup scripts** — cross-platform symlink management for both submodules
@@ -41,16 +41,16 @@ git submodule update --init --recursive
 chmod +x setup.sh && ./setup.sh
 ```
 
-This creates symlinks from both submodules into the project (`src/addons/`, `tools/`, `.github/skills/`, `references/`).
+This creates symlinks from both submodules into the project (`client/addons/`, `tools/`, `.github/skills/`, `references/`).
 
 ### 3. Open in Godot
 
-Open `src/project.godot` in Godot 4.x **Mono edition** (required for C# support). Build the project (the hammer icon or `dotnet build` from `src/`).
+Open `client/project.godot` in Godot 4.x **Mono edition** (required for C# support). Build the project (the hammer icon or `dotnet build` from `client/`).
 
 ### 4. Run validation
 
 ```powershell
-.\tools\run_scenario.ps1 -Scenario src\validation\scenarios\your_scenario.json -GodotExe "path\to\godot"
+.\tools\run_scenario.ps1 -Scenario client\validation\scenarios\your_scenario.json -GodotExe "path\to\godot"
 ```
 
 ## Project Structure
@@ -59,23 +59,23 @@ Open `src/project.godot` in Godot 4.x **Mono edition** (required for C# support)
 ├── submodules/
 │   ├── agentic_godot_validation/     ← git submodule (validation kit)
 │   └── agent_skills/                 ← git submodule (Copilot skills)
-├── src/                              ← Godot project root
+├── client/                            ← Godot project root
 │   ├── project.godot
-│   ├── MyPrototype.csproj            ← .NET project file
-│   ├── MyPrototype.sln               ← .NET solution
-│   ├── bootstrap/                    ← app entry (test-mode routing)
-│   │   ├── app_root.cs              ← C# entry point
-│   │   └── app_root.tscn
-│   ├── game/                         ← your game scenes and scripts
-│   │   ├── main.cs                  ← placeholder game scene
-│   │   └── main.tscn
+│   ├── Nomad.csproj                    ← .NET project file
+│   ├── Nomad.sln                       ← .NET solution
+│   ├── bootstrap/                      ← app entry (test-mode routing)
+│   │   ├── AppRoot.cs                  ← C# entry point
+│   │   └── AppRoot.tscn
+│   ├── game/                           ← your game scenes and scripts
+│   │   ├── Main.cs                     ← placeholder game scene
+│   │   └── Main.tscn
 │   ├── addons/
-│   │   └── agentic_godot_validation/  ← symlink → validation submodule
+│   │   └── agentic_godot_validation/   ← symlink → validation submodule
 │   └── validation/
-│       ├── harnesses/                ← test harness scenes
-│       ├── scenarios/                ← scenario JSON contracts
+│       ├── harnesses/                  ← test harness scenes
+│       ├── scenarios/                  ← scenario JSON contracts
 │       └── scripts/
-│           └── harness_controllers/   ← C# state exposure scripts
+│           └── harness_controllers/    ← C# state exposure scripts
 ├── .github/
 │   ├── agents/                       ← Copilot agent personas
 │   ├── skills/                       ← Copilot CLI skills (symlinked + custom)
@@ -93,7 +93,7 @@ This template uses **C# (.NET 8.0)** for all game code. The original GDScript ve
 
 Key differences from GDScript:
 - All game scripts are `.cs` files (not `.gd`)
-- Project uses `MyPrototype.csproj` and `MyPrototype.sln`
+- Project uses `Nomad.csproj` and `Nomad.sln`
 - Build with `dotnet build` or Godot's built-in MSBuild
 - Requires **Godot Mono** edition (standard Godot does not include .NET support)
 - Godot API is accessed through the `Godot` namespace (e.g., `GD.Load<PackedScene>()`, `GetNode<T>()`)

@@ -14,7 +14,7 @@ obj/
 artifacts/
 
 # Symlinked directories (created by setup.ps1 / setup.sh)
-src/addons/agentic_godot_validation
+client/addons/agentic_godot_validation
 tools
 
 # Agent-skills symlinked skills (created by setup scripts)
