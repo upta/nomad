@@ -1,6 +1,6 @@
 # Validation Assets Instructions
 
-These instructions apply to files under `src/validation/**`.
+These instructions apply to files under `client/validation/**`.
 
 ## Writing Harness Controllers
 

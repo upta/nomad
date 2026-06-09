@@ -1,6 +1,6 @@
 # Validation Runtime Instructions
 
-These instructions apply to files under `src/addons/agentic_godot_validation/**`.
+These instructions apply to files under `client/addons/agentic_godot_validation/**`.
 
 **DO NOT EDIT FILES UNDER THIS PATH.** These files are symlinked from the `agentic-godot-validation` submodule. Changes must be made in the submodule repository and pulled in.
 
@@ -15,7 +15,7 @@ These instructions apply to files under `src/addons/agentic_godot_validation/**`
 If you need a new assertion or scenario operation that the framework doesn't support:
 
 1. Do NOT modify files in this directory
-2. Instead, implement the logic in your harness controller under `src/validation/scripts/harness_controllers/`
+2. Instead, implement the logic in your harness controller under `client/validation/scripts/harness_controllers/`
 3. If the capability would benefit all projects, contribute it upstream to the `agentic-godot-validation` repo
 
 ## Reference
