@@ -90,7 +90,7 @@ Before writing gameplay code, define the expected behavior as a validation scena
 Implement the gameplay feature. Run the scenario to confirm it passes:
 
 ```powershell
-.\tools\run_scenario.ps1 -Scenario src\validation\scenarios\player_jump_vertical.json -GodotExe "C:\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64.exe"
+.\tools\run_scenario.ps1 -Scenario client\validation\scenarios\player_jump_vertical.json -GodotExe "C:\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64.exe"
 ```
 
 ### Step 3: REFACTOR — Clean Up Both Code and Scenarios
@@ -199,7 +199,7 @@ harness_state.signals.<signal_name>
 ### Single Scenario
 
 ```powershell
-.\tools\run_scenario.ps1 -Scenario src\validation\scenarios\<name>.json -GodotExe "<path\to\godot.exe>"
+.\tools\run_scenario.ps1 -Scenario client\validation\scenarios\<name>.json -GodotExe "<path\to\godot.exe>"
 ```
 
 ### All Scenarios
@@ -211,7 +211,7 @@ harness_state.signals.<signal_name>
 ### Debug Mode (slower, with verbose output)
 
 ```powershell
-.\tools\run_scenario.ps1 -Scenario src\validation\scenarios\<name>.json -GodotExe "<path>" -Debug
+.\tools\run_scenario.ps1 -Scenario client\validation\scenarios\<name>.json -GodotExe "<path>" -Debug
 ```
 
 ## The Prove-It Pattern for Game Bugs

@@ -28,7 +28,7 @@ First, invoke the `test-driven-development` and `godot-validation-testing` skill
 In this project, tests are Godot validation scenarios. Run scenarios with:
 
 ```powershell
-.\tools\run_scenario.ps1 -Scenario src\validation\scenarios\<name>.json -GodotExe "<path>"
+.\tools\run_scenario.ps1 -Scenario client\validation\scenarios\<name>.json -GodotExe "<path>"
 .\tools\run_all_scenarios.ps1 -GodotExe "<path>"
 ```
 

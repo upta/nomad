@@ -85,13 +85,13 @@ SpacetimeDB Scaffold + Client Connection
 
 ### Phase 0: Multiplayer Foundation
 
-- [ ] **Task 0.1: Rename project + move to client/** — Update `project.godot` config/name from "My Prototype" to "Nomad", rename `.sln` and `.csproj`, update namespaces. Move Godot project from `src/` to `client/` to align with server/client convention. Touch ~5-8 files. **Scope: S**
-  - [ ] 0.1.1: Rename C# files to PascalCase (`AppRoot.cs`, `Main.cs`) and add file-scoped namespaces (`Nomad.Bootstrap`, `Nomad.Game`)
-  - [ ] 0.1.2: Update `.tscn` files — rename to PascalCase and fix script path references
-  - [ ] 0.1.3: Rename project identity — `project.godot` (name/assembly), `MyPrototype.csproj`→`Nomad.csproj`, `MyPrototype.sln`→`Nomad.sln`
-  - [ ] 0.1.4: Move `src/` → `client/` (directory rename)
-  - [ ] 0.1.5: Update path references in `symlink-config.txt`, `.gitignore`, `README.md`
-  - [ ] 0.1.6: Recreate symlinks (`./setup.ps1`), run `dotnet build` from `client/`, verify
+- [x] **Task 0.1: Rename project + move to client/** — Update `project.godot` config/name from "My Prototype" to "Nomad", rename `.sln` and `.csproj`, update namespaces. Move Godot project from `src/` to `client/` to align with server/client convention. Touch ~5-8 files. **Scope: S**
+  - [x] 0.1.1: Rename C# files to PascalCase (`AppRoot.cs`, `Main.cs`) and add file-scoped namespaces (`Nomad.Bootstrap`, `Nomad.Game`)
+  - [x] 0.1.2: Update `.tscn` files — rename to PascalCase and fix script path references
+  - [x] 0.1.3: Rename project identity — `project.godot` (name/assembly), `MyPrototype.csproj`→`Nomad.csproj`, `MyPrototype.sln`→`Nomad.sln`
+  - [x] 0.1.4: Move `src/` → `client/` (directory rename)
+  - [x] 0.1.5: Update path references in `symlink-config.txt`, `.gitignore`, `README.md`
+  - [x] 0.1.6: Recreate symlinks (`./setup.ps1`), run `dotnet build` from `client/`, verify
 
 - [ ] **Task 0.2: SpacetimeDB server scaffold** — Create `server/` directory with SpacetimeDB module structure. Set up `spacetime.json`, `.csproj`, `Lib.cs` entry point. Define initial tables (Player, GameSession). Implement connection handshake reducer. Build with `spacetime build`. Reference: untrailed `server/` structure. **Scope: M**
 
