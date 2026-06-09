@@ -96,6 +96,7 @@ This project includes Copilot CLI skills for structured development workflows, o
 |-------|------------|
 | `using-agent-skills` | Guidance on when and how to use skills |
 | `install-agentic-godot-validation` | Installing validation kit into a Godot project |
+| `spacetime-db-reference` | SpacetimeDB CLI and C# SDK reference for server development |
 
 ### Agent Personas
 

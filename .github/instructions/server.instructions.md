@@ -4,7 +4,7 @@ applyTo: "server/**"
 
 # SpacetimeDB Server Instructions
 
-This is a SpacetimeDB project. For detailed information see [spacetimedb.com/llms.txt](https://spacetimedb.com/llms.txt).
+This is a SpacetimeDB project. For detailed CLI and C# SDK reference, use the `spacetime-db-reference` skill. See also [spacetimedb.com/llms.txt](https://spacetimedb.com/llms.txt).
 
 ## Core Rules
 
