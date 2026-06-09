@@ -1,0 +1,6 @@
+[submodule "submodules/agentic_godot_validation"]
+	path = submodules/agentic_godot_validation
+	url = https://github.com/upta/agentic-godot-validation.git
+[submodule "submodules/agent_skills"]
+	path = submodules/agent_skills
+	url = https://github.com/addyosmani/agent-skills.git

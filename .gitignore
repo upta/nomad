@@ -1,0 +1,34 @@
+# Godot
+.import/
+.godot/
+export.cfg
+export_presets.cfg
+
+# Godot C# / .NET build artifacts
+.godot/mono/
+bin/
+obj/
+*.csproj.user
+
+# Validation artifacts (generated at runtime)
+artifacts/
+
+# Symlinked directories (created by setup.ps1 / setup.sh)
+src/addons/agentic_godot_validation
+tools
+
+# Agent-skills symlinked skills (created by setup scripts)
+.github/skills/test-driven-development
+.github/skills/code-review-and-quality
+.github/skills/debugging-and-error-recovery
+.github/skills/spec-driven-development
+.github/skills/planning-and-task-breakdown
+.github/skills/incremental-implementation
+
+# Validation kit symlinked skills
+.github/skills/author-validation-scenario
+.github/skills/debug-validation-failure
+.github/skills/install-agentic-godot-validation
+
+# Agent-skills references (symlinked)
+references/testing-patterns.md
