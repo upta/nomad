@@ -100,7 +100,7 @@ SpacetimeDB Scaffold + Client Connection
   - [x] 0.2.4: Create reducers — `Reducers/Connect.cs`, `Disconnect.cs`, `MoveEntity.cs`
   - [x] 0.2.5: `spacetime build` + `spacetime publish` + update `server.instructions.md` for SDK 2.4.x conventions
 
-- [ ] **Task 0.3: SpacetimeDB client integration** — Add SpacetimeDB client SDK to Godot project. Create client-side connection manager that connects to local SpacetimeDB, subscribes to tables, and calls reducers. Verify end-to-end: client connects → reducer called → table updated → client sees update. Reference: untrailed client integration. **Scope: M**
+- [x] **Task 0.3: SpacetimeDB client integration** — Add SpacetimeDB client SDK to Godot project. Create client-side connection manager that connects to local SpacetimeDB, subscribes to tables, and calls reducers. Verify end-to-end: client connects → reducer called → table updated → client sees update. Reference: untrailed client integration. **Scope: M**
 
 - [ ] **Task 0.4: Tile-based grid map + 2D camera** — Create a TileMap-based grid for the ship interior. Add a top-down Camera2D. Set up rendering layers for the flat 2D vector style per GDD §7.1. Camera should follow the local player. **Scope: S**
 

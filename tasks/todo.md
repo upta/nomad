@@ -33,40 +33,72 @@
 
 ---
 
-# Task 0.2: SpacetimeDB Server Scaffold
+# Task 0.2: SpacetimeDB Server Scaffold ✅ DONE
 
 ## Convention Migration (SDK 2.4.x)
-- Lifecycle hooks: `OnConnect` / `OnDisconnect` (WITH "On" prefix per current SDK)
-- Attributes: `[PrimaryKey]`, `[AutoInc]`, `[Reducer]` (shorthand, no `SpacetimeDB.` prefix)
+- Lifecycle hooks: `ClientConnected` / `ClientDisconnected` (NO "On" prefix — STDB0010 error otherwise)
+- Attributes: `[PrimaryKey]`, `[AutoInc]`, shorthand (no `SpacetimeDB.` prefix on well-known attrs)
 - Tables nested inside `public static partial class Module`, split across files via `partial`
 - Module path: `server/src/` (not `spacetimedb/`)
 - `.csproj`: `Microsoft.NET.Sdk` + `wasi-wasm` + `SpacetimeDB.Runtime 2.4.*`
+- `.csproj` MUST be named `StdbModule.csproj` (SpacetimeDB expects this name)
 
-## Subtask 0.2.1: Scaffold + reorganize
+## Subtask 0.2.1: Scaffold + reorganize ✅
 - [x] Run `spacetime init` into `server/` (done)
-- [ ] Delete generated artifacts: `.cursor/`, `.windsurfrules`
-- [ ] Move module from `server/spacetimedb/` → `server/src/`
-- [ ] Rename `StdbModule.csproj` → `NomadServer.csproj`
-- [ ] Update `spacetime.json` module-path to `./src`
-- [ ] Add `server/.gitignore` for wasm artifacts
+- [x] Delete generated artifacts: `.cursor/`, `.windsurfrules` (not present — clean)
+- [x] Move module from `server/spacetimedb/` → `server/src/` (not present — already in src/)
+- [x] Keep `StdbModule.csproj` name (required by SpacetimeDB — renaming breaks build)
+- [x] Update `spacetime.json` module-path to `./src`
+- [x] Add `server/.gitignore` for wasm artifacts
 
-## Subtask 0.2.2: Types + GlobalUsings
-- [ ] Create `server/src/GlobalUsings.cs` — `global using SpacetimeDB;`
-- [ ] Create `server/src/Types/EntityType.cs` — `enum EntityType : uint { Player }`
+## Subtask 0.2.2: Types + GlobalUsings ✅
+- [x] Create `server/src/GlobalUsings.cs` — `global using SpacetimeDB;`
+- [x] Create `server/src/Types/EntityType.cs` — `enum EntityType : uint { None, Player }`
 
-## Subtask 0.2.3: Table definitions
-- [ ] Create `server/src/Tables/Player.cs` — Identity PK, IsConnected, PlayerEntityId (int)
-- [ ] Create `server/src/Tables/Entity.cs` — EntityId PK+AutoInc (int), EntityTypeId (uint), PositionX/Y (float)
-- [ ] Create `server/src/Tables/EntityOwnership.cs` — EntityId PK (int), Owner (Identity) with BTree index, Public=false
+## Subtask 0.2.3: Table definitions ✅
+- [x] Create `server/src/Tables/Player.cs` — Identity PK, IsConnected, PlayerEntityId (int)
+- [x] Create `server/src/Tables/Entity.cs` — EntityId PK+AutoInc (int), EntityTypeId (uint), PositionX/Y (float)
+- [x] Create `server/src/Tables/EntityOwnership.cs` — EntityId PK (int), Owner (Identity) with BTree index, Public=false
 
-## Subtask 0.2.4: Reducers
-- [ ] Create `server/src/Reducers/Connect.cs` — OnConnect: upsert player + spawn player entity + create ownership
-- [ ] Create `server/src/Reducers/Disconnect.cs` — OnDisconnect: mark player disconnected + deactivate owned entities
-- [ ] Create `server/src/Reducers/MoveEntity.cs` — ownership check + position update with `with` expression
+## Subtask 0.2.4: Reducers ✅
+- [x] Create `server/src/Reducers/Connect.cs` — ClientConnected: upsert player + spawn player entity + create ownership
+- [x] Create `server/src/Reducers/Disconnect.cs` — ClientDisconnected: mark player disconnected
+- [x] Create `server/src/Reducers/MoveEntity.cs` — ownership check + position update with `with` expression
 
-## Subtask 0.2.5: Build + publish + docs
-- [ ] `spacetime build` succeeds
-- [ ] `spacetime publish nomad --module-path ./server/src` succeeds
-- [ ] Generate client bindings
-- [ ] Update `server.instructions.md` for SDK 2.4.x conventions
-- [ ] Update `server-reducers.instructions.md` for SDK 2.4.x conventions
+## Subtask 0.2.5: Build + publish + docs ✅
+- [x] `spacetime build --module-path ./src` succeeds
+- [x] `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` succeeds
+- [x] Generate client bindings — `spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src`
+- [x] `server.instructions.md` already reflects SDK 2.4.x conventions
+- [x] `server-reducers.instructions.md` already reflects SDK 2.4.x conventions
+
+---
+
+# Task 0.3: SpacetimeDB Client Integration ✅ DONE
+
+## Subtask 0.3.1: Add NuGet package ✅
+- [x] Add `SpacetimeDB.ClientSDK` v2.4.1 to `Nomad.csproj`
+- [x] `dotnet restore` + `dotnet build` succeeds
+
+## Subtask 0.3.2: Create DbManager ✅
+- [x] Create `client/game/Db/DbManager.cs` — Godot Node that uses `DbConnection.Builder()` pattern
+- [x] Connect to `http://localhost:3000` / `nomad`
+- [x] Subscribe to all tables (`Players` + `Entities`) on connect via `SubscriptionBuilder().SubscribeToAllTables()`
+- [x] Call `conn.FrameTick()` in `_Process(double delta)` each frame
+- [x] `OnConnectError` and `OnDisconnect` callbacks with GD.PrintErr logging
+- [x] Expose `Tables` (RemoteTables) and `Reducers` (RemoteReducers) properties
+- [x] Proper `#nullable enable` with `new` keyword for IsConnected (hides GodotObject.IsConnected)
+- [x] `dotnet build` succeeds
+
+## Subtask 0.3.3: Wire into Main scene ✅
+- [x] `Main.cs` instantiates `DbManager` as child in `_Ready()`
+- [x] Updated label text to "Nomad"
+- [x] `dotnet build` succeeds
+
+## Subtask 0.3.4: End-to-end verification ✅
+- [x] Godot headless run confirms: `Connecting to ws://localhost:3000 nomad`
+- [x] Client connected: `[DbManager] Connected. Identity: ...`
+- [x] Subscription applied: `[DbManager] Subscription applied — initial table data loaded.`
+- [x] Player row created in SpacetimeDB with `player_entity_id` set
+- [x] `spacetime sql nomad "SELECT * FROM Players"` shows the new Player row
+- [x] `spacetime build` and `dotnet build` still pass after formatting
