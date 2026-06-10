@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="InputContext" format=3 uid="uid://c4jnbrfghyodg"]
+[gd_resource type="Resource" script_class="InputContext" format=3 ]
 
-[ext_resource type="Resource" uid="uid://df3nr48wj8lpv" path="res://game/Guide/_Resource/GuideMappingContext/GlobalControllerContext.tres" id="1_global_ctrl"]
-[ext_resource type="Script" uid="uid://ceqd1dvxwwqas" path="res://game/Guide/GuideMappingContextBinding.cs" id="2_binding"]
-[ext_resource type="Resource" uid="uid://3u507o8tgaq3" path="res://game/Guide/_Resource/GuideMappingContext/GlobalKbmContext.tres" id="3_global_kbm"]
-[ext_resource type="Resource" uid="uid://dayq3cw0c4j65" path="res://game/Guide/_Resource/GuideAction/SwitchToController.tres" id="4_switch_ctrl"]
-[ext_resource type="Script" uid="uid://c2ill1uu6jrlc" path="res://game/Guide/GuideActionBinding.cs" id="5_action_binding"]
-[ext_resource type="Resource" uid="uid://cm6321qlu4m82" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="6_switch_kbm"]
-[ext_resource type="Script" uid="uid://wdqsf7ryn83f" path="res://game/Guide/InputContext.cs" id="7_ctx"]
+[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideMappingContext/GlobalControllerContext.tres" id="1_global_ctrl"]
+[ext_resource type="Script" path="res://game/Guide/GuideMappingContextBinding.cs" id="2_binding"]
+[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideMappingContext/GlobalKbmContext.tres" id="3_global_kbm"]
+[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideAction/SwitchToController.tres" id="4_switch_ctrl"]
+[ext_resource type="Script" path="res://game/Guide/GuideActionBinding.cs" id="5_action_binding"]
+[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="6_switch_kbm"]
+[ext_resource type="Script" path="res://game/Guide/InputContext.cs" id="7_ctx"]
 
 [sub_resource type="Resource" id="Resource_global_ctrl_binding"]
 script = ExtResource("2_binding")

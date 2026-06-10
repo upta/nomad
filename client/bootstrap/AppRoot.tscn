@@ -1,9 +1,9 @@
-[gd_scene format=3 uid="uid://c74lk3ajyfp5q"]
+[gd_scene format=3 ]
 
-[ext_resource type="Script" uid="uid://p750m8166ptb" path="res://bootstrap/AppRoot.cs" id="1"]
-[ext_resource type="Resource" uid="uid://df3nr48wj8lpv" path="res://game/Guide/InputContext.tres" id="2_input_ctx"]
-[ext_resource type="Resource" uid="uid://q5nbm67qawjh" path="res://game/Player/_Input/CharacterInputModeContext.tres" id="3_gameplay_mode"]
-[ext_resource type="PackedScene" uid="uid://bqkngkbb2tlff" path="res://game/Main.tscn" id="4_game_scene"]
+[ext_resource type="Script"  path="res://bootstrap/AppRoot.cs" id="1"]
+[ext_resource type="Resource"  path="res://game/Guide/InputContext.tres" id="2_input_ctx"]
+[ext_resource type="Resource"  path="res://game/Player/_Input/CharacterInputModeContext.tres" id="3_gameplay_mode"]
+[ext_resource type="PackedScene"  path="res://game/Main.tscn" id="4_game_scene"]
 
 [node name="AppRoot" type="Node" unique_id=52363722]
 script = ExtResource("1")
