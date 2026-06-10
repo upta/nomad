@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/Player/Player.cs" id="1"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/CharacterMove.tres" id="2_move"]
+
+[sub_resource type="RectangleShape2D" id="rect"]
+size = Vector2(48, 48)
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1")
+MoveAction = ExtResource("2_move")
+MoveSpeed = 400.0
+Acceleration = 1600.0
+Deceleration = 2400.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("rect")
+
+[node name="Sprite" type="ColorRect" parent="."]
+size = Vector2(48, 48)
+position = Vector2(-24, -24)
+color = Color(0.2, 0.8, 0.3, 1)

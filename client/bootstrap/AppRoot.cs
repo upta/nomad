@@ -39,6 +39,9 @@ public partial class AppRoot : Node, IProvide<DbConnection>, IProvide<GuideServi
         _dbManager = new DbManager();
         _dbManager.OnDataReady += OnDataReady;
         AddChild(_dbManager);
+        _dbManager.Setup();
+
+        Setup();
 
         if (!IsTestMode())
         {
