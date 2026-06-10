@@ -102,7 +102,7 @@ SpacetimeDB Scaffold + Client Connection
 
 - [x] **Task 0.3: SpacetimeDB client integration** — Add SpacetimeDB client SDK to Godot project. Create client-side connection manager that connects to local SpacetimeDB, subscribes to tables, and calls reducers. Verify end-to-end: client connects → reducer called → table updated → client sees update. Reference: untrailed client integration. **Scope: M**
 
-- [ ] **Task 0.4: Tile-based grid map + 2D camera** — Create a TileMap-based grid for the ship interior. Add a top-down Camera2D. Set up rendering layers for the flat 2D vector style per GDD §7.1. Camera should follow the local player. **Scope: S**
+- [x] **Task 0.4: Tile-based grid map + 2D camera** — Create a TileMap-based grid for the ship interior. Add a top-down Camera2D. Set up rendering layers for the flat 2D vector style per GDD §7.1. Camera should follow the local player. **Scope: S**
 
 - [ ] **Task 0.5: Player character + WASD movement** — Create a Player scene (CharacterBody2D) with WASD movement. Client-authoritative position sent to SpacetimeDB. Remote players interpolated. Crib from untrailed movement patterns. Implements the Move verb (§5). Add movement validation scenario. **Scope: M**
 

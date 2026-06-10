@@ -102,3 +102,21 @@
 - [x] Player row created in SpacetimeDB with `player_entity_id` set
 - [x] `spacetime sql nomad "SELECT * FROM Players"` shows the new Player row
 - [x] `spacetime build` and `dotnet build` still pass after formatting
+
+---
+
+# Task 0.4: Tile Grid + Camera ✅ DONE
+
+## Subtask 0.4.1: ShipGrid tile map ✅
+- [x] Create `client/game/Map/ShipGrid.cs` — Node2D with `_Draw()` rendering a ship floor plan
+- [x] 8×6 tile grid (TileSize=64), centered at origin, with 4 rooms (3×2 tiles each) in a 2×2 layout
+- [x] Flat colors: hull background (dark blue-gray), room interiors, wall outlines — RimWorld-inspired vector style per GDD §7.1
+- [x] Create `client/game/Map/ShipGrid.tscn` scene
+- [x] Wire ShipGrid into `Main.cs`
+
+## Subtask 0.4.2: Camera2D ✅
+- [x] Add Camera2D to Main scene in `Main.cs`
+- [x] Top-down 2D: position smoothing enabled (speed=5), zoom 2.0×
+- [x] Camera currently static — follow target will be assigned to player in Task 0.5
+- [x] `dotnet build` + `spacetime build` both pass
+- [x] Headless run: zero warnings, zero errors, SpacetimeDB connection still works
