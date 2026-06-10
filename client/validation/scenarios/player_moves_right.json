@@ -43,12 +43,12 @@
         "before_x": {
           "kind": "checkpoint",
           "checkpoint": "before",
-          "path": "harness_state.nodes.player.position.x"
+          "path": "harness_state.actor_position.x"
         },
         "after_x": {
           "kind": "checkpoint",
           "checkpoint": "after",
-          "path": "harness_state.nodes.player.position.x"
+          "path": "harness_state.actor_position.x"
         },
         "threshold": {
           "kind": "contract",

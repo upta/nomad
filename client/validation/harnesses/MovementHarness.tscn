@@ -1,9 +1,16 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://validation/scripts/harness_controllers/MovementHarnessController.cs" id="1"]
-[ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="2"]
+[ext_resource type="Script" path="res://validation/scripts/harness_controllers/TestMovementActor.cs" id="2"]
 
-[node name="MovementHarness" type="Node"]
+[node name="MovementHarness" type="Node2D"]
 script = ExtResource("1")
+ActorPath = NodePath("PlayerActor")
+SpawnPointPath = NodePath("SpawnPoint")
 
-[node name="Player" parent="." instance=ExtResource("2")]
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(0, 0)
+
+[node name="PlayerActor" type="Node2D" parent="."]
+script = ExtResource("2")
+position = Vector2(0, 0)

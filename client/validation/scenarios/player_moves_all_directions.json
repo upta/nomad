@@ -40,20 +40,9 @@
     {
       "op": "assert_pipeline",
       "sources": {
-        "before_x": {
-          "kind": "checkpoint",
-          "checkpoint": "right_before",
-          "path": "harness_state.nodes.player.position.x"
-        },
-        "after_x": {
-          "kind": "checkpoint",
-          "checkpoint": "right_after",
-          "path": "harness_state.nodes.player.position.x"
-        },
-        "threshold": {
-          "kind": "contract",
-          "path": "done_contract.min_direction_delta"
-        }
+        "before_x": { "kind": "checkpoint", "checkpoint": "right_before", "path": "harness_state.actor_position.x" },
+        "after_x": { "kind": "checkpoint", "checkpoint": "right_after", "path": "harness_state.actor_position.x" },
+        "threshold": { "kind": "contract", "path": "done_contract.min_direction_delta" }
       },
       "pipeline": [
         {
@@ -95,20 +84,9 @@
     {
       "op": "assert_pipeline",
       "sources": {
-        "before_x": {
-          "kind": "checkpoint",
-          "checkpoint": "left_before",
-          "path": "harness_state.nodes.player.position.x"
-        },
-        "after_x": {
-          "kind": "checkpoint",
-          "checkpoint": "left_after",
-          "path": "harness_state.nodes.player.position.x"
-        },
-        "threshold": {
-          "kind": "contract",
-          "path": "done_contract.min_direction_delta"
-        }
+        "before_x": { "kind": "checkpoint", "checkpoint": "left_before", "path": "harness_state.actor_position.x" },
+        "after_x": { "kind": "checkpoint", "checkpoint": "left_after", "path": "harness_state.actor_position.x" },
+        "threshold": { "kind": "contract", "path": "done_contract.min_direction_delta" }
       },
       "pipeline": [
         {
