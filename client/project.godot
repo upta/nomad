@@ -1,5 +1,5 @@
 ; Engine configuration file.
-; It's best edited using the editor and not directly,
+; It's best edited using the editor UI and not directly,
 ; since the parameters that go here are not all obvious.
 ;
 ; Format:
@@ -12,15 +12,12 @@ config_version=5
 
 config/name="Nomad"
 run/main_scene="res://bootstrap/AppRoot.tscn"
+config/features=PackedStringArray("4.6", "C#")
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-
-[rendering]
-
-renderer/rendering_method="forward_plus"
 
 [dotnet]
 
