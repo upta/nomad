@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="InputContext" format=3 uid="uid://c4jnbrfghyodg"]
+
+[ext_resource type="Resource" uid="uid://df3nr48wj8lpv" path="res://game/Guide/_Resource/GuideMappingContext/GlobalControllerContext.tres" id="1_global_ctrl"]
+[ext_resource type="Script" uid="uid://ceqd1dvxwwqas" path="res://game/Guide/GuideMappingContextBinding.cs" id="2_binding"]
+[ext_resource type="Resource" uid="uid://3u507o8tgaq3" path="res://game/Guide/_Resource/GuideMappingContext/GlobalKbmContext.tres" id="3_global_kbm"]
+[ext_resource type="Resource" uid="uid://dayq3cw0c4j65" path="res://game/Guide/_Resource/GuideAction/SwitchToController.tres" id="4_switch_ctrl"]
+[ext_resource type="Script" uid="uid://c2ill1uu6jrlc" path="res://game/Guide/GuideActionBinding.cs" id="5_action_binding"]
+[ext_resource type="Resource" uid="uid://cm6321qlu4m82" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="6_switch_kbm"]
+[ext_resource type="Script" uid="uid://wdqsf7ryn83f" path="res://game/Guide/InputContext.cs" id="7_ctx"]
+
+[sub_resource type="Resource" id="Resource_global_ctrl_binding"]
+script = ExtResource("2_binding")
+MappingContext = ExtResource("1_global_ctrl")
+
+[sub_resource type="Resource" id="Resource_global_kbm_binding"]
+script = ExtResource("2_binding")
+MappingContext = ExtResource("3_global_kbm")
+
+[sub_resource type="Resource" id="Resource_switch_ctrl_action"]
+script = ExtResource("5_action_binding")
+Action = ExtResource("4_switch_ctrl")
+
+[sub_resource type="Resource" id="Resource_switch_kbm_action"]
+script = ExtResource("5_action_binding")
+Action = ExtResource("6_switch_kbm")
+
+[resource]
+script = ExtResource("7_ctx")
+GlobalControllerContext = SubResource("Resource_global_ctrl_binding")
+GlobalKbmContext = SubResource("Resource_global_kbm_binding")
+SwitchToControllerAction = SubResource("Resource_switch_ctrl_action")
+SwitchToKbmAction = SubResource("Resource_switch_kbm_action")

@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="GUIDEMappingContext" format=3 uid="uid://3u507o8tgaq3"]
+[gd_resource type="Resource" script_class="GUIDEMappingContext" format=3 uid="uid://df3nr48wj8lpv"]
 
 [ext_resource type="Script" uid="uid://cpplm41b5bt6m" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
-[ext_resource type="Resource" uid="uid://dayq3cw0c4j65" path="res://Core/Guide/_Resource/GuideAction/SwitchToController.tres" id="2_action"]
+[ext_resource type="Resource" uid="uid://cm6321qlu4m82" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="2_action"]
 [ext_resource type="Script" uid="uid://dsa1dnifd6w32" path="res://addons/guide/guide_mapping_context.gd" id="3_ctx"]
 [ext_resource type="Script" uid="uid://mtx1unc2aqn7" path="res://addons/guide/guide_input_mapping.gd" id="4_input"]
 [ext_resource type="Script" uid="uid://w3fbpe7r01n8" path="res://addons/guide/inputs/guide_input_any.gd" id="5_any"]
@@ -11,10 +11,11 @@
 
 [sub_resource type="Resource" id="Resource_any_input"]
 script = ExtResource("5_any")
-joy_buttons = true
-joy_axes = true
-mouse = false
-joy = true
+mouse_buttons = true
+mouse_movement = true
+keyboard = true
+mouse = true
+joy = false
 
 [sub_resource type="Resource" id="Resource_pressed"]
 script = ExtResource("8_pressed")

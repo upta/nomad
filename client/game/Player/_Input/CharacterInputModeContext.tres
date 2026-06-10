@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="InputModeContext" format=3 uid="uid://bx57tw4br6mdr"]
+
+[ext_resource type="Resource" uid="uid://q5nbm67qawjh" path="res://game/Player/_Input/Contexts/CharacterContextController.tres" id="1_controller"]
+[ext_resource type="Script" uid="uid://ceqd1dvxwwqas" path="res://game/Guide/GuideMappingContextBinding.cs" id="2_binding"]
+[ext_resource type="Resource" uid="uid://c0uj5ujyksqc" path="res://game/Player/_Input/Contexts/CharacterContextKbm.tres" id="3_kbm"]
+[ext_resource type="Script" uid="uid://dmy2ip2fboutl" path="res://game/Guide/InputModeContext.cs" id="4_mode"]
+
+[sub_resource type="Resource" id="Resource_controller_binding"]
+script = ExtResource("2_binding")
+MappingContext = ExtResource("1_controller")
+
+[sub_resource type="Resource" id="Resource_kbm_binding"]
+script = ExtResource("2_binding")
+MappingContext = ExtResource("3_kbm")
+
+[resource]
+script = ExtResource("4_mode")
+ControllerContext = SubResource("Resource_controller_binding")
+KbmContext = SubResource("Resource_kbm_binding")

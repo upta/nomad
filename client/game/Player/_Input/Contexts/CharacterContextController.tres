@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="GUIDEMappingContext" format=3 uid="uid://q5nbm67qawjh"]
+
+[ext_resource type="Script" uid="uid://cpplm41b5bt6m" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
+[ext_resource type="Script" uid="uid://dsa1dnifd6w32" path="res://addons/guide/guide_mapping_context.gd" id="2_ctx"]
+[ext_resource type="Resource" uid="uid://c5bxup344pawt" path="res://game/Player/_Input/Actions/CharacterMove.tres" id="3_move"]
+[ext_resource type="Script" uid="uid://mtx1unc2aqn7" path="res://addons/guide/guide_input_mapping.gd" id="4_input"]
+[ext_resource type="Script" uid="uid://doauobik3xyea" path="res://addons/guide/inputs/guide_input_joy_axis_2d.gd" id="5_joy2d"]
+[ext_resource type="Script" uid="uid://bl8rjl4oaldje" path="res://addons/guide/modifiers/guide_modifier.gd" id="6_mod"]
+[ext_resource type="Script" uid="uid://c47lkb48itd6l" path="res://addons/guide/modifiers/guide_modifier_deadzone.gd" id="7_deadzone"]
+[ext_resource type="Script" uid="uid://x74mnwgr08a7" path="res://addons/guide/triggers/guide_trigger.gd" id="7_lnrlo"]
+[ext_resource type="Resource" uid="uid://w68am3he3g3y" path="res://game/Player/_Input/Actions/Interact.tres" id="8_interact"]
+[ext_resource type="Resource" uid="uid://coysa2lql50om" path="res://game/Player/_Input/Actions/HotbarDropItem.tres" id="10_drop"]
+[ext_resource type="Resource" uid="uid://b6h8am0tujf33" path="res://game/Player/_Input/Actions/HotbarCycleSlot.tres" id="10_h04xt"]
+[ext_resource type="Script" uid="uid://b52rqq28tuqpg" path="res://addons/guide/triggers/guide_trigger_pressed.gd" id="10_y3k2f"]
+[ext_resource type="Script" uid="uid://bbhoxsiqwo07l" path="res://addons/guide/inputs/guide_input_joy_axis_1d.gd" id="11_af52p"]
+[ext_resource type="Script" uid="uid://rvttn472ix6v" path="res://addons/guide/inputs/guide_input_joy_button.gd" id="11_joybtn"]
+
+[sub_resource type="Resource" id="Resource_joy_axis"]
+script = ExtResource("5_joy2d")
+
+[sub_resource type="Resource" id="Resource_deadzone"]
+script = ExtResource("7_deadzone")
+
+[sub_resource type="Resource" id="Resource_joy_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_joy_axis")
+modifiers = Array[ExtResource("6_mod")]([SubResource("Resource_deadzone")])
+
+[sub_resource type="Resource" id="Resource_move_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("3_move")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_joy_input")])
+
+[sub_resource type="Resource" id="Resource_interact_btn"]
+script = ExtResource("11_joybtn")
+
+[sub_resource type="Resource" id="Resource_4iura"]
+script = ExtResource("10_y3k2f")
+
+[sub_resource type="Resource" id="Resource_interact_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_interact_btn")
+triggers = Array[ExtResource("7_lnrlo")]([SubResource("Resource_4iura")])
+
+[sub_resource type="Resource" id="Resource_interact_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("8_interact")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_interact_input")])
+
+[sub_resource type="Resource" id="Resource_y3k2f"]
+script = ExtResource("11_af52p")
+axis = 5
+
+[sub_resource type="Resource" id="Resource_cycle_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_y3k2f")
+
+[sub_resource type="Resource" id="Resource_cycle_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("10_h04xt")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_cycle_input")])
+metadata/_guide_input_mappings_collapsed = false
+
+[sub_resource type="Resource" id="Resource_xbfr2"]
+script = ExtResource("11_joybtn")
+button = 2
+
+[sub_resource type="Resource" id="Resource_drop_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_xbfr2")
+
+[sub_resource type="Resource" id="Resource_drop_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("10_drop")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_drop_input")])
+
+[resource]
+script = ExtResource("2_ctx")
+mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_interact_action"), SubResource("Resource_cycle_action"), SubResource("Resource_drop_action")])
