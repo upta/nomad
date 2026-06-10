@@ -53,6 +53,9 @@ spacetime generate --lang csharp --out-dir ./client/Db --module-path ./server/sr
 
 # Run all validation scenarios
 ./tools/run_all_scenarios.ps1 -GodotExe <path>
+
+# Note: Scripts auto-detect project.godot — tries repo root first, then client/ subdirectory.
+# Artifacts are written to the project directory (e.g., client/artifacts/).
 ```
 
 ## Project Structure (Phase 0 target)

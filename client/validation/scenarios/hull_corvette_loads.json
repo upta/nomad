@@ -1,0 +1,63 @@
+{
+  "scenario_id": "hull_corvette_loads",
+  "version": 3,
+  "description": "Loading the Corvette hull template returns a valid hull with 7 room slots on an 8×6 grid.",
+  "harness_scene": "res://validation/harnesses/HullHarness.tscn",
+  "done_contract": {
+    "expected_room_count": 7,
+    "expected_grid_width": 8,
+    "expected_grid_height": 6
+  },
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/HullHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 5
+    },
+    {
+      "op": "checkpoint",
+      "name": "loaded"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_count",
+      "comparator": "eq",
+      "expected": 7
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.grid_width",
+      "comparator": "eq",
+      "expected": 8
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.grid_height",
+      "comparator": "eq",
+      "expected": 6
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.hull_id",
+      "comparator": "eq",
+      "expected": "corvette"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.armor_rating",
+      "comparator": "eq",
+      "expected": 1
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="HullTemplate" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://game/Ship/HullTemplate.cs" id="1"]
+[ext_resource type="Script" path="res://game/Ship/RoomSlot.cs" id="2"]
+
+[sub_resource type="Resource" id="sub_0"]
+script = ExtResource("2")
+SlotIndex = 0
+PositionX = 0
+PositionY = 0
+Width = 2
+Height = 2
+
+[sub_resource type="Resource" id="sub_1"]
+script = ExtResource("2")
+SlotIndex = 1
+PositionX = 2
+PositionY = 0
+Width = 4
+Height = 2
+
+[sub_resource type="Resource" id="sub_2"]
+script = ExtResource("2")
+SlotIndex = 2
+PositionX = 6
+PositionY = 0
+Width = 2
+Height = 2
+
+[sub_resource type="Resource" id="sub_3"]
+script = ExtResource("2")
+SlotIndex = 3
+PositionX = 0
+PositionY = 2
+Width = 2
+Height = 2
+
+[sub_resource type="Resource" id="sub_4"]
+script = ExtResource("2")
+SlotIndex = 4
+PositionX = 4
+PositionY = 2
+Width = 4
+Height = 2
+
+[sub_resource type="Resource" id="sub_5"]
+script = ExtResource("2")
+SlotIndex = 5
+PositionX = 0
+PositionY = 4
+Width = 3
+Height = 2
+
+[sub_resource type="Resource" id="sub_6"]
+script = ExtResource("2")
+SlotIndex = 6
+PositionX = 3
+PositionY = 4
+Width = 5
+Height = 2
+
+[resource]
+script = ExtResource("1")
+HullId = "corvette"
+GridWidth = 8
+GridHeight = 6
+ArmorRating = 1
+RoomSlots = Array[ExtResource("2")]([SubResource("sub_0"), SubResource("sub_1"), SubResource("sub_2"), SubResource("sub_3"), SubResource("sub_4"), SubResource("sub_5"), SubResource("sub_6")])

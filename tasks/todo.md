@@ -74,6 +74,32 @@
 
 ---
 
+# Task 1.1: Hull Template Data Model ✅ DONE
+
+## Subtask 1.1.1: Create RoomSlot Resource ✅
+- [x] Create `client/game/Ship/RoomSlot.cs` — `[GlobalClass] Resource` with `SlotIndex`, `PositionX`, `PositionY`, `Width`, `Height`
+
+## Subtask 1.1.2: Create HullTemplate Resource ✅
+- [x] Create `client/game/Ship/HullTemplate.cs` — `[GlobalClass] Resource` with `HullId`, `GridWidth`, `GridHeight`, `ArmorRating`, `RoomSlots`
+- [x] Static `CreateCorvette()` factory with 7 room slots on 8×6 grid
+
+## Subtask 1.1.3: Create CorvetteHull.tres ✅
+- [x] Create `client/game/Ship/CorvetteHull.tres` — serialized HullTemplate with 7 RoomSlot sub-resources
+- [x] 7 room layout: center corridor, rooms of varying widths
+
+## Subtask 1.1.4: Validation scenario ✅
+- [x] Create `client/validation/harnesses/HullHarness.tscn` + `HullHarnessController.cs`
+- [x] Create `client/validation/scenarios/hull_corvette_loads.json` — 5 assert_value checks
+- [x] Scenario passes: room_count=7, grid_width=8, grid_height=6, hull_id="corvette", armor_rating=1
+
+## Subtask 1.1.5: Fix script auto-detection ✅
+- [x] Fix `tools/run_scenario.ps1` — auto-detect `project.godot` in `client/` subdirectory
+- [x] Fix `tools/run_all_scenarios.ps1` — same auto-detect
+- [x] Fix `Resolve-ScenarioPath` to try both repo-root-relative and project-relative paths
+- [x] All 3 scenarios pass with no project selector
+
+---
+
 # Task 0.3: SpacetimeDB Client Integration ✅ DONE
 
 ## Subtask 0.3.1: Add NuGet package ✅
