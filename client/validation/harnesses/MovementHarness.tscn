@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://validation/scripts/harness_controllers/MovementHarnessController.cs" id="1"]
+[ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="2"]
+
+[node name="MovementHarness" type="Node"]
+script = ExtResource("1")
+
+[node name="Player" parent="." instance=ExtResource("2")]

@@ -1,11 +1,11 @@
 namespace Nomad.Bootstrap;
 
-using Game.Db;
-using Game.Guide;
 using Godot;
+using Nomad.Game;
+using Nomad.Game.Db;
+using Nomad.Game.Guide;
 
-[Meta(typeof(IAutoNode))]
-public partial class AppRoot : Node, IProvide<DbConnection>, IProvide<GuideService>
+public partial class AppRoot : Node
 {
     private static readonly PackedScene TestScene = GD.Load<PackedScene>(
         "res://addons/agentic_godot_validation/runtime/scenes/test_bootstrap.tscn"
@@ -28,8 +28,6 @@ public partial class AppRoot : Node, IProvide<DbConnection>, IProvide<GuideServi
         _dbManager.OnDataReady -= OnDataReady;
     }
 
-    public override void _Notification(int what) => this.Notify(what);
-
     public override void _Ready()
     {
         _guideService = new GuideService(InputContext);
@@ -39,9 +37,6 @@ public partial class AppRoot : Node, IProvide<DbConnection>, IProvide<GuideServi
         _dbManager = new DbManager();
         _dbManager.OnDataReady += OnDataReady;
         AddChild(_dbManager);
-        _dbManager.Setup();
-
-        Setup();
 
         if (!IsTestMode())
         {
@@ -52,12 +47,6 @@ public partial class AppRoot : Node, IProvide<DbConnection>, IProvide<GuideServi
             AddChild(TestScene.Instantiate());
         }
     }
-
-    public void Setup() => this.Provide();
-
-    DbConnection IProvide<DbConnection>.Value() => _dbManager.Connection;
-
-    GuideService IProvide<GuideService>.Value() => _guideService;
 
     private static bool IsTestMode()
     {
@@ -72,7 +61,9 @@ public partial class AppRoot : Node, IProvide<DbConnection>, IProvide<GuideServi
     private void OnDataReady()
     {
         _guideService.PushContext(GameplayModeContext);
-        AddChild(GameScene.Instantiate());
+        var main = GameScene.Instantiate<Main>();
+        AddChild(main);
+        main.InstantiatePlayer(_dbManager);
         _dbManager.OnDataReady -= OnDataReady;
     }
 }

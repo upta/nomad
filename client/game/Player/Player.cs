@@ -3,16 +3,12 @@ namespace Nomad.Game.Player;
 using Godot;
 using StdbPlayer = SpacetimeDB.Types.Player;
 
-[Meta(typeof(IAutoNode))]
 public partial class Player : CharacterBody2D
 {
     private float _currentRotation;
-    private MovementNetworkSync _networkSync = null!;
+    private MovementNetworkSync? _networkSync;
     private float _speedModifier = 1.0f;
     private int _entityId;
-
-    [Dependency]
-    private DbConnection Server => this.DependOn<DbConnection>();
 
     [Export]
     public Resource MoveAction { get; set; } = null!;
@@ -26,7 +22,10 @@ public partial class Player : CharacterBody2D
     [Export]
     public float MoveSpeed { get; set; } = 400f;
 
-    public override void _Notification(int what) => this.Notify(what);
+    [Export]
+    public Node? DbManagerNode { get; set; }
+
+    private DbConnection? Server => (DbManagerNode as Db.DbManager)?.Connection;
 
     public override void _PhysicsProcess(double delta)
     {
@@ -50,22 +49,28 @@ public partial class Player : CharacterBody2D
         _networkSync?.Update(_entityId, GlobalPosition, Velocity, _currentRotation, delta);
     }
 
-    public void OnResolved()
+    public override void _Ready()
     {
-        _networkSync = new MovementNetworkSync(Server);
-        _networkSync.Initialize(GlobalPosition);
-
-        if (Server.Identity is { } identity)
+        if (Server is { } svr)
         {
-            var playerRow = Server.Db.Players.Identity.Find(identity);
-            if (playerRow is { } p)
-                _entityId = p.PlayerEntityId;
+            _networkSync = new MovementNetworkSync(svr);
+            _networkSync.Initialize(GlobalPosition);
+
+            if (svr.Identity is { } identity)
+            {
+                var playerRow = svr.Db.Players.Identity.Find(identity);
+                if (playerRow is { } p)
+                    _entityId = p.PlayerEntityId;
+            }
+
+            svr.Db.Players.OnUpdate += OnPlayerUpdated;
         }
     }
 
     public override void _ExitTree()
     {
-        Server.Db.Players.OnUpdate -= OnPlayerUpdated;
+        if (Server is { } svr)
+            svr.Db.Players.OnUpdate -= OnPlayerUpdated;
     }
 
     private void OnPlayerUpdated(EventContext ctx, StdbPlayer oldPlayer, StdbPlayer newPlayer)

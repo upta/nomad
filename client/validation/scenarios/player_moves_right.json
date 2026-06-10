@@ -1,0 +1,75 @@
+{
+  "scenario_id": "player_moves_right",
+  "version": 3,
+  "description": "Player character moves right when move_right is held, increasing x position beyond the starting value.",
+  "harness_scene": "res://validation/harnesses/MovementHarness.tscn",
+  "done_contract": {
+    "min_rightward_delta": 10.0,
+    "frame_budget": 60,
+    "physics_ticks_per_second": 60
+  },
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/MovementHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 5
+    },
+    {
+      "op": "checkpoint",
+      "name": "before"
+    },
+    {
+      "op": "press_action",
+      "action": "move_right"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 60
+    },
+    {
+      "op": "release_action",
+      "action": "move_right"
+    },
+    {
+      "op": "checkpoint",
+      "name": "after"
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before_x": {
+          "kind": "checkpoint",
+          "checkpoint": "before",
+          "path": "harness_state.nodes.player.position.x"
+        },
+        "after_x": {
+          "kind": "checkpoint",
+          "checkpoint": "after",
+          "path": "harness_state.nodes.player.position.x"
+        },
+        "threshold": {
+          "kind": "contract",
+          "path": "done_contract.min_rightward_delta"
+        }
+      },
+      "pipeline": [
+        {
+          "op": "subtract",
+          "inputs": ["after_x", "before_x"],
+          "as": "delta_x"
+        }
+      ],
+      "assert": {
+        "actual": "delta_x",
+        "comparator": "gte",
+        "expected_source": "threshold"
+      }
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

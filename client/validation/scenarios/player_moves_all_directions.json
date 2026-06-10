@@ -1,0 +1,130 @@
+{
+  "scenario_id": "player_moves_all_directions",
+  "version": 3,
+  "description": "Player moves in all four cardinal directions producing correct position deltas.",
+  "harness_scene": "res://validation/harnesses/MovementHarness.tscn",
+  "done_contract": {
+    "min_direction_delta": 5.0,
+    "frame_budget": 30,
+    "physics_ticks_per_second": 60
+  },
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/MovementHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 5
+    },
+    {
+      "op": "checkpoint",
+      "name": "right_before"
+    },
+    {
+      "op": "press_action",
+      "action": "move_right"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 30
+    },
+    {
+      "op": "release_action",
+      "action": "move_right"
+    },
+    {
+      "op": "checkpoint",
+      "name": "right_after"
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before_x": {
+          "kind": "checkpoint",
+          "checkpoint": "right_before",
+          "path": "harness_state.nodes.player.position.x"
+        },
+        "after_x": {
+          "kind": "checkpoint",
+          "checkpoint": "right_after",
+          "path": "harness_state.nodes.player.position.x"
+        },
+        "threshold": {
+          "kind": "contract",
+          "path": "done_contract.min_direction_delta"
+        }
+      },
+      "pipeline": [
+        {
+          "op": "subtract",
+          "inputs": ["after_x", "before_x"],
+          "as": "delta_x"
+        }
+      ],
+      "assert": {
+        "actual": "delta_x",
+        "comparator": "gte",
+        "expected_source": "threshold"
+      }
+    },
+    {
+      "op": "wait_frames",
+      "frames": 5
+    },
+    {
+      "op": "checkpoint",
+      "name": "left_before"
+    },
+    {
+      "op": "press_action",
+      "action": "move_left"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 30
+    },
+    {
+      "op": "release_action",
+      "action": "move_left"
+    },
+    {
+      "op": "checkpoint",
+      "name": "left_after"
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before_x": {
+          "kind": "checkpoint",
+          "checkpoint": "left_before",
+          "path": "harness_state.nodes.player.position.x"
+        },
+        "after_x": {
+          "kind": "checkpoint",
+          "checkpoint": "left_after",
+          "path": "harness_state.nodes.player.position.x"
+        },
+        "threshold": {
+          "kind": "contract",
+          "path": "done_contract.min_direction_delta"
+        }
+      },
+      "pipeline": [
+        {
+          "op": "subtract",
+          "inputs": ["before_x", "after_x"],
+          "as": "delta_x"
+        }
+      ],
+      "assert": {
+        "actual": "delta_x",
+        "comparator": "gte",
+        "expected_source": "threshold"
+      }
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}
