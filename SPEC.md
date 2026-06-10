@@ -253,53 +253,56 @@ Key conventions:
 Each task is complete when:
 
 ### Task 0.1: Project Restructuring
-- [ ] `client/` directory exists with Godot project (moved from `src/`)
-- [ ] `project.godot` has `config/name="Nomad"` and `project/assembly_name="Nomad"`
-- [ ] `.csproj` is `Nomad.csproj` with `<RootNamespace>Nomad</RootNamespace>`
-- [ ] `.sln` is `Nomad.sln` referencing `Nomad.csproj`
-- [ ] All existing files renamed to PascalCase: `AppRoot.cs/tscn`, `Main.cs/tscn`
-- [ ] All C# files use `namespace Nomad.*` (file-scoped)
-- [ ] `symlink-config.txt` updated for `client/` paths
-- [ ] `dotnet build` succeeds from `client/` (after symlinks re-run)
-- [ ] All existing validation scenarios still pass
+- [x] `client/` directory exists with Godot project (moved from `src/`)
+- [x] `project.godot` has `config/name="Nomad"` and `project/assembly_name="Nomad"`
+- [x] `.csproj` is `Nomad.csproj` with `<RootNamespace>Nomad</RootNamespace>`
+- [x] `.sln` is `Nomad.sln` referencing `Nomad.csproj`
+- [x] All existing files renamed to PascalCase: `AppRoot.cs/tscn`, `Main.cs/tscn`
+- [x] All C# files use `namespace Nomad.*` (file-scoped)
+- [x] `symlink-config.txt` updated for `client/` paths
+- [x] `dotnet build` succeeds from `client/` (after symlinks re-run)
+- [x] All existing validation scenarios still pass
 
 ### Task 0.2: SpacetimeDB Server Scaffold
-- [ ] `server/` directory with `spacetime.json`, `NomadServer.csproj`
-- [ ] `GlobalUsings.cs` with `global using SpacetimeDB;`
-- [ ] `Tables/Player.cs` — `partial struct` with `Identity`, `IsConnected`, `PlayerEntityId`
-- [ ] `Tables/Entity.cs` — `partial struct` with `EntityId` (auto-increment), `EntityTypeId`, `PositionX`, `PositionY`
-- [ ] `Tables/EntityOwnership.cs` — `partial struct` with `EntityId`, `Owner`
-- [ ] `Reducers/Connect.cs` — `ClientConnected` lifecycle + spawn player entity
-- [ ] `Reducers/MoveEntity.cs` — client-authoritative `MoveEntity` reducer with ownership check
-- [ ] `spacetime build` succeeds
-- [ ] `spacetime publish nomad --module-path ./server/src` succeeds
+- [x] `server/` directory with `spacetime.json`, `NomadServer.csproj`
+- [x] `GlobalUsings.cs` with `global using SpacetimeDB;`
+- [x] `Tables/Player.cs` — `partial struct` with `Identity`, `IsConnected`, `PlayerEntityId`
+- [x] `Tables/Entity.cs` — `partial struct` with `EntityId` (auto-increment), `EntityTypeId`, `Position`, `Velocity`, `Rotation`, `Active`
+- [x] `Tables/EntityOwnership.cs` — `partial struct` with `EntityId`, `Owner`
+- [x] `Types/DbVector2.cs` — `partial struct` with `X`, `Y`
+- [x] `Views/ActiveEntities.cs` — view filtering `Entities.Active == true`
+- [x] `Reducers/Connect.cs` — `ClientConnected` lifecycle + spawn player entity
+- [x] `Reducers/MoveEntity.cs` — client-authoritative `MoveEntity` with ownership check (6-param)
+- [x] `Reducers/Disconnect.cs` — deactivate entities, zero velocity
+- [x] `spacetime build` succeeds
+- [x] `spacetime publish nomad --module-path ./server/src` succeeds
 
 ### Task 0.3: SpacetimeDB Client Integration
-- [ ] `SpacetimeDB.ClientSDK.Godot` NuGet package added to `Nomad.csproj`
-- [ ] Client connection manager connects to local SpacetimeDB using builder pattern
-- [ ] Client subscribes to Players, Entities, EntityOwnership tables on connect
-- [ ] Client calls `MoveEntity` reducer with position updates
-- [ ] `client/Db/` generated binding directory is `.gitignore`d
-- [ ] End-to-end verified: client connects → Player row created → client sees update
+- [x] `SpacetimeDB.ClientSDK` NuGet package added to `Nomad.csproj`
+- [x] Client connection manager (DbManager) connects to local SpacetimeDB using builder pattern
+- [x] Client subscribes to Players, Entities, ActiveEntities on connect
+- [x] Client calls `MoveEntity` reducer with position updates (MovementNetworkSync)
+- [x] `client/Db/` generated binding directory is `.gitignore`d
+- [x] End-to-end verified: client connects → Player row created → client sees update
 
 ### Task 0.4: Tile Grid + Camera
-- [ ] Ship grid scene with TileMapLayer rendering a basic ship floor plan
-- [ ] Camera2D follows local player character
-- [ ] Flat 2D vector style per GDD §7.1 (minimal for now)
+- [x] Ship grid scene with _Draw() rendering a basic ship floor plan (8x6 grid, 4 rooms)
+- [x] Camera2D follows local player character
+- [x] Flat 2D vector style per GDD §7.1 (minimal for now)
 
 ### Task 0.5: Player Character + Movement
-- [ ] `Player` scene (CharacterBody2D) with WASD movement
-- [ ] Client-authoritative position sent to SpacetimeDB via `MoveEntity` reducer
-- [ ] Remote players rendered at server-reported positions
-- [ ] Implements Move verb per GDD §5
-- [ ] Validation: `player_moves_right.json` passes
-- [ ] Validation: `player_moves_all_directions.json` passes
+- [x] `Player` scene (CharacterBody2D) with GUIDE-based WASD movement
+- [x] Client-authoritative position sent to SpacetimeDB via `MoveEntity` reducer (throttled 50ms)
+- [x] Remote players rendered with SnapshotInterpolator (lerp) + EntityMover
+- [x] Implements Move verb per GDD §5
+- [x] Validation: `player_moves_right.json` passes (393px in 60 frames)
+- [x] Validation: `player_moves_all_directions.json` passes (right + left assertions)
 
 ### Checkpoint: Foundation
-- [ ] Two clients connect, move, and see each other
-- [ ] Project is named Nomad, structured as `client/` + `server/`
-- [ ] All validation scenarios pass
-- [ ] `dotnet build` and `spacetime build` both succeed
+- [x] Two clients connect, move, and see each other
+- [x] Project is named Nomad, structured as `client/` + `server/`
+- [x] All validation scenarios pass
+- [x] `dotnet build` and `spacetime build` both succeed
 
 ## Open Questions
 

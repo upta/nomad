@@ -93,7 +93,7 @@ SpacetimeDB Scaffold + Client Connection
   - [x] 0.1.5: Update path references in `symlink-config.txt`, `.gitignore`, `README.md`
   - [x] 0.1.6: Recreate symlinks (`./setup.ps1`), run `dotnet build` from `client/`, verify
 
-- [ ] **Task 0.2: SpacetimeDB Server Scaffold** — Scaffold server via `spacetime init`, reorganize into `server/src/Tables/`, `Reducers/`, `Types/`. Use current SDK 2.4.x conventions (OnConnect lifecycle, shorthand attributes like [PrimaryKey], tables nested in partial class Module split across files). Define 3 tables + 3 reducers + 1 type. Build + publish. **Scope: M**
+- [x] **Task 0.2: SpacetimeDB Server Scaffold** — Scaffold server via `spacetime init`, reorganize into `server/src/Tables/`, `Reducers/`, `Types/`. Use current SDK 2.4.x conventions (OnConnect lifecycle, shorthand attributes like [PrimaryKey], tables nested in partial class Module split across files). Define 3 tables + 3 reducers + 1 type. Build + publish. **Scope: M**
   - [x] 0.2.1: Scaffold via `spacetime init`, clean generated files, move `spacetimedb/`→`src/`, rename `.csproj` to `StdbModule.csproj`, update `spacetime.json`
   - [x] 0.2.2: Create `src/GlobalUsings.cs` + `src/Types/EntityType.cs`
   - [x] 0.2.3: Create table definitions — `Tables/Player.cs`, `Entity.cs`, `EntityOwnership.cs`
@@ -104,9 +104,11 @@ SpacetimeDB Scaffold + Client Connection
 
 - [x] **Task 0.4: Tile-based grid map + 2D camera** — Create a TileMap-based grid for the ship interior. Add a top-down Camera2D. Set up rendering layers for the flat 2D vector style per GDD §7.1. Camera should follow the local player. **Scope: S**
 
-- [ ] **Task 0.5: Player character + WASD movement** — Create a Player scene (CharacterBody2D) with WASD movement. Client-authoritative position sent to SpacetimeDB. Remote players interpolated. Crib from untrailed movement patterns. Implements the Move verb (§5). Add movement validation scenario. **Scope: M**
+- [x] **Task 0.5: Player character + WASD movement** — Create a Player scene (CharacterBody2D) with WASD movement. Client-authoritative position sent to SpacetimeDB. Remote players interpolated. Crib from untrailed movement patterns. Implements the Move verb (§5). Add movement validation scenario. **Scope: M**
 
 **Checkpoint: Foundation** — Multiple clients connect to SpacetimeDB, players move on a grid, camera follows, project is named Nomad.
+
+✅ Phase 0 complete. Project restructured, server scaffolded (tables + reducers + ActiveEntities view), client integrated (DbManager + GUIDE input + Player with MovementNetworkSync), tile grid rendered, camera follows player, remote players rendered with SnapshotInterpolator lerp. Two validation scenarios pass.
 
 ### Phase 1: Ship Architecture
 
