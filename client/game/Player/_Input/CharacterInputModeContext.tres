@@ -1,17 +1,204 @@
-[gd_resource type="Resource" script_class="InputModeContext" format=3 ]
+[gd_resource type="Resource" format=3 uid="uid://c0kieirdls30u"]
 
-[ext_resource type="Resource" path="res://game/Player/_Input/Contexts/CharacterContextController.tres" id="1_controller"]
-[ext_resource type="Script" path="res://game/Guide/GuideMappingContextBinding.cs" id="2_binding"]
-[ext_resource type="Resource" path="res://game/Player/_Input/Contexts/CharacterContextKbm.tres" id="3_kbm"]
-[ext_resource type="Script" path="res://game/Guide/InputModeContext.cs" id="4_mode"]
+[ext_resource type="Resource" uid="uid://bia5wln118l0x" path="res://game/Player/_Input/Contexts/CharacterContextController.tres" id="1_controller"]
+[ext_resource type="Script" uid="uid://mevt8l4svrd6" path="res://addons/guide/guide_action_mapping.gd" id="2_3ljjb"]
+[ext_resource type="Script" uid="uid://ceqd1dvxwwqas" path="res://game/Guide/GuideMappingContextBinding.cs" id="2_binding"]
+[ext_resource type="Resource" uid="uid://dd4d55xqh8koq" path="res://game/Player/_Input/Contexts/CharacterContextKbm.tres" id="3_kbm"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/CharacterMove.tres" id="3_xbp3w"]
+[ext_resource type="Script" uid="uid://bnrqk2d5hdkce" path="res://addons/guide/guide_input_mapping.gd" id="4_mnuro"]
+[ext_resource type="Script" uid="uid://dmy2ip2fboutl" path="res://game/Guide/InputModeContext.cs" id="4_mode"]
+[ext_resource type="Script" uid="uid://ds4n014dms52y" path="res://addons/guide/inputs/guide_input_joy_axis_2d.gd" id="5_5q2in"]
+[ext_resource type="Script" uid="uid://bxbb3tkiaqxwo" path="res://addons/guide/modifiers/guide_modifier.gd" id="6_qxtxk"]
+[ext_resource type="Script" uid="uid://ctqp1sl47id7u" path="res://addons/guide/modifiers/guide_modifier_deadzone.gd" id="7_o34la"]
+[ext_resource type="Script" uid="uid://b4elwochdmo5p" path="res://addons/guide/triggers/guide_trigger.gd" id="8_fx1ye"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/Interact.tres" id="9_cxlap"]
+[ext_resource type="Script" uid="uid://bcubm07s0x235" path="res://addons/guide/inputs/guide_input_joy_button.gd" id="10_kidu3"]
+[ext_resource type="Script" uid="uid://csep3him3o7bq" path="res://addons/guide/triggers/guide_trigger_pressed.gd" id="11_fxcqk"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarCycleSlot.tres" id="12_w16xa"]
+[ext_resource type="Script" uid="uid://ja2ypq3ulvxc" path="res://addons/guide/inputs/guide_input_joy_axis_1d.gd" id="13_8fr16"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarDropItem.tres" id="14_hfr02"]
+[ext_resource type="Script" uid="uid://cxtfakmx43grs" path="res://addons/guide/inputs/guide_input_key.gd" id="17_aj767"]
+[ext_resource type="Script" uid="uid://bjfjmd66etb2f" path="res://addons/guide/modifiers/guide_modifier_input_swizzle.gd" id="18_d408q"]
+[ext_resource type="Script" uid="uid://ctdhyewtsggym" path="res://addons/guide/modifiers/guide_modifier_negate.gd" id="19_jacpf"]
+
+[sub_resource type="Resource" id="Resource_joy_axis"]
+script = ExtResource("5_5q2in")
+
+[sub_resource type="Resource" id="Resource_deadzone"]
+script = ExtResource("7_o34la")
+
+[sub_resource type="Resource" id="Resource_joy_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_joy_axis")
+modifiers = Array[ExtResource("6_qxtxk")]([SubResource("Resource_deadzone")])
+
+[sub_resource type="Resource" id="Resource_move_action"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("3_xbp3w")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_joy_input")])
+
+[sub_resource type="Resource" id="Resource_interact_btn"]
+script = ExtResource("10_kidu3")
+
+[sub_resource type="Resource" id="Resource_4iura"]
+script = ExtResource("11_fxcqk")
+
+[sub_resource type="Resource" id="Resource_interact_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_interact_btn")
+triggers = Array[ExtResource("8_fx1ye")]([SubResource("Resource_4iura")])
+
+[sub_resource type="Resource" id="Resource_interact_action"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("9_cxlap")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_interact_input")])
+
+[sub_resource type="Resource" id="Resource_y3k2f"]
+script = ExtResource("13_8fr16")
+axis = 5
+
+[sub_resource type="Resource" id="Resource_cycle_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_y3k2f")
+
+[sub_resource type="Resource" id="Resource_cycle_action"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("12_w16xa")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_cycle_input")])
+metadata/_guide_input_mappings_collapsed = false
+
+[sub_resource type="Resource" id="Resource_xbfr2"]
+script = ExtResource("10_kidu3")
+button = 2
+
+[sub_resource type="Resource" id="Resource_drop_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_xbfr2")
+
+[sub_resource type="Resource" id="Resource_drop_action"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("14_hfr02")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_drop_input")])
 
 [sub_resource type="Resource" id="Resource_controller_binding"]
 script = ExtResource("2_binding")
 MappingContext = ExtResource("1_controller")
+DisplayName = ""
+Mappings = Array[ExtResource("2_3ljjb")]([SubResource("Resource_move_action"), SubResource("Resource_interact_action"), SubResource("Resource_cycle_action"), SubResource("Resource_drop_action")])
+_mappingContext = ExtResource("1_controller")
+_signalsConnected = true
+_onDisabledCallable = Callable()
+_onEnabledCallable = Callable()
+
+[sub_resource type="Resource" id="Resource_w_key"]
+script = ExtResource("17_aj767")
+key = 87
+
+[sub_resource type="Resource" id="Resource_w_swizzle"]
+script = ExtResource("18_d408q")
+
+[sub_resource type="Resource" id="Resource_w_negate"]
+script = ExtResource("19_jacpf")
+
+[sub_resource type="Resource" id="Resource_w_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_w_key")
+modifiers = Array[ExtResource("6_qxtxk")]([SubResource("Resource_w_swizzle"), SubResource("Resource_w_negate")])
+
+[sub_resource type="Resource" id="Resource_s_key"]
+script = ExtResource("17_aj767")
+key = 83
+
+[sub_resource type="Resource" id="Resource_s_swizzle"]
+script = ExtResource("18_d408q")
+
+[sub_resource type="Resource" id="Resource_s_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_s_key")
+modifiers = Array[ExtResource("6_qxtxk")]([SubResource("Resource_s_swizzle")])
+
+[sub_resource type="Resource" id="Resource_a_key"]
+script = ExtResource("17_aj767")
+key = 65
+
+[sub_resource type="Resource" id="Resource_a_negate"]
+script = ExtResource("19_jacpf")
+
+[sub_resource type="Resource" id="Resource_a_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_a_key")
+modifiers = Array[ExtResource("6_qxtxk")]([SubResource("Resource_a_negate")])
+
+[sub_resource type="Resource" id="Resource_d_key"]
+script = ExtResource("17_aj767")
+key = 68
+
+[sub_resource type="Resource" id="Resource_d_input"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_d_key")
+
+[sub_resource type="Resource" id="Resource_m4w3y"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("3_xbp3w")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_w_input"), SubResource("Resource_s_input"), SubResource("Resource_a_input"), SubResource("Resource_d_input")])
+
+[sub_resource type="Resource" id="Resource_e_key"]
+script = ExtResource("17_aj767")
+key = 69
+
+[sub_resource type="Resource" id="Resource_4e0bc"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_e_key")
+
+[sub_resource type="Resource" id="Resource_453os"]
+script = ExtResource("17_aj767")
+key = 32
+
+[sub_resource type="Resource" id="Resource_axruf"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_453os")
+
+[sub_resource type="Resource" id="Resource_x5cs3"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("9_cxlap")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_4e0bc"), SubResource("Resource_axruf")])
+
+[sub_resource type="Resource" id="Resource_aaq76"]
+script = ExtResource("17_aj767")
+key = 4194306
+
+[sub_resource type="Resource" id="Resource_8dctr"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_aaq76")
+
+[sub_resource type="Resource" id="Resource_q2jpm"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("12_w16xa")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_8dctr")])
+metadata/_guide_input_mappings_collapsed = false
+
+[sub_resource type="Resource" id="Resource_g_key"]
+script = ExtResource("17_aj767")
+key = 71
+
+[sub_resource type="Resource" id="Resource_d0qf2"]
+script = ExtResource("4_mnuro")
+input = SubResource("Resource_g_key")
+
+[sub_resource type="Resource" id="Resource_rraj4"]
+script = ExtResource("2_3ljjb")
+action = ExtResource("14_hfr02")
+input_mappings = Array[ExtResource("4_mnuro")]([SubResource("Resource_d0qf2")])
 
 [sub_resource type="Resource" id="Resource_kbm_binding"]
 script = ExtResource("2_binding")
 MappingContext = ExtResource("3_kbm")
+DisplayName = ""
+Mappings = Array[ExtResource("2_3ljjb")]([SubResource("Resource_m4w3y"), SubResource("Resource_x5cs3"), SubResource("Resource_q2jpm"), SubResource("Resource_rraj4")])
+_mappingContext = ExtResource("3_kbm")
+_signalsConnected = true
+_onDisabledCallable = Callable()
+_onEnabledCallable = Callable()
 
 [resource]
 script = ExtResource("4_mode")
