@@ -20,6 +20,62 @@ These instructions apply to files under `client/game/**`.
 - References should be bound using the `[Node("#ChildNode")]` attribute or `GetNode<T>()`
 - `[Export]` should be used to get references to other scenes, not string paths
 
+## GUIDE Input System
+
+Input is handled by the G.U.I.D.E addon (`client/addons/guide/`), not raw Godot `Input` calls. C# wrappers live in `client/game/Guide/`.
+
+### Key types
+
+| Type | Purpose |
+|------|---------|
+| `GuideActionBinding` | Wraps a `GUIDEAction` resource. Use typed properties, never raw `.Get()` |
+| `GuideMappingContextBinding` | Wraps a `GUIDEMappingContext` (group of action mappings) |
+| `GuideService` | Manages the context stack, input mode (KBM/Controller), and the `/root/GUIDE` singleton |
+| `InputContext` | Resource holding global KBM/Controller contexts + mode-switch actions |
+| `InputModeContext` | Resource holding a Controller/KBM context pair for a gameplay/UI mode |
+
+### Reading input (the right way)
+
+```csharp
+// ✅ Use typed properties on GuideActionBinding
+[Export] public GuideActionBinding MoveAction { get; set; } = null!;
+
+var direction = MoveAction.ValueAxis2D;   // Vector2
+var held = MoveAction.ValueBool;          // bool
+var axis1d = MoveAction.ValueAxis1D;     // float
+```
+
+```csharp
+// ❌ Never use raw .Get() with string keys — bypasses type safety
+var direction = (Vector2)MoveAction.Get("value_axis_2d");  // BAD
+```
+
+### Setting up GUIDE contexts
+
+1. Define actions as `.tres` GUIDEAction resources (e.g., `CharacterMove.tres`)
+2. Define mapping contexts that bind inputs → actions (e.g., `CharacterContextKbm.tres`)
+3. Group contexts into an `InputModeContext` with KBM + Controller pairs
+4. Create an `InputContext` resource with global contexts + mode-switch actions
+5. In `AppRoot._Ready()`: `new GuideService(inputContext)`, `Initialize()`, then `PushContext(gameplayMode)` after data is ready
+
+### GUIDE + InputMap coexistence
+
+GUIDE actions replace raw `Input.GetVector()` in gameplay code, but `InputMap` actions must still be registered for the validation runtime's `press_action` / `release_action` operations to work in test mode. Register them alongside GUIDE initialization:
+
+```csharp
+private static void EnsureInputActions()
+{
+    foreach (var (actionName, key) in ActionKeys)
+    {
+        if (!InputMap.HasAction(actionName))
+            InputMap.AddAction(actionName);
+        var inputEvent = new InputEventKey { PhysicalKeycode = key };
+        if (!InputMap.ActionHasEvent(actionName, inputEvent))
+            InputMap.ActionAddEvent(actionName, inputEvent);
+    }
+}
+```
+
 ## Service Layer Rules
 
 `_Service/` classes are the core game logic layer. They separate business rules and state management from Godot presentation code.
@@ -58,25 +114,42 @@ These instructions apply to files under `client/game/**`.
 
 ```csharp
 // _Service/ class — pure logic
-public class PlayerMovementService(DbConnection server, uint entityId)
+public class MovementNetworkSync(DbConnection server, float sendInterval = 0.05f)
 {
-    public event Action<Vector2>? PositionUpdated;
+    private Vector2 _lastSentPosition;
 
-    public void UpdatePosition(Vector2 position)
+    public void Initialize(Vector2 position) => _lastSentPosition = position;
+
+    public void Update(int entityId, Vector2 position, Vector2 velocity, float rotation, double delta)
     {
-        server.Reducers.MoveEntity(entityId, position.X, position.Y);
+        var hasMoved = !position.IsEqualApprox(_lastSentPosition);
+        if (hasMoved)
+        {
+            server.Reducers.MoveEntity(
+                entityId,
+                new DbVector2(position.X, position.Y),
+                new DbVector2(velocity.X, velocity.Y),
+                rotation,
+                Time.GetTicksMsec() / 1000.0
+            );
+            _lastSentPosition = position;
+        }
     }
 }
 
 // _Scene/ class — thin Godot shell
 public partial class Player : CharacterBody2D
 {
-    private PlayerMovementService _movement = null!;
+    private MovementNetworkSync _networkSync = null!;
 
-    public override void _Ready()
+    [Export] public GuideActionBinding MoveAction { get; set; } = null!;
+
+    public override void _PhysicsProcess(double delta)
     {
-        _movement = new PlayerMovementService(Server, _entityId);
-        _movement.PositionUpdated += pos => GlobalPosition = pos;
+        var direction = MoveAction.ValueAxis2D;
+        Velocity = direction * MoveSpeed;
+        MoveAndSlide();
+        _networkSync.Update(_entityId, GlobalPosition, Velocity, 0f, delta);
     }
 }
 ```

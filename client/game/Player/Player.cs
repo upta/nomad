@@ -1,6 +1,7 @@
 namespace Nomad.Game.Player;
 
 using Godot;
+using Guide;
 using StdbPlayer = SpacetimeDB.Types.Player;
 
 public partial class Player : CharacterBody2D
@@ -11,7 +12,7 @@ public partial class Player : CharacterBody2D
     private int _entityId;
 
     [Export]
-    public Resource MoveAction { get; set; } = null!;
+    public GuideActionBinding MoveAction { get; set; } = null!;
 
     [Export]
     public float Acceleration { get; set; } = 1600f;
@@ -32,7 +33,7 @@ public partial class Player : CharacterBody2D
         if (MoveAction is null)
             return;
 
-        var direction = (Vector2)MoveAction.Get("value_axis_2d");
+        var direction = MoveAction.ValueAxis2D;
 
         var inputMagnitude = direction.Length();
         if (inputMagnitude > 1f)
