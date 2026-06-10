@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="GUIDEMappingContext" format=3 uid="uid://3u507o8tgaq3"]
+
+[ext_resource type="Script" uid="uid://cpplm41b5bt6m" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
+[ext_resource type="Resource" uid="uid://dayq3cw0c4j65" path="res://Core/Guide/_Resource/GuideAction/SwitchToController.tres" id="2_action"]
+[ext_resource type="Script" uid="uid://dsa1dnifd6w32" path="res://addons/guide/guide_mapping_context.gd" id="3_ctx"]
+[ext_resource type="Script" uid="uid://mtx1unc2aqn7" path="res://addons/guide/guide_input_mapping.gd" id="4_input"]
+[ext_resource type="Script" uid="uid://w3fbpe7r01n8" path="res://addons/guide/inputs/guide_input_any.gd" id="5_any"]
+[ext_resource type="Script" uid="uid://bl8rjl4oaldje" path="res://addons/guide/modifiers/guide_modifier.gd" id="6_mod"]
+[ext_resource type="Script" uid="uid://x74mnwgr08a7" path="res://addons/guide/triggers/guide_trigger.gd" id="7_trigger"]
+[ext_resource type="Script" uid="uid://b52rqq28tuqpg" path="res://addons/guide/triggers/guide_trigger_pressed.gd" id="8_pressed"]
+
+[sub_resource type="Resource" id="Resource_any_input"]
+script = ExtResource("5_any")
+joy_buttons = true
+joy_axes = true
+mouse = false
+joy = true
+
+[sub_resource type="Resource" id="Resource_pressed"]
+script = ExtResource("8_pressed")
+
+[sub_resource type="Resource" id="Resource_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_any_input")
+triggers = Array[ExtResource("7_trigger")]([SubResource("Resource_pressed")])
+
+[sub_resource type="Resource" id="Resource_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("2_action")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_input")])
+
+[resource]
+script = ExtResource("3_ctx")
+mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_action")])
