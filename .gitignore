@@ -27,5 +27,10 @@ client/Db/
 !.claude/skills/run-game
 !.claude/skills/spacetime-db-reference
 
+# Symlinked commands + agents from agent-skills (created by setup scripts);
+# add ! entries here if project-owned commands/agents are added later
+.claude/commands/*
+.claude/agents/*
+
 # Agent-skills references (symlinked)
 references/testing-patterns.md

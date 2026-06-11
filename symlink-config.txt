@@ -38,5 +38,19 @@ tools=submodules/agentic_godot_validation/tools
 .claude/skills/test-driven-development=submodules/agent_skills/skills/test-driven-development
 .claude/skills/using-agent-skills=submodules/agent_skills/skills/using-agent-skills
 
+# Claude Code commands (from agent-skills) — wrappers that orchestrate the skills above
+.claude/commands/build.md=submodules/agent_skills/.claude/commands/build.md
+.claude/commands/code-simplify.md=submodules/agent_skills/.claude/commands/code-simplify.md
+.claude/commands/plan.md=submodules/agent_skills/.claude/commands/plan.md
+.claude/commands/review.md=submodules/agent_skills/.claude/commands/review.md
+.claude/commands/ship.md=submodules/agent_skills/.claude/commands/ship.md
+.claude/commands/spec.md=submodules/agent_skills/.claude/commands/spec.md
+.claude/commands/test.md=submodules/agent_skills/.claude/commands/test.md
+
+# Claude Code agents (from agent-skills) — personas /ship fans out to
+.claude/agents/code-reviewer.md=submodules/agent_skills/agents/code-reviewer.md
+.claude/agents/security-auditor.md=submodules/agent_skills/agents/security-auditor.md
+.claude/agents/test-engineer.md=submodules/agent_skills/agents/test-engineer.md
+
 # Agent-skills references
 references/testing-patterns.md=submodules/agent_skills/references/testing-patterns.md

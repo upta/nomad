@@ -13,6 +13,7 @@ Reference for working SpacetimeDB + Godot integration patterns: [untrailed](http
 - `client/addons/` — external addons, including the symlinked validation runtime — **never edit** (validation kit changes belong in `submodules/agentic_godot_validation/` and require asking first)
 - `tools/` — symlinked validation runner scripts (`run_scenario.ps1`, `run_all_scenarios.ps1`)
 - `.claude/skills/` — project-owned skills (`validate-gameplay`, `run-game`, `spacetime-db-reference`) plus workflow skills symlinked from `submodules/agent_skills` and the validation kit. Run `./setup.ps1` after initializing/updating submodules to (re)create symlinks.
+- `.claude/commands/` + `.claude/agents/` — symlinked from `submodules/agent_skills`: slash commands (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/code-simplify`, `/ship`) that orchestrate the workflow skills, and the personas `/ship` fans out to. Command bodies reference skills as `agent-skills:<name>`; here those skills are symlinked unqualified — invoke the plain skill name (e.g. `incremental-implementation`). In this project, "tests" for `/build` and `/test` mean validation scenarios (see the `validate-gameplay` skill).
 - `docs/game-design-document.md` — the GDD (ask before modifying)
 - `SPEC.md`, `tasks/plan.md`, `tasks/todo.md` — spec, implementation plan, task tracking
 
