@@ -20,9 +20,16 @@ public partial class ConnectedGameHarnessController : Node2D
     private bool _dataReady;
     private DbManager _dbManager = null!;
     private Vector2? _initialNodePosition;
+    private Vector2? _initialRemotePosition;
     private Vector2? _initialServerPosition;
     private Main? _main;
     private Node2D? _playerNode;
+    private PuppetClient? _puppet;
+    private Node2D? _remoteNode;
+    private int _remoteNodeRecreations;
+
+    [Export]
+    public bool EnablePuppet { get; set; }
 
     [Export]
     public PackedScene MainScene { get; set; } = null!;
@@ -45,15 +52,33 @@ public partial class ConnectedGameHarnessController : Node2D
         _dbManager.OnConnectionFailed += OnServerConnectionFailed;
         AddChild(_dbManager);
         _dbManager.Connect();
+
+        if (EnablePuppet)
+        {
+            _puppet = new PuppetClient();
+            AddChild(_puppet);
+        }
     }
 
     public Godot.Collections.Dictionary get_observed_state()
     {
-        return new Godot.Collections.Dictionary
+        var state = new Godot.Collections.Dictionary
         {
             ["connection"] = BuildConnectionState(),
             ["game"] = BuildGameState(),
         };
+
+        if (_puppet is { } puppet)
+        {
+            state["puppet"] = new Godot.Collections.Dictionary
+            {
+                ["data_ready"] = puppet.DataReady,
+                ["entity_id"] = puppet.EntityId,
+                ["displacement_from_initial"] = puppet.DisplacementFromInitial,
+            };
+        }
+
+        return state;
     }
 
     // The validation runtime presses InputMap actions, but GUIDE only sees
@@ -148,6 +173,32 @@ public partial class ConnectedGameHarnessController : Node2D
                 ["y"] = _playerNode.GlobalPosition.Y,
                 ["displacement_from_start"] = _playerNode.GlobalPosition.DistanceTo(initial),
             };
+        }
+
+        state["remote_count"] = _main?.RemoteEntityCount ?? 0;
+
+        if (_puppet is { EntityId: > 0 } puppet && _main is not null)
+        {
+            // Always read the live registered node — a stale cached reference can
+            // be disposed if the game recreates remote nodes. Recreations are
+            // counted because a stable remote node IS part of the contract.
+            var current = _main.GetRemoteNode(puppet.EntityId);
+            if (current is not null)
+            {
+                if (_remoteNode is not null && !ReferenceEquals(current, _remoteNode))
+                    _remoteNodeRecreations++;
+                _remoteNode = current;
+                _initialRemotePosition ??= current.GlobalPosition;
+                state["remote_node"] = new Godot.Collections.Dictionary
+                {
+                    ["x"] = current.GlobalPosition.X,
+                    ["y"] = current.GlobalPosition.Y,
+                    ["displacement_from_initial"] = current.GlobalPosition.DistanceTo(
+                        _initialRemotePosition.Value
+                    ),
+                };
+            }
+            state["remote_node_recreations"] = _remoteNodeRecreations;
         }
 
         return state;

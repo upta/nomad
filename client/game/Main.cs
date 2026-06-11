@@ -14,6 +14,10 @@ public partial class Main : Node2D
     private Player.Player? _localPlayer;
     private int _localEntityId;
 
+    public int RemoteEntityCount => _remoteNodes.Count;
+
+    public Node2D? GetRemoteNode(int entityId) => _remoteNodes.GetValueOrDefault(entityId);
+
     public override void _Ready()
     {
         var roomTypeRegistry = new Ship.RoomTypeRegistry();
@@ -52,13 +56,16 @@ public partial class Main : Node2D
 
         _localEntityId = GetLocalEntityId(conn);
 
-        conn.Db.ActiveEntities.OnInsert += OnRemoteEntityInserted;
-        conn.Db.ActiveEntities.OnDelete += OnRemoteEntityDeleted;
+        // Subscribe to the base Entities table, not the ActiveEntities view:
+        // computed views have no primary key, so row updates arrive as
+        // insert+delete pairs and would destroy remote nodes on every move.
+        conn.Db.Entities.OnInsert += OnEntityInserted;
+        conn.Db.Entities.OnUpdate += OnEntityUpdated;
+        conn.Db.Entities.OnDelete += OnEntityDeleted;
 
-        foreach (var entity in conn.Db.ActiveEntities.Iter())
+        foreach (var entity in conn.Db.Entities.Iter())
         {
-            if (entity.EntityId != _localEntityId)
-                CreateRemoteNode(conn, entity);
+            TryCreateRemoteNode(entity);
         }
     }
 
@@ -70,10 +77,11 @@ public partial class Main : Node2D
 
     public override void _ExitTree()
     {
-        if (_dbManager?.Connection?.Db?.ActiveEntities is { } ae)
+        if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {
-            ae.OnInsert -= OnRemoteEntityInserted;
-            ae.OnDelete -= OnRemoteEntityDeleted;
+            entities.OnInsert -= OnEntityInserted;
+            entities.OnUpdate -= OnEntityUpdated;
+            entities.OnDelete -= OnEntityDeleted;
         }
     }
 
@@ -88,22 +96,42 @@ public partial class Main : Node2D
         return 0;
     }
 
-    private void OnRemoteEntityInserted(EventContext ctx, Entity entity)
+    private void OnEntityDeleted(EventContext ctx, Entity entity)
     {
-        if (entity.EntityId == _localEntityId || _dbManager is null)
-            return;
-        if (_remoteNodes.ContainsKey(entity.EntityId))
-            return;
-        CreateRemoteNode(_dbManager.Connection, entity);
+        RemoveRemoteNode(entity.EntityId);
     }
 
-    private void OnRemoteEntityDeleted(EventContext ctx, Entity entity)
+    private void OnEntityInserted(EventContext ctx, Entity entity)
     {
-        if (_remoteNodes.TryGetValue(entity.EntityId, out var node))
+        TryCreateRemoteNode(entity);
+    }
+
+    private void OnEntityUpdated(EventContext ctx, Entity oldEntity, Entity newEntity)
+    {
+        if (!newEntity.Active)
         {
-            _remoteNodes.Remove(entity.EntityId);
+            RemoveRemoteNode(newEntity.EntityId);
+            return;
+        }
+        TryCreateRemoteNode(newEntity);
+    }
+
+    private void RemoveRemoteNode(int entityId)
+    {
+        if (_remoteNodes.TryGetValue(entityId, out var node))
+        {
+            _remoteNodes.Remove(entityId);
             node.QueueFree();
         }
+    }
+
+    private void TryCreateRemoteNode(Entity entity)
+    {
+        if (_dbManager is null || !entity.Active)
+            return;
+        if (entity.EntityId == _localEntityId || _remoteNodes.ContainsKey(entity.EntityId))
+            return;
+        CreateRemoteNode(_dbManager.Connection, entity);
     }
 
     private void CreateRemoteNode(DbConnection conn, Entity entity)

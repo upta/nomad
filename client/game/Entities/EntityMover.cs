@@ -51,14 +51,14 @@ public partial class EntityMover : Node
 
     public override void _ExitTree()
     {
-        Server.Db.ActiveEntities.OnInsert -= OnEntityUpdated;
+        Server.Db.Entities.OnUpdate -= OnEntityUpdated;
     }
 
     public void Initialize(Entity entity)
     {
         _interpolator = new SnapshotInterpolator(renderDelay: RenderDelay);
         TargetNode ??= GetParent() as Node2D;
-        Server.Db.ActiveEntities.OnInsert += OnEntityUpdated;
+        Server.Db.Entities.OnUpdate += OnEntityUpdated;
 
         var position = new Vector2(entity.Position.X, entity.Position.Y);
         var velocity = new Vector2(entity.Velocity.X, entity.Velocity.Y);
@@ -67,13 +67,18 @@ public partial class EntityMover : Node
         _interpolator.PushSnapshot(position, velocity, entity.Rotation, entity.SenderTimestamp);
     }
 
-    private void OnEntityUpdated(EventContext ctx, Entity entity)
+    private void OnEntityUpdated(EventContext ctx, Entity oldEntity, Entity newEntity)
     {
-        if (entity.EntityId != EntityId)
+        if (newEntity.EntityId != EntityId)
             return;
 
-        var position = new Vector2(entity.Position.X, entity.Position.Y);
-        var velocity = new Vector2(entity.Velocity.X, entity.Velocity.Y);
-        _interpolator.PushSnapshot(position, velocity, entity.Rotation, entity.SenderTimestamp);
+        var position = new Vector2(newEntity.Position.X, newEntity.Position.Y);
+        var velocity = new Vector2(newEntity.Velocity.X, newEntity.Velocity.Y);
+        _interpolator.PushSnapshot(
+            position,
+            velocity,
+            newEntity.Rotation,
+            newEntity.SenderTimestamp
+        );
     }
 }

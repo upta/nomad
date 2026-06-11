@@ -1,0 +1,84 @@
+{
+  "scenario_id": "remote_player_renders_and_moves",
+  "version": 3,
+  "description": "A second client (in-process puppet with its own identity) connects, the server creates its player entity, the local client renders a remote-player node for it, and the node tracks the puppet's server-driven movement.",
+  "harness_scene": "res://validation/harnesses/MultiplayerGameHarness.tscn",
+  "done_contract": {
+    "min_remote_displacement_pixels": 16.0,
+    "frame_budget": 900,
+    "physics_ticks_per_second": 60
+  },
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/MultiplayerGameHarness.tscn"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.connection.data_ready",
+      "comparator": "eq",
+      "expected": true,
+      "timeout_frames": 600
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.game.player_exists",
+      "comparator": "eq",
+      "expected": true,
+      "timeout_frames": 120
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.puppet.data_ready",
+      "comparator": "eq",
+      "expected": true,
+      "timeout_frames": 600
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.puppet.entity_id",
+      "comparator": "gte",
+      "expected": 1,
+      "timeout_frames": 300
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.game.remote_count",
+      "comparator": "gte",
+      "expected": 1,
+      "timeout_frames": 300
+    },
+    {
+      "op": "checkpoint",
+      "name": "remote_spawned"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.game.remote_node.displacement_from_initial",
+      "comparator": "gte",
+      "expected": 16.0,
+      "timeout_frames": 300
+    },
+    {
+      "op": "checkpoint",
+      "name": "remote_moved"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "remote_moved",
+      "path": "harness_state.puppet.displacement_from_initial",
+      "comparator": "gte",
+      "expected": 16.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "remote_moved",
+      "path": "harness_state.game.remote_node_recreations",
+      "comparator": "eq",
+      "expected": 0
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}
