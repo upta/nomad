@@ -135,7 +135,15 @@ A feature is not done until a human can play-test it for game feel — not for w
 1. **Validation scenarios exist** for the change — covering the intended behavior, not just the happy path.
 2. **New scenarios pass.** Writing a scenario is not enough. Run it and confirm green.
 3. **All existing scenarios still pass.** Run the full suite (`run_all_scenarios.ps1`) and confirm no regressions. If something broke, fix it before calling the work done.
-4. **`git push origin`** at the end of every work batch.
+4. **Game starts without errors.** Run the game in normal (non-test) headless mode for ≥10 seconds and verify zero `ERROR:` lines in the log. Test-mode scenarios can miss startup-path bugs. Verification command:
+   ```powershell
+   $godotExe = Join-Path $env:APPDATA "godotenv\godot\bin\godot.exe"
+   $logPath = Join-Path $env:TEMP "nomad_verify.log"
+   $job = Start-Job { & $args[0] --path $args[1] --log-file $args[2] --rendering-driver opengl3 --headless 2>&1 } -ArgumentList $godotExe, (Resolve-Path client).Path, $logPath
+   Start-Sleep 10; Stop-Job $job; Remove-Job $job -Force
+   Select-String -Path $logPath -Pattern 'ERROR:' # must be empty
+   ```
+5. **`git push origin`** at the end of every work batch.
 
 If any of these are missing, the feature is not done. A human should never encounter a bug that automated validation could have caught.
 
@@ -192,6 +200,6 @@ Comments should be rare and ONLY explain "why" not "what".
 
 ## Boundaries
 
-- Always: Run validation scenarios after gameplay changes, write tests before fixes, build + format both projects before considering work done
+- Always: Run validation scenarios after gameplay changes, write tests before fixes, build + format both projects, and verify game starts without errors in headless normal mode before considering work done
 - Ask first: Changes to validation framework submodule, adding NuGet packages, any modification to `docs/game-design-document.md`
 - Never: Commit GDScript files, skip validation, remove failing scenarios
