@@ -1,6 +1,14 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
+[ext_resource type="PackedScene" path="res://game/Entities/RemoteEntity.tscn" id="2_remote"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
+RemoteEntityScene = ExtResource("2_remote")
+
+[node name="Camera" type="Camera2D" parent="."]
+unique_name_in_owner = true
+position_smoothing_enabled = true
+position_smoothing_speed = 5.0
+zoom = Vector2(2, 2)

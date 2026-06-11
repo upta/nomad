@@ -1,24 +1,33 @@
 namespace Nomad.Game;
 
 using System.Collections.Generic;
+using Chickensoft.GodotNodeInterfaces;
 using Entities;
 using Godot;
 using Map;
 
+[Meta(typeof(IAutoNode))]
 public partial class Main : Node2D
 {
-    private readonly Dictionary<int, Node2D> _remoteNodes = [];
-    private Camera2D _camera = null!;
+    private readonly Dictionary<int, RemoteEntity> _remoteNodes = [];
     private Db.DbManager? _dbManager;
     private ShipGrid? _shipGrid;
     private Player.Player? _localPlayer;
     private int _localEntityId;
 
+    public override void _Notification(int what) => this.Notify(what);
+
+    [Node]
+    public ICamera2D Camera { get; set; } = default!;
+
+    [Export]
+    public PackedScene RemoteEntityScene { get; set; } = null!;
+
     public int RemoteEntityCount => _remoteNodes.Count;
 
     public Node2D? GetRemoteNode(int entityId) => _remoteNodes.GetValueOrDefault(entityId);
 
-    public override void _Ready()
+    public void OnReady()
     {
         var roomTypeRegistry = new Ship.RoomTypeRegistry();
         AddChild(roomTypeRegistry);
@@ -30,14 +39,7 @@ public partial class Main : Node2D
         _shipGrid.RoomTypeRegistry = roomTypeRegistry;
         AddChild(_shipGrid);
 
-        _camera = new Camera2D
-        {
-            PositionSmoothingEnabled = true,
-            PositionSmoothingSpeed = 5f,
-            Zoom = new Vector2(2.0f, 2.0f),
-        };
-        AddChild(_camera);
-        _camera.MakeCurrent();
+        Camera.MakeCurrent();
     }
 
     public void InstantiatePlayer(Db.DbManager dbManager)
@@ -72,7 +74,7 @@ public partial class Main : Node2D
     public override void _Process(double delta)
     {
         if (_localPlayer is not null)
-            _camera.GlobalPosition = _localPlayer.GlobalPosition;
+            Camera.GlobalPosition = _localPlayer.GlobalPosition;
     }
 
     public override void _ExitTree()
@@ -136,25 +138,9 @@ public partial class Main : Node2D
 
     private void CreateRemoteNode(DbConnection conn, Entity entity)
     {
-        var node = new Node2D();
-        var sprite = new ColorRect
-        {
-            Size = new Vector2(32, 32),
-            Color = new Color(0.6f, 0.6f, 0.8f),
-        };
-        sprite.Position = new Vector2(-16, -16);
-        node.AddChild(sprite);
-
-        var mover = new EntityMover
-        {
-            EntityId = entity.EntityId,
-            Server = conn,
-            TargetNode = node,
-        };
-        node.AddChild(mover);
-        mover.Initialize(entity);
-
+        var node = RemoteEntityScene.Instantiate<RemoteEntity>();
         AddChild(node);
+        node.Initialize(conn, entity);
         _remoteNodes[entity.EntityId] = node;
     }
 }
