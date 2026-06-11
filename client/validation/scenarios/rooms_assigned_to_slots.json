@@ -1,0 +1,90 @@
+{
+  "scenario_id": "rooms_assigned_to_slots",
+  "version": 3,
+  "description": "All 7 room slots render with correct colors and labels matching their assigned room types (test-injected, no SpacetimeDB required).",
+  "harness_scene": "res://validation/harnesses/RoomRenderHarness.tscn",
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/RoomRenderHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 5
+    },
+    {
+      "op": "checkpoint",
+      "name": "loaded"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.0.slot_index",
+      "comparator": "eq",
+      "expected": 0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.0.label",
+      "comparator": "eq",
+      "expected": "Reactor"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.1.slot_index",
+      "comparator": "eq",
+      "expected": 1
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.1.label",
+      "comparator": "eq",
+      "expected": "Bridge"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.2.label",
+      "comparator": "eq",
+      "expected": "Cloning Bay"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.3.label",
+      "comparator": "eq",
+      "expected": "Hydroponics"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.4.label",
+      "comparator": "eq",
+      "expected": "Workshop"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.5.label",
+      "comparator": "eq",
+      "expected": "Kitchen"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.rooms.6.label",
+      "comparator": "eq",
+      "expected": "Cargo Bay"
+    },
+    {
+      "op": "checkpoint",
+      "name": "assertions_done"
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

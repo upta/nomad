@@ -1,0 +1,104 @@
+{
+  "scenario_id": "room_types_load",
+  "version": 3,
+  "description": "All 7 room types load correctly with proper metadata (IDs, labels, power draws, terminal types).",
+  "harness_scene": "res://validation/harnesses/RoomTypeHarness.tscn",
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/RoomTypeHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 5
+    },
+    {
+      "op": "checkpoint",
+      "name": "loaded"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.type_count",
+      "comparator": "eq",
+      "expected": 7
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.0.room_id",
+      "comparator": "eq",
+      "expected": "Reactor"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.0.label",
+      "comparator": "eq",
+      "expected": "Reactor"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.0.power_draw",
+      "comparator": "eq",
+      "expected": 3
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.0.terminal_type",
+      "comparator": "eq",
+      "expected": 1
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.1.room_id",
+      "comparator": "eq",
+      "expected": "Bridge"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.2.room_id",
+      "comparator": "eq",
+      "expected": "CloningBay"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.3.room_id",
+      "comparator": "eq",
+      "expected": "Hydroponics"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.4.room_id",
+      "comparator": "eq",
+      "expected": "Workshop"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.5.room_id",
+      "comparator": "eq",
+      "expected": "Kitchen"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.6.room_id",
+      "comparator": "eq",
+      "expected": "CargoBay"
+    },
+    {
+      "op": "checkpoint",
+      "name": "assertions_done"
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

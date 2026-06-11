@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RoomType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/Ship/RoomType.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+RoomId = "Workshop"
+Label = "Workshop"
+PowerDraw = 2
+TerminalType = 2
+Color = Color(0.5, 0.5, 0.6, 1)

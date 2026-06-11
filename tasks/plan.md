@@ -114,7 +114,12 @@ SpacetimeDB Scaffold + Client Connection
 
 - [x] **Task 1.1: Hull template data model** — Define `.tres` resource format for hull templates: grid width/height, armor rating, and a list of fixed room slots (each with position, width, height — but no type yet). Create one reference hull ("Corvette", 7 rooms). Each hull and room type has a string ID for SpacetimeDB reference. FTL-style: rooms are fixed positions on the hull, crew assigns types to them in the lobby. **Scope: M**
 
-- [ ] **Task 1.2: Room system** — Define 7 room types as `.tres` resources: Reactor, Bridge, Cloning Bay, Hydroponics, Workshop, Kitchen, Cargo Bay. Each has `room_id`, `label`, `power_draw`, `terminal_type` (star_chart, power_router, fabricator, cloning, info), `tileset_ref`. SpacetimeDB stores runtime assignment: `slot_index → room_type_id` + live state (powered, pressurized, breaker, health). Client renders rooms by looking up the assigned type and applying its tileset. **Scope: L**
+- [x] **Task 1.2: Room system** — Define 7 room types as `.tres` resources: Reactor, Bridge, Cloning Bay, Hydroponics, Workshop, Kitchen, Cargo Bay. Each has `room_id`, `label`, `power_draw`, `terminal_type` (star_chart, power_router, fabricator, cloning, info), `tileset_ref`. SpacetimeDB stores runtime assignment: `slot_index → room_type_id` + live state (powered, pressurized, breaker, health). Client renders rooms by looking up the assigned type and applying its tileset. **Scope: L**
+    - [ ] 1.2.1: Server Room Tables + Types — `TerminalType` + `RoomTypeId` enums, `RoomAssignment` table. **Scope: S**
+    - [ ] 1.2.2: Server AssignRoomType Reducer + Init Seeding — reducer to assign room types, `Init` lifecycle seeds Corvette defaults. **Scope: S**
+    - [ ] 1.2.3: Client RoomType Resource + 7 Room Types — `TerminalType` enum, `RoomType` [GlobalClass] Resource, 7 `.tres` files, `RoomTypeRegistry` lookup. **Scope: M**
+    - [ ] 1.2.4: Client Room Rendering in ShipGrid — rewrite `ShipGrid.cs` to read HullTemplate + RoomAssignment + RoomTypeRegistry for type-specific rendering. **Scope: M**
+    - [ ] 1.2.5: Validation Scenarios — `room_types_load.json`, `rooms_assigned_to_slots.json`, harness + controller. **Scope: M**
 
 - [ ] **Task 1.3: Power grid + breaker switches** — Simple binary power model: Reactor generates power, each room consumes 1 unit. If total demand ≤ reactor output, all rooms powered. Breakers can be toggled to cut power to individual rooms. Breaker state lives in SpacetimeDB. Players interact with breaker objects to toggle (Toggle verb per §5). Walk-up modal shows room power status. **Scope: M**
 

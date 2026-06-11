@@ -146,3 +146,46 @@
 - [x] Camera currently static — follow target will be assigned to player in Task 0.5
 - [x] `dotnet build` + `spacetime build` both pass
 - [x] Headless run: zero warnings, zero errors, SpacetimeDB connection still works
+
+---
+
+# Task 1.2: Room System 🔄 IN PROGRESS
+
+## Subtask 1.2.1: Server Room Tables + Types ✅ DONE
+- [x] Create `server/src/Types/TerminalType.cs` — enum: None, StarChart, PowerRouter, Fabricator, Cloning, Info
+- [x] Create `server/src/Types/RoomTypeId.cs` — enum: None, Reactor, Bridge, CloningBay, Hydroponics, Workshop, Kitchen, CargoBay
+- [x] Create `server/src/Tables/RoomAssignment.cs` — partial struct with SlotIndex PK, RoomTypeId, IsPowered, IsPressurized, BreakerOn, Health
+- [x] `spacetime build` succeeds
+- [x] `spacetime generate` client bindings
+
+## Subtask 1.2.2: Server AssignRoomType Reducer + Init Seeding ✅ DONE
+- [x] Create `server/src/Reducers/AssignRoomType.cs` — reducer: slot_index, room_type_id, ownership/phase check
+- [x] Create `server/src/Reducers/Init.cs` — Init lifecycle seeds Corvette room defaults
+- [x] `spacetime build` + `spacetime publish` + generate bindings
+- [x] Verify via `spacetime sql` that room assignments appear
+
+## Subtask 1.2.3: Client RoomType Resource + 7 Room Types ✅ DONE
+- [x] Create `client/game/Ship/TerminalType.cs` — client-side enum
+- [x] Create `client/game/Ship/RoomType.cs` — `[GlobalClass]` Resource: RoomId, Label, PowerDraw, TerminalType, Color
+- [x] Create 7 `.tres` RoomType files in `client/game/Ship/RoomTypes/`
+- [x] Create `RoomTypeRegistry` — loads all RoomTypes, provides lookup by RoomId
+- [x] `dotnet build` succeeds
+
+## Subtask 1.2.4: Client Room Rendering in ShipGrid ✅ DONE
+- [x] Rewrite `ShipGrid.cs` — accept HullTemplate, RoomAssignment table, RoomTypeRegistry
+- [x] Render rooms with type-specific colors and labels per slot
+- [x] Subscribe to RoomAssignment OnInsert/OnUpdate for reactive rendering
+- [x] Wire into `Main.cs`
+- [x] `dotnet build` + headless run verification
+
+## Subtask 1.2.5: Validation Scenarios ✅ DONE
+- [x] Create `client/validation/harnesses/RoomTypeHarness.tscn` + `RoomTypeHarnessController.cs`
+- [x] Create `client/validation/harnesses/RoomRenderHarness.tscn` + `RoomRenderHarnessController.cs`
+- [x] Create `client/validation/scenarios/room_types_load.json` — verify 7 room types
+- [x] Create `client/validation/scenarios/rooms_assigned_to_slots.json` — verify rendering
+- [x] Run all 5 scenarios → all pass
+- [x] `dotnet csharpier format .` in both client/ and server/
+
+---
+
+# Task 1.2: Room System 🔄 IN PROGRESS → ✅ DONE

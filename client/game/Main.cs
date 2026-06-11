@@ -10,13 +10,21 @@ public partial class Main : Node2D
     private readonly Dictionary<int, Node2D> _remoteNodes = [];
     private Camera2D _camera = null!;
     private Db.DbManager? _dbManager;
+    private ShipGrid? _shipGrid;
     private Player.Player? _localPlayer;
     private int _localEntityId;
 
     public override void _Ready()
     {
-        var shipGrid = GD.Load<PackedScene>("res://game/Map/ShipGrid.tscn").Instantiate();
-        AddChild(shipGrid);
+        var roomTypeRegistry = new Ship.RoomTypeRegistry();
+        AddChild(roomTypeRegistry);
+
+        var hullTemplate = GD.Load<Ship.HullTemplate>("res://game/Ship/CorvetteHull.tres");
+
+        _shipGrid = GD.Load<PackedScene>("res://game/Map/ShipGrid.tscn").Instantiate<ShipGrid>();
+        _shipGrid.HullTemplate = hullTemplate;
+        _shipGrid.RoomTypeRegistry = roomTypeRegistry;
+        AddChild(_shipGrid);
 
         _camera = new Camera2D
         {
@@ -31,6 +39,10 @@ public partial class Main : Node2D
     public void InstantiatePlayer(Db.DbManager dbManager)
     {
         _dbManager = dbManager;
+
+        if (_shipGrid is not null)
+            _shipGrid.BindToServer(dbManager);
+
         var conn = dbManager.Connection;
 
         var playerScene = GD.Load<PackedScene>("res://game/Player/Player.tscn");
