@@ -1,6 +1,6 @@
 # Plan: SpacetimeDB-Aware Validation
 
-**Status:** proposed (not started)
+**Status:** approved 2026-06-11 (decisions below), not started
 **Goal:** validation scenarios that exercise the real client ↔ server path — reducers, subscriptions, remote-entity rendering — so multiplayer behavior (the heart of the game) is provable in-engine, not just client-local logic.
 
 ## Current state (verified 2026-06-11)
@@ -10,6 +10,7 @@
 - The scenario runtime has no polling primitive — only fixed `wait_frames`. Network round-trips are nondeterministic in latency, so STDB scenarios need wait-until semantics or they will be flaky.
 - `tools/` is a **symlink into the validation-kit submodule** — host-owned orchestration scripts cannot live there.
 - Each anonymous `DbConnection` gets its own identity, and the server's `ClientConnected` reducer creates a player entity per identity — so two in-process connections naturally produce two players.
+- Nomad's `DbManager` never calls `WithToken`, so identity is not persisted between launches — every run is a brand-new player. untrailed solves persistence with the SDK's `AuthToken` helper (`AuthToken.Init($".untrailed-{env}")` + `WithToken(AuthToken.Token)` + `SaveToken` on connect), keyed per environment; its `--client <name>` CLI arg feeds the player name / sidecar flag.
 
 ## Design principles
 
@@ -40,6 +41,7 @@ The one framework change everything else depends on; generically useful even wit
 ## Phase 2 — Connected harnesses + orchestration (host project)
 
 1. **Configurable `DbManager`:** read `NOMAD_STDB_URI` / `NOMAD_STDB_DB` env vars, falling back to current hardcoded values. Two-line change, zero behavior change for normal play.
+   - Alongside this, adopt untrailed's identity pattern with a per-client twist: a `--client <id>` user arg (default `main`) feeds `AuthToken.Init($".nomad-{clientId}")`, `WithToken(AuthToken.Token)`, `SaveToken` on connect. Each client id gets its own token file → its own persistent identity. This also enables local multiplayer play-testing: launch two windowed instances with `--client a` / `--client b`.
 2. **`ConnectedHarnessController` base** (`client/validation/scripts/harness_controllers/`): owns a `DbManager`, calls `Connect()` in `_Ready()`, and exposes connection state under `harness_state.connection.*` (`is_connected`, `data_ready`, `local_entity_id`, table counts, per-entity positions read from `Connection.Db`). Concrete harnesses subclass it and add feature state.
 3. **Host-owned orchestration script** `scripts/run_stdb_scenarios.ps1` (new top-level `scripts/` dir, NOT the symlinked `tools/`):
    - ensure `spacetime start` is running (start as background process if not)
@@ -57,6 +59,7 @@ The one framework change everything else depends on; generically useful even wit
 Prove remote-entity behavior with **two identities in one process**: the harness opens a second, independent `DbConnection` ("puppet"). Anonymous connections get distinct identities, so the server treats it as a second player.
 
 - `PuppetClient` helper (validation-only, `client/validation/scripts/`): second `DbConnection` + simple scripted behaviors (e.g., "call `MoveEntity` rightward every N frames"), state exposed via the harness (`harness_state.puppet.*`).
+- **Identity isolation:** the puppet connects with `WithToken(null)` and never saves the returned token — the SDK's `AuthToken` helper is static, so the per-client-id token file (Phase 2) serves the *process-level* identity while the in-process puppet just takes a fresh anonymous identity each run. Fresh-per-run is correct anyway against ephemeral test databases.
 - Scenario: `remote_player_renders_and_moves` — local client connects → puppet connects → `wait_until` remote node rendered → puppet moves → `wait_until` the rendered remote node's x advances (proves `EntityMover`/`SnapshotInterpolator` against real server traffic).
 - Scripted-bot behaviors keep the framework untouched. If scenarios later need fine-grained puppet control from JSON steps, propose a generic `invoke_harness` op (call a named controller method) upstream — deferred until actually needed.
 
@@ -71,12 +74,12 @@ Prove remote-entity behavior with **two identities in one process**: the harness
 
 **Effort: small.**
 
-## Open questions
+## Decisions (Brian, 2026-06-11)
 
-1. **Suite default:** should STDB scenarios run in the everyday DoD loop (slower: publish + connect per run) or only before push? Recommendation: in the loop — connection bugs are the expensive ones — and revisit if wall-clock exceeds ~2 min.
-2. **Server lifecycle:** is it acceptable for the orchestration script to auto-start `spacetime start` as a background process on demand (and leave it running), or should it own start/stop per run? Recommendation: start-on-demand, leave running.
-3. **`wait_until` upstreaming:** changes land in `upta/agentic-godot-validation` directly on main, or PR-and-review even though it's your repo?
-4. **Identity/token reuse:** confirm the SDK doesn't persist and reuse a token between the main and puppet connections (would collapse them into one identity). If it does, the puppet needs an explicit fresh-token path. Verify early in Phase 3 — it changes the puppet design.
+1. **Suite default:** STDB scenarios run in the everyday DoD loop. Correctness over wall-clock — work happens asynchronously, so suite duration is not a constraint.
+2. **Server lifecycle:** orchestration auto-starts `spacetime start` on demand and leaves it running.
+3. **`wait_until` upstreaming:** commit directly to `main` of `upta/agentic-godot-validation`.
+4. **Identity:** per-client token files, untrailed-style — `--client <id>` feeds `AuthToken.Init($".nomad-{clientId}")` so each client instance has a distinct persistent identity (Phase 2); the in-process puppet uses `WithToken(null)` with no save for a fresh identity per run (Phase 3).
 
 ## Suggested order
 
