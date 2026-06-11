@@ -1,0 +1,57 @@
+{
+  "scenario_id": "player_blocked_by_wall",
+  "version": 3,
+  "description": "Holding move_up from spawn drives the player into the corridor's north wall (no door above spawn); collision stops them at the wall face instead of passing through.",
+  "harness_scene": "res://validation/harnesses/ShipWalkHarness.tscn",
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/ShipWalkHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 10
+    },
+    {
+      "op": "checkpoint",
+      "name": "spawn"
+    },
+    {
+      "op": "press_action",
+      "action": "move_up"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 90
+    },
+    {
+      "op": "release_action",
+      "action": "move_up"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 15
+    },
+    {
+      "op": "checkpoint",
+      "name": "at_wall"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "at_wall",
+      "path": "harness_state.player.y",
+      "comparator": "gte",
+      "expected": -33.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "at_wall",
+      "path": "harness_state.player.y",
+      "comparator": "lte",
+      "expected": -15.0
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

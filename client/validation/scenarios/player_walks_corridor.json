@@ -1,0 +1,60 @@
+{
+  "scenario_id": "player_walks_corridor",
+  "version": 3,
+  "description": "The corridor is walkable end to end: the player travels 400+ px east unobstructed, then the corridor's east wall stops them.",
+  "harness_scene": "res://validation/harnesses/ShipWalkHarness.tscn",
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/ShipWalkHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 10
+    },
+    {
+      "op": "checkpoint",
+      "name": "spawn"
+    },
+    {
+      "op": "press_action",
+      "action": "move_right"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.player.x",
+      "comparator": "gte",
+      "expected": 420.0,
+      "timeout_frames": 240
+    },
+    {
+      "op": "release_action",
+      "action": "move_right"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 15
+    },
+    {
+      "op": "checkpoint",
+      "name": "east_end"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "east_end",
+      "path": "harness_state.player.x",
+      "comparator": "gte",
+      "expected": 420.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "east_end",
+      "path": "harness_state.player.x",
+      "comparator": "lte",
+      "expected": 437.0
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

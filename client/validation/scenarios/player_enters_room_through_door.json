@@ -1,0 +1,90 @@
+{
+  "scenario_id": "player_enters_room_through_door",
+  "version": 3,
+  "description": "Holding up+left slides the player along the corridor's north wall until the Bridge door, through the door opening, into the Bridge room, then up to the room's north wall.",
+  "harness_scene": "res://validation/harnesses/ShipWalkHarness.tscn",
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/ShipWalkHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 10
+    },
+    {
+      "op": "checkpoint",
+      "name": "spawn"
+    },
+    {
+      "op": "press_action",
+      "action": "move_up"
+    },
+    {
+      "op": "press_action",
+      "action": "move_left"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.player.y",
+      "comparator": "lte",
+      "expected": -80.0,
+      "timeout_frames": 300
+    },
+    {
+      "op": "release_action",
+      "action": "move_left"
+    },
+    {
+      "op": "checkpoint",
+      "name": "through_door"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 90
+    },
+    {
+      "op": "release_action",
+      "action": "move_up"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 15
+    },
+    {
+      "op": "checkpoint",
+      "name": "in_room"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "in_room",
+      "path": "harness_state.player.y",
+      "comparator": "gte",
+      "expected": -213.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "in_room",
+      "path": "harness_state.player.y",
+      "comparator": "lte",
+      "expected": -190.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "in_room",
+      "path": "harness_state.player.x",
+      "comparator": "gte",
+      "expected": -181.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "in_room",
+      "path": "harness_state.player.x",
+      "comparator": "lte",
+      "expected": 20.0
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

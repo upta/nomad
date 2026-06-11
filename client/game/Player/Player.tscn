@@ -9,9 +9,10 @@ script = ExtResource("2_binding")
 Action = ExtResource("3_move_raw")
 
 [sub_resource type="RectangleShape2D" id="rect"]
-size = Vector2(48, 48)
+size = Vector2(24, 24)
 
 [node name="Player" type="CharacterBody2D"]
+motion_mode = 1
 script = ExtResource("1")
 MoveAction = SubResource("move_bound")
 MoveSpeed = 400.0
@@ -22,6 +23,6 @@ Deceleration = 2400.0
 shape = SubResource("rect")
 
 [node name="Sprite" type="ColorRect" parent="."]
-size = Vector2(48, 48)
-position = Vector2(-24, -24)
+size = Vector2(24, 24)
+position = Vector2(-12, -12)
 color = Color(0.2, 0.8, 0.3, 1)

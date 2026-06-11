@@ -1,0 +1,48 @@
+{
+  "scenario_id": "ship_layout_renders",
+  "version": 3,
+  "description": "ShipGrid paints the corvette layout: 313 floor cells (245 room + 54 corridor + 14 door) and a sealed wall ring derived around them.",
+  "harness_scene": "res://validation/harnesses/RoomRenderHarness.tscn",
+  "done_contract": {
+    "expected_floor_count": 313,
+    "expected_door_count": 14
+  },
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/RoomRenderHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 10
+    },
+    {
+      "op": "checkpoint",
+      "name": "rendered"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "rendered",
+      "path": "harness_state.map.floor_count",
+      "comparator": "eq",
+      "expected": 313
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "rendered",
+      "path": "harness_state.map.door_count",
+      "comparator": "eq",
+      "expected": 14
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "rendered",
+      "path": "harness_state.map.wall_count",
+      "comparator": "gte",
+      "expected": 100
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

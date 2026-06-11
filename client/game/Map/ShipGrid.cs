@@ -2,22 +2,40 @@ namespace Nomad.Game.Map;
 
 using System;
 using System.Collections.Generic;
+using Chickensoft.AutoInject;
+using Chickensoft.GodotNodeInterfaces;
+using Chickensoft.Introspection;
 using Db;
 using Godot;
 using Ship;
 using StdbRa = SpacetimeDB.Types.RoomAssignment;
 using StdbRt = SpacetimeDB.Types.RoomTypeId;
 
+[Meta(typeof(IAutoNode))]
 public partial class ShipGrid : Node2D
 {
-    private const int TileSize = 64;
+    private const float RoomTintAlpha = 0.45f;
+    private const int TileSize = 32;
 
-    private static readonly Color FloorColor = new(0.25f, 0.28f, 0.33f);
-    private static readonly Color WallColor = new(0.45f, 0.48f, 0.50f);
     private static readonly Color DefaultRoomColor = new(0.30f, 0.33f, 0.38f);
+    private static readonly Vector2I FloorTile = new(0, 0);
+    private static readonly Vector2I WallTile = new(1, 0);
 
     private readonly Dictionary<int, StdbRa> _assignments = [];
+    private readonly HashSet<Vector2I> _floorCells = [];
+    private readonly HashSet<Vector2I> _wallCells = [];
     private Font _font = null!;
+
+    public override void _Notification(int what) => this.Notify(what);
+
+    [Node]
+    public ITileMapLayer FloorLayer { get; set; } = default!;
+
+    [Node]
+    public ITileMapLayer WallLayer { get; set; } = default!;
+
+    [Export]
+    public Node? DbManagerNode { get; set; }
 
     [Export]
     public HullTemplate? HullTemplate { get; set; }
@@ -25,38 +43,50 @@ public partial class ShipGrid : Node2D
     [Export]
     public RoomTypeRegistry? RoomTypeRegistry { get; set; }
 
-    [Export]
-    public Node? DbManagerNode { get; set; }
+    private Vector2I GridOffset =>
+        HullTemplate is null
+            ? Vector2I.Zero
+            : new(HullTemplate.GridWidth / 2, HullTemplate.GridHeight / 2);
 
     private DbConnection? Server => (DbManagerNode as DbManager)?.Connection;
 
-    public override void _Ready()
+    public void OnReady()
     {
         _font = ThemeDB.FallbackFont;
 
         if (Server is { } svr)
             SubscribeToAssignments(svr);
 
+        BuildMap();
         QueueRedraw();
     }
 
-    public void BindToServer(DbManager dbManager)
+    public override void _Draw()
     {
-        DbManagerNode = dbManager;
-        if (Server is { } svr)
-            SubscribeToAssignments(svr);
-    }
+        if (HullTemplate is null)
+            return;
 
-    private void SubscribeToAssignments(DbConnection svr)
-    {
-        // Load existing assignments before subscribing to events
-        foreach (var ra in svr.Db.RoomAssignments.Iter())
-            _assignments[ra.SlotIndex] = ra;
+        var offset = GridOffset;
 
-        svr.Db.RoomAssignments.OnInsert += OnAssignmentInserted;
-        svr.Db.RoomAssignments.OnUpdate += OnAssignmentUpdated;
+        foreach (var slot in HullTemplate.RoomSlots)
+        {
+            var rect = new Rect2(
+                (slot.PositionX - offset.X) * TileSize,
+                (slot.PositionY - offset.Y) * TileSize,
+                slot.Width * TileSize,
+                slot.Height * TileSize
+            );
 
-        QueueRedraw();
+            DrawRect(rect, new Color(GetRoomColor(slot.SlotIndex), RoomTintAlpha), true);
+
+            var label = GetRoomLabel(slot.SlotIndex);
+            if (label.Length > 0)
+            {
+                var labelSize = _font.GetStringSize(label, HorizontalAlignment.Center);
+                var labelPos = rect.Position + (rect.Size - labelSize) / 2f;
+                DrawString(_font, labelPos, label, HorizontalAlignment.Left);
+            }
+        }
     }
 
     public override void _ExitTree()
@@ -68,65 +98,102 @@ public partial class ShipGrid : Node2D
         }
     }
 
-    public override void _Draw()
+    public void BindToServer(DbManager dbManager)
+    {
+        DbManagerNode = dbManager;
+        if (Server is { } svr)
+            SubscribeToAssignments(svr);
+    }
+
+    public Godot.Collections.Dictionary GetObservedRoomState()
+    {
+        var roomList = new Godot.Collections.Array<Godot.Collections.Dictionary>();
+
+        if (HullTemplate is not null)
+        {
+            foreach (var slot in HullTemplate.RoomSlots)
+            {
+                var entry = new Godot.Collections.Dictionary
+                {
+                    ["slot_index"] = slot.SlotIndex,
+                    ["color_r"] = GetRoomColor(slot.SlotIndex).R,
+                    ["color_g"] = GetRoomColor(slot.SlotIndex).G,
+                    ["color_b"] = GetRoomColor(slot.SlotIndex).B,
+                    ["label"] = GetRoomLabel(slot.SlotIndex),
+                };
+                roomList.Add(entry);
+            }
+        }
+
+        return new Godot.Collections.Dictionary
+        {
+            ["rooms"] = roomList,
+            ["map"] = new Godot.Collections.Dictionary
+            {
+                ["floor_count"] = _floorCells.Count,
+                ["wall_count"] = _wallCells.Count,
+                ["door_count"] = HullTemplate?.Doors.Count ?? 0,
+            },
+        };
+    }
+
+    public void SetTestAssignment(int slotIndex, string roomTypeId)
+    {
+        _assignments[slotIndex] = new StdbRa
+        {
+            SlotIndex = slotIndex,
+            RoomTypeId = Enum.Parse<StdbRt>(roomTypeId),
+            IsPowered = true,
+            IsPressurized = true,
+            BreakerOn = true,
+            Health = 100f,
+        };
+        QueueRedraw();
+    }
+
+    private void AddFloorRect(int x, int y, int width, int height)
+    {
+        for (var dx = 0; dx < width; dx++)
+        for (var dy = 0; dy < height; dy++)
+            _floorCells.Add(new Vector2I(x + dx, y + dy));
+    }
+
+    // Floors come straight from the hull data (rooms, corridors, doors); walls
+    // are derived as every cell touching a floor cell, so the layout stays
+    // sealed no matter how the .tres is reshaped.
+    private void BuildMap()
     {
         if (HullTemplate is null)
             return;
 
-        var halfW = HullTemplate.GridWidth * TileSize / 2f;
-        var halfH = HullTemplate.GridHeight * TileSize / 2f;
+        _floorCells.Clear();
+        _wallCells.Clear();
 
-        // Hull background
-        DrawRect(
-            new Rect2(
-                -halfW,
-                -halfH,
-                HullTemplate.GridWidth * TileSize,
-                HullTemplate.GridHeight * TileSize
-            ),
-            FloorColor,
-            true
-        );
-
-        // Draw each room slot
         foreach (var slot in HullTemplate.RoomSlots)
+            AddFloorRect(slot.PositionX, slot.PositionY, slot.Width, slot.Height);
+
+        foreach (var corridor in HullTemplate.Corridors)
+            AddFloorRect(corridor.PositionX, corridor.PositionY, corridor.Width, corridor.Height);
+
+        foreach (var door in HullTemplate.Doors)
+            _floorCells.Add(door);
+
+        foreach (var cell in _floorCells)
         {
-            var color = GetRoomColor(slot.SlotIndex);
-            var rect = new Rect2(
-                -halfW + slot.PositionX * TileSize,
-                -halfH + slot.PositionY * TileSize,
-                slot.Width * TileSize,
-                slot.Height * TileSize
-            );
-
-            // Room interior
-            DrawRect(rect, color, true);
-
-            // Room walls
-            DrawRect(rect, WallColor, false, 2);
-
-            // Room label
-            var label = GetRoomLabel(slot.SlotIndex);
-            if (label.Length > 0)
+            for (var dx = -1; dx <= 1; dx++)
+            for (var dy = -1; dy <= 1; dy++)
             {
-                var labelSize = _font.GetStringSize(label, HorizontalAlignment.Center);
-                var labelPos = rect.Position + (rect.Size - labelSize) / 2f;
-                DrawString(_font, labelPos, label, HorizontalAlignment.Left);
+                var neighbor = cell + new Vector2I(dx, dy);
+                if (!_floorCells.Contains(neighbor))
+                    _wallCells.Add(neighbor);
             }
         }
 
-        // Hull outline
-        DrawRect(
-            new Rect2(
-                -halfW,
-                -halfH,
-                HullTemplate.GridWidth * TileSize,
-                HullTemplate.GridHeight * TileSize
-            ),
-            WallColor,
-            false,
-            3
-        );
+        var offset = GridOffset;
+        foreach (var cell in _floorCells)
+            FloorLayer.SetCell(cell - offset, 0, FloorTile);
+        foreach (var cell in _wallCells)
+            WallLayer.SetCell(cell - offset, 0, WallTile);
     }
 
     private Color GetRoomColor(int slotIndex)
@@ -165,43 +232,14 @@ public partial class ShipGrid : Node2D
         QueueRedraw();
     }
 
-    public Godot.Collections.Dictionary GetObservedRoomState()
+    private void SubscribeToAssignments(DbConnection svr)
     {
-        var roomList = new Godot.Collections.Array<Godot.Collections.Dictionary>();
+        foreach (var ra in svr.Db.RoomAssignments.Iter())
+            _assignments[ra.SlotIndex] = ra;
 
-        if (HullTemplate is not null)
-        {
-            foreach (var slot in HullTemplate.RoomSlots)
-            {
-                var entry = new Godot.Collections.Dictionary
-                {
-                    ["slot_index"] = slot.SlotIndex,
-                    ["color_r"] = GetRoomColor(slot.SlotIndex).R,
-                    ["color_g"] = GetRoomColor(slot.SlotIndex).G,
-                    ["color_b"] = GetRoomColor(slot.SlotIndex).B,
-                    ["label"] = GetRoomLabel(slot.SlotIndex),
-                };
-                roomList.Add(entry);
-            }
-        }
+        svr.Db.RoomAssignments.OnInsert += OnAssignmentInserted;
+        svr.Db.RoomAssignments.OnUpdate += OnAssignmentUpdated;
 
-        return new Godot.Collections.Dictionary { ["rooms"] = roomList };
-    }
-
-    /// <summary>
-    /// Injects room assignments directly for validation testing (bypasses SpacetimeDB).
-    /// </summary>
-    public void SetTestAssignment(int slotIndex, string roomTypeId)
-    {
-        _assignments[slotIndex] = new StdbRa
-        {
-            SlotIndex = slotIndex,
-            RoomTypeId = Enum.Parse<StdbRt>(roomTypeId),
-            IsPowered = true,
-            IsPressurized = true,
-            BreakerOn = true,
-            Health = 100f,
-        };
         QueueRedraw();
     }
 }

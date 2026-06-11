@@ -10,17 +10,15 @@ public partial class HullHarnessController : Node
     public override void _Ready()
     {
         _hull = GD.Load<HullTemplate>("res://game/Ship/CorvetteHull.tres");
-        if (_hull is not null)
+        if (_hull is null)
         {
-            GD.Print(
-                $"[HullHarnessController] Loaded .tres: {_hull.HullId} with {_hull.RoomSlots.Count} slots"
-            );
+            GD.PrintErr("[HullHarnessController] CorvetteHull.tres failed to load");
+            return;
         }
-        else
-        {
-            GD.Print("[HullHarnessController] .tres load failed, using factory fallback");
-            _hull = HullTemplate.CreateCorvette();
-        }
+
+        GD.Print(
+            $"[HullHarnessController] Loaded .tres: {_hull.HullId} with {_hull.RoomSlots.Count} slots"
+        );
 
         var gridVisual = new HullGridVisualizer { Name = "GridVisual" };
         gridVisual.SetHull(_hull);
@@ -60,6 +58,8 @@ public partial class HullHarnessController : Node
             ["armor_rating"] = _hull.ArmorRating,
             ["room_count"] = _hull.RoomSlots.Count,
             ["room_slots"] = slotList,
+            ["corridor_count"] = _hull.Corridors.Count,
+            ["door_count"] = _hull.Doors.Count,
         };
     }
 }

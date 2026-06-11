@@ -10,19 +10,8 @@ public partial class RoomRenderHarnessController : Node2D
 
     public override void _Ready()
     {
-        // Set up the same configuration as Main.cs does
-        var registry = new RoomTypeRegistry { Name = "RoomTypeRegistry" };
-        AddChild(registry);
-
-        var hull = GD.Load<HullTemplate>("res://game/Ship/CorvetteHull.tres");
-
-        _shipGrid = new ShipGrid
-        {
-            Name = "ShipGrid",
-            HullTemplate = hull,
-            RoomTypeRegistry = registry,
-        };
-        AddChild(_shipGrid);
+        _shipGrid = GetNode<ShipGrid>("ShipGrid");
+        _shipGrid.RoomTypeRegistry = GetNode<RoomTypeRegistry>("RoomTypeRegistry");
 
         // Inject test assignments matching the Init seed defaults
         _shipGrid.SetTestAssignment(0, "Reactor");
