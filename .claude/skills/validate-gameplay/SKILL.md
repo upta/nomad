@@ -122,6 +122,7 @@ position = Vector2(0, 0)
 |---|---|---|
 | `load_harness` | `scene` | First step; `res://` path to the harness scene |
 | `wait_frames` | `frames` | Physics frames (60/s). Always frames, never wall-clock — there is no `wait_seconds` |
+| `wait_until` | `path`, `comparator`, `expected`, `timeout_frames` (default 300), `poll_every_frames` (default 1) | Polls live `get_observed_state()` until the condition holds; fails with `assertion_failure` at timeout (captures a debug screenshot). **Use this, never a generous `wait_frames`, for anything with nondeterministic timing — network round-trips, SpacetimeDB subscription updates, deferred spawns.** Path-not-found while polling counts as "not yet" |
 | `checkpoint` | `name` | Snapshots `harness_state` AND captures `screenshots/<name>.png` |
 | `press_action` / `release_action` | `action` | Drives a Godot **InputMap** action (not GUIDE). The action must be registered in `EnsureInputActions()` in `client/bootstrap/AppRoot.cs` |
 | `assert_value` | `checkpoint`, `path`, `comparator`, `expected` | Compare one checkpointed value against a literal |
