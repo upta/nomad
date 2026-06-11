@@ -20,17 +20,9 @@ tools
 # Generated SpacetimeDB client bindings
 client/Db/
 
-# Symlinked skills from submodules (created by setup scripts);
+# Symlinked skills from the validation kit (created by setup scripts);
 # project-owned skills are explicitly kept
 .claude/skills/*
 !.claude/skills/validate-gameplay
 !.claude/skills/run-game
 !.claude/skills/spacetime-db-reference
-
-# Symlinked commands + agents from agent-skills (created by setup scripts);
-# add ! entries here if project-owned commands/agents are added later
-.claude/commands/*
-.claude/agents/*
-
-# Agent-skills references (symlinked)
-references/testing-patterns.md

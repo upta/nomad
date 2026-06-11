@@ -9,8 +9,8 @@ The goal: **humans playtest for fun, not for bugs.** Automated validation catche
 - **`client/`** — Godot 4.x C# project (.NET 8.0), scene-first conventions, Chickensoft AutoInject, GUIDE input
 - **`server/`** — SpacetimeDB module (tables, reducers, views)
 - **[Agentic Godot Validation Kit](https://github.com/upta/agentic-godot-validation)** — automated gameplay validation via scenario contracts (git submodule)
-- **[Agent Skills](https://github.com/addyosmani/agent-skills)** — development workflow skills (git submodule)
-- **Claude Code setup** — `CLAUDE.md` hierarchy (root, `client/`, `server/`), project skills in `.claude/skills/`, and a Stop hook that refuses to finish a session with unvalidated gameplay changes
+- **[Agent Skills](https://github.com/addyosmani/agent-skills)** — development workflow skills, loaded as a Claude Code plugin (declared in `.claude/settings.json`; accept the install prompt on first session)
+- **Claude Code setup** — `CLAUDE.md` hierarchy (root, `client/`, `server/`), project skills in `.claude/skills/`, project commands in `.claude/commands/` (`/build`, `/test`, `/review`, `/ship` adapted to validation-first), and a Stop hook that refuses to finish a session with unvalidated gameplay changes
 
 ## Quick Start
 
@@ -29,7 +29,7 @@ cd nomad
 ./setup.sh         # Linux/macOS
 ```
 
-This links the submodules into the project (`client/addons/`, `tools/`, `.claude/skills/`, `references/`) per `symlink-config.txt`.
+This links the validation kit into the project (`client/addons/`, `tools/`, two `.claude/skills/` entries) per `symlink-config.txt`. The agent-skills plugin installs itself from `.claude/settings.json` — accept the prompt the first time you open Claude Code here.
 
 ### 3. Server
 
@@ -71,12 +71,12 @@ Open `client/project.godot` in Godot 4.x **Mono edition**, or build with `dotnet
 │   ├── src/{Tables,Reducers,Types,Views}/
 │   └── CLAUDE.md                      ← SpacetimeDB rules
 ├── submodules/
-│   ├── agentic_godot_validation/      ← git submodule (validation kit)
-│   └── agent_skills/                  ← git submodule (workflow skills)
+│   └── agentic_godot_validation/      ← git submodule (validation kit)
 ├── .claude/
-│   ├── skills/                        ← project skills + symlinked submodule skills
+│   ├── skills/                        ← project skills + symlinked validation-kit skills
+│   ├── commands/                      ← project commands (/build /test /review /ship)
 │   ├── hooks/check-validation.ps1     ← Stop hook: no unvalidated gameplay changes
-│   └── settings.json
+│   └── settings.json                  ← hooks + agent-skills plugin declaration
 ├── tools/                             ← symlink → validation runner scripts
 ├── tasks/                             ← plan, todo, validation-stdb-plan
 ├── CLAUDE.md                          ← project policy, commands, Definition of Done
@@ -104,10 +104,11 @@ The authoritative scenario format and workflow live in `.claude/skills/validate-
 
 ```bash
 git -C submodules/agentic_godot_validation pull origin main
-git -C submodules/agent_skills pull origin main
 ./setup.ps1   # re-link if targets changed
 git add submodules/ && git commit -m "chore: update submodules"
 ```
+
+The agent-skills plugin updates through Claude Code's plugin system (`/plugin`), independent of git.
 
 ## Requirements
 
