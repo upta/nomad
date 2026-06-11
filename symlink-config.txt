@@ -9,18 +9,34 @@ client/addons/agentic_godot_validation=submodules/agentic_godot_validation/addon
 # Validation runner tools
 tools=submodules/agentic_godot_validation/tools
 
-# Copilot skills (from validation kit)
-.github/skills/author-validation-scenario=submodules/agentic_godot_validation/.github/skills/author-validation-scenario
-.github/skills/debug-validation-failure=submodules/agentic_godot_validation/.github/skills/debug-validation-failure
-.github/skills/install-agentic-godot-validation=submodules/agentic_godot_validation/.github/skills/install-agentic-godot-validation
+# Claude Code skills (from validation kit)
+.claude/skills/author-validation-scenario=submodules/agentic_godot_validation/.github/skills/author-validation-scenario
+.claude/skills/debug-validation-failure=submodules/agentic_godot_validation/.github/skills/debug-validation-failure
 
-# Copilot skills (from agent-skills)
-.github/skills/test-driven-development=submodules/agent_skills/skills/test-driven-development
-.github/skills/code-review-and-quality=submodules/agent_skills/skills/code-review-and-quality
-.github/skills/debugging-and-error-recovery=submodules/agent_skills/skills/debugging-and-error-recovery
-.github/skills/spec-driven-development=submodules/agent_skills/skills/spec-driven-development
-.github/skills/planning-and-task-breakdown=submodules/agent_skills/skills/planning-and-task-breakdown
-.github/skills/incremental-implementation=submodules/agent_skills/skills/incremental-implementation
+# Claude Code skills (from agent-skills)
+.claude/skills/api-and-interface-design=submodules/agent_skills/skills/api-and-interface-design
+.claude/skills/browser-testing-with-devtools=submodules/agent_skills/skills/browser-testing-with-devtools
+.claude/skills/ci-cd-and-automation=submodules/agent_skills/skills/ci-cd-and-automation
+.claude/skills/code-review-and-quality=submodules/agent_skills/skills/code-review-and-quality
+.claude/skills/code-simplification=submodules/agent_skills/skills/code-simplification
+.claude/skills/context-engineering=submodules/agent_skills/skills/context-engineering
+.claude/skills/debugging-and-error-recovery=submodules/agent_skills/skills/debugging-and-error-recovery
+.claude/skills/deprecation-and-migration=submodules/agent_skills/skills/deprecation-and-migration
+.claude/skills/documentation-and-adrs=submodules/agent_skills/skills/documentation-and-adrs
+.claude/skills/doubt-driven-development=submodules/agent_skills/skills/doubt-driven-development
+.claude/skills/frontend-ui-engineering=submodules/agent_skills/skills/frontend-ui-engineering
+.claude/skills/git-workflow-and-versioning=submodules/agent_skills/skills/git-workflow-and-versioning
+.claude/skills/idea-refine=submodules/agent_skills/skills/idea-refine
+.claude/skills/incremental-implementation=submodules/agent_skills/skills/incremental-implementation
+.claude/skills/interview-me=submodules/agent_skills/skills/interview-me
+.claude/skills/performance-optimization=submodules/agent_skills/skills/performance-optimization
+.claude/skills/planning-and-task-breakdown=submodules/agent_skills/skills/planning-and-task-breakdown
+.claude/skills/security-and-hardening=submodules/agent_skills/skills/security-and-hardening
+.claude/skills/shipping-and-launch=submodules/agent_skills/skills/shipping-and-launch
+.claude/skills/source-driven-development=submodules/agent_skills/skills/source-driven-development
+.claude/skills/spec-driven-development=submodules/agent_skills/skills/spec-driven-development
+.claude/skills/test-driven-development=submodules/agent_skills/skills/test-driven-development
+.claude/skills/using-agent-skills=submodules/agent_skills/skills/using-agent-skills
 
 # Agent-skills references
 references/testing-patterns.md=submodules/agent_skills/references/testing-patterns.md

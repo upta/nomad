@@ -20,18 +20,12 @@ tools
 # Generated SpacetimeDB client bindings
 client/Db/
 
-# Agent-skills symlinked skills (created by setup scripts)
-.github/skills/test-driven-development
-.github/skills/code-review-and-quality
-.github/skills/debugging-and-error-recovery
-.github/skills/spec-driven-development
-.github/skills/planning-and-task-breakdown
-.github/skills/incremental-implementation
-
-# Validation kit symlinked skills
-.github/skills/author-validation-scenario
-.github/skills/debug-validation-failure
-.github/skills/install-agentic-godot-validation
+# Symlinked skills from submodules (created by setup scripts);
+# project-owned skills are explicitly kept
+.claude/skills/*
+!.claude/skills/validate-gameplay
+!.claude/skills/run-game
+!.claude/skills/spacetime-db-reference
 
 # Agent-skills references (symlinked)
 references/testing-patterns.md
