@@ -4,15 +4,19 @@
 
 Nomad is a cooperative, top-down 2D sci-fi survival game for up to 8 players. The crew pilots a modular gravity ship fleeing an encroaching galactic cataclysm (The Stellar Night). The core experience blends localized crew-management tension with high-stakes route navigation — played entirely in real-time co-op from a flat, top-down perspective. No direct character-vs-monster combat.
 
-The current codebase is a bare Godot 4.x C# prototype with bootstrap routing (`AppRoot`) and a placeholder `Main` scene. No gameplay features exist yet.
+Status: Phase 0 and Phase 1 Tasks 1.1–1.2 are complete. The codebase has a working multiplayer foundation (SpacetimeDB connection, client-authoritative movement, remote-player interpolation), a walkable Corvette interior (rooms, corridors, doors, tile collision), the room type system, and two validation suites (pure + SpacetimeDB-backed).
 
 ## Architecture Decisions
 
 - **Godot 4.x + C# client** — Godot renders the game, collects input, plays audio. All game logic lives in SpacetimeDB or is strictly client-side prediction/rendering.
 - **SpacetimeDB server-authoritative** — The SpacetimeDB module owns all shared game state. Clients subscribe to tables and call reducers. Reducers are transactional and deterministic (no filesystem, network, timers, or random inside reducers). Reference: [untrailed](https://github.com/upta/untrailed) for working SpacetimeDB + Godot integration patterns.
 - **Client-authoritative player position** — Each client owns their player's position (sends to server). Other entities are interpolated/extrapolated client-side. Server validates for anti-cheat.
-- **Top-down 2D, tile-based grid** — Flat vector style inspired by RimWorld (§7.1). Characters are single-piece sprites (no skeletal animation). Grid uses Godot TileMap.
-- **Data-driven rooms** — Hull templates and room types defined as `.tres` resources with string IDs that SpacetimeDB references for runtime state (powered, pressurized, etc.).
+- **Top-down 2D, tile-based grid** — Flat vector style inspired by RimWorld (§7.1). Characters are single-piece sprites (no skeletal animation). `TileMapLayer` floor/wall layers are painted from hull data; wall cells are derived as every cell touching a floor cell, so layouts stay sealed however the `.tres` is reshaped.
+- **Data-driven rooms** — Hull templates and room types defined as `.tres` resources with string IDs that SpacetimeDB references for runtime state (powered, pressurized, etc.). Hull templates define room slots, corridors, and door cells.
+- **Scene-first authoring (mandatory)** — `.tscn`/`.tres` are the primary authoring surface; code is for behavior only. Static structure is declared in scenes, tunables are `[Export]`s set in scene/resource files, dynamic spawning instantiates exported `PackedScene`s. See `client/CLAUDE.md` for the full rules.
+- **Chickensoft AutoInject** — node binding via `[Meta(typeof(IAutoNode))]` + `[Node]` properties (using `GodotNodeInterfaces` interface types); tree-scoped DI via `IProvider`/`IDependent` instead of singletons.
+- **GUIDE input system** — all gameplay input goes through GUIDE action/context resources wrapped by the typed bindings in `client/game/Guide/`; never raw `Input` calls. Scenario-driven actions must also be registered in `InputMap` (see `EnsureInputActions()` in `AppRoot.cs`).
+- **Service layer split** — `_Service/` classes are plain C# (state, rules, no node types); `_Scene/` scripts are thin Godot shells that delegate to services.
 - **Room-centric power model** — Power/atmosphere calculated per-room, not per-tile (§6.3). Simple binary model initially (powered/unpowered), expandable later. Each room has an interactable breaker switch.
 - **Walk-up modal UI** — Complex systems (Star Chart, Power Router, Fabricator) accessed by walking a character up to a physical terminal and interacting. Opens a Godot Control-based modal dialog. No persistent floating HUD menus (§7.2).
 - **Pausability** — Real-time gameplay with architectural support for pausing (Stellar Night clock stoppable, reducer gating). The hybrid model means the game is real-time by default but the system can freeze state cleanly.
@@ -21,25 +25,27 @@ The current codebase is a bare Godot 4.x C# prototype with bootstrap routing (`A
 ## Project Structure
 
 ```
-client/                 → Godot 4.x C# project (moved from current src/)
-  game/                 → Gameplay scenes and C# scripts
+client/                 → Godot 4.x C# project
   bootstrap/            → App entry point with test-mode routing
-  validation/           → Harnesses, scenarios, harness controllers
-  addons/               → Symlinked addons (agentic_godot_validation)
+  game/                 → Gameplay scenes and C# scripts (Db/, Entities/, Guide/, Map/, Player/, Ship/)
+  validation/           → Harnesses, harness controllers, scenarios/ (pure) + scenarios_stdb/ (networked)
+  addons/               → Symlinked addons (agentic_godot_validation, guide) — never edit
+  Db/                   → Generated SpacetimeDB client bindings — never edit
 server/                 → SpacetimeDB module
   src/
     Tables/             → Table definitions (schema)
     Reducers/           → Reducer functions (game logic)
     Types/              → Shared types used by server
     Views/              → Query views for client subscriptions
-    Lib.cs              → Module entry point
-  spacetime.json        → Local SpacetimeDB config
+  spacetime.json        → Module path + generate config
   spacetime.local.json  → Local deployment config
-  spacetime.prod.json   → Production deployment config
-shared/                 → Types and constants shared between client and server (if needed beyond generated bindings)
-docs/                   → GDD, specs, ADRs
+scripts/                → run_stdb_scenarios.ps1 (ephemeral DB suite) + validate_all.ps1 (both suites)
+tools/                  → Symlinked validation runner scripts
+docs/                   → GDD
 tasks/                  → Plan and task tracking
 ```
+
+Note: shared types beyond the generated bindings have not been needed; there is no `shared/` directory and no production deployment config yet.
 
 ## Source-Driven Reference
 
@@ -62,7 +68,7 @@ SpacetimeDB Scaffold + Client Connection
     │       │       │       │
     │       │       │       └── Life Support (Oxygen + Pressurization)
     │       │       │
-    │       │       └── Terminal Interaction Modals
+    │       │       └── Interaction Framework (walk-up prompts + terminal modals)
     │       │
     │       ├── Character Core (Health, Death, Ghost)
     │       │       │
@@ -115,25 +121,33 @@ SpacetimeDB Scaffold + Client Connection
 - [x] **Task 1.1: Hull template data model** — Define `.tres` resource format for hull templates: grid width/height, armor rating, and a list of fixed room slots (each with position, width, height — but no type yet). Create one reference hull ("Corvette", 7 rooms). Each hull and room type has a string ID for SpacetimeDB reference. FTL-style: rooms are fixed positions on the hull, crew assigns types to them in the lobby. **Scope: M**
 
 - [x] **Task 1.2: Room system** — Define 7 room types as `.tres` resources: Reactor, Bridge, Cloning Bay, Hydroponics, Workshop, Kitchen, Cargo Bay. Each has `room_id`, `label`, `power_draw`, `terminal_type` (star_chart, power_router, fabricator, cloning, info), `tileset_ref`. SpacetimeDB stores runtime assignment: `slot_index → room_type_id` + live state (powered, pressurized, breaker, health). Client renders rooms by looking up the assigned type and applying its tileset. **Scope: L**
-    - [ ] 1.2.1: Server Room Tables + Types — `TerminalType` + `RoomTypeId` enums, `RoomAssignment` table. **Scope: S**
-    - [ ] 1.2.2: Server AssignRoomType Reducer + Init Seeding — reducer to assign room types, `Init` lifecycle seeds Corvette defaults. **Scope: S**
-    - [ ] 1.2.3: Client RoomType Resource + 7 Room Types — `TerminalType` enum, `RoomType` [GlobalClass] Resource, 7 `.tres` files, `RoomTypeRegistry` lookup. **Scope: M**
-    - [ ] 1.2.4: Client Room Rendering in ShipGrid — rewrite `ShipGrid.cs` to read HullTemplate + RoomAssignment + RoomTypeRegistry for type-specific rendering. **Scope: M**
-    - [ ] 1.2.5: Validation Scenarios — `room_types_load.json`, `rooms_assigned_to_slots.json`, harness + controller. **Scope: M**
+    - [x] 1.2.1: Server Room Tables + Types — `TerminalType` + `RoomTypeId` enums, `RoomAssignment` table. **Scope: S**
+    - [x] 1.2.2: Server AssignRoomType Reducer + Init Seeding — reducer to assign room types, `Init` lifecycle seeds Corvette defaults. **Scope: S**
+    - [x] 1.2.3: Client RoomType Resource + 7 Room Types — `TerminalType` enum, `RoomType` [GlobalClass] Resource, 7 `.tres` files, `RoomTypeRegistry` lookup. **Scope: M**
+    - [x] 1.2.4: Client Room Rendering in ShipGrid — rewrite `ShipGrid.cs` to read HullTemplate + RoomAssignment + RoomTypeRegistry for type-specific rendering. **Scope: M**
+    - [x] 1.2.5: Validation Scenarios — `room_types_load.json`, `rooms_assigned_to_slots.json`, harness + controller. **Scope: M**
 
-- [ ] **Task 1.3: Power grid + breaker switches** — Simple binary power model: Reactor generates power, each room consumes 1 unit. If total demand ≤ reactor output, all rooms powered. Breakers can be toggled to cut power to individual rooms. Breaker state lives in SpacetimeDB. Players interact with breaker objects to toggle (Toggle verb per §5). Walk-up modal shows room power status. **Scope: M**
+- [x] **Task 1.2b (retro): Walkable interior + infrastructure hardening** — Work completed between 1.2 and 1.3 that the plan didn't originally call for:
+  - Walkable ship interior: `TileMapLayer` floor/wall rendering from hull data (`ShipTileSet.tres` + atlas), corridors and door cells in `HullTemplate`, derived wall collision, Corvette regrown to 29×16. Validated by `ship_layout_renders`, `player_blocked_by_wall`, `player_walks_corridor`, `player_enters_room_through_door`, `player_slides_past_door_corner`.
+  - SpacetimeDB validation suite: `client/validation/scenarios_stdb/` with puppet-client multiplayer scenarios, `scripts/run_stdb_scenarios.ps1` (ephemeral DB), `scripts/validate_all.ps1` entry point; fixed remote-player vanish bug.
+  - Scene-first refactors: `Main.tscn` declares camera/player/hull/registries, `RemoteEntity.tscn` for remote players, Chickensoft AutoInject adopted for node binding.
+  - Input + movement polish: GUIDE input system with typed C# wrappers, smooth local movement, circle player collider, editor multi-client run instances.
 
-- [ ] **Task 1.4: Room pressurization** — Rooms are pressurized or unpressurized. Hull breaches cause depressurization. SpacetimeDB owns pressurization state. Foundation for oxygen tether (Phase 2). Render depressurized rooms visually differently. **Scope: M**
+- [ ] **Task 1.3: Interaction framework (walk-up prompts + terminal modals)** — The shared system every later interactable rides on: an `Interactable` component/area that registers with the player, proximity detection picking the nearest target, an interact prompt, the Interact verb (GUIDE action already authored in `game/Player/_Input/Actions/Interact.tres`), and a modal host that opens/closes a Control-based overlay per terminal type (§7.2 — no persistent floating menus). Steal the working interaction system from [untrailed](https://github.com/upta/untrailed) and adapt it. Scene-first: interactables and modals are scenes; behavior delegates to services. Validation: scenario proving walk-up → prompt → interact → modal opens → close. **Scope: M**
 
-**Checkpoint: Ship** — Hull loads, 6-8 rooms exist with breakers, rooms can be powered/unpowered, pressurization state tracked.
+- [ ] **Task 1.4: Power grid + breaker switches** — Simple binary power model: Reactor generates power, each room consumes 1 unit. If total demand ≤ reactor output, all rooms powered. Breakers can be toggled to cut power to individual rooms. Breaker state lives in SpacetimeDB. Players interact with breaker objects to toggle (Toggle verb per §5) using the Task 1.3 framework. Walk-up modal shows room power status. **Scope: M**
+
+- [ ] **Task 1.5: Room pressurization** — Rooms are pressurized or unpressurized; SpacetimeDB owns pressurization state. Render depressurized rooms visually differently. Foundation for the oxygen tether (Phase 2). Hull breaches as a *cause* of depressurization land complete with Task 5.6 (creation + repair); this task includes a server-side way to set pressurization for validation. **Scope: M**
+
+**Checkpoint: Ship** — Hull loads, 7 rooms exist with breakers, interaction framework works, rooms can be powered/unpowered, pressurization state tracked.
 
 ### Phase 2: Character Systems
 
-- [ ] **Task 2.1: Character health + environmental damage** — Characters have a health meter. Take damage from suffocation, starvation, fire, hostile creatures (§6.4). SpacetimeDB owns health state and processes damage. Client renders health bar. **Scope: M**
+- [ ] **Task 2.1: Character health + damage pipeline** — Characters have a health meter. SpacetimeDB owns health state and a generic damage pipeline (typed damage sources, death at zero). Client renders health bar. Each damage *source* ships complete with its owning feature: suffocation with 2.2, starvation with 2.3, fire with 5.1, hostile creatures with 5.2/5.3 (§6.4). This task includes a debug/validation damage reducer so the pipeline is provable before those sources exist. **Scope: M**
 
-- [ ] **Task 2.2: Oxygen tether** — Personal oxygen tank depletes in vacuum/unpressurized areas, refills in pressurized rooms (§6.2). SpacetimeDB owns oxygen state. Spacesuits expand capacity at movement speed cost (deferred to later task). **Scope: M**
+- [ ] **Task 2.2: Oxygen tether + spacesuits** — Personal oxygen tank depletes in vacuum/unpressurized areas, refills in pressurized powered rooms; empty tank applies suffocation damage via the 2.1 pipeline (§6.2). SpacetimeDB owns oxygen state. Includes spacesuits: equipped at a suit rack interactable (Task 1.3 framework), expanding tank capacity at the cost of movement speed — the full oxygen feature lands here. **Scope: L**
 
-- [ ] **Task 2.3: Food/hunger meter** — Secondary metabolic meter that depletes slowly. Replenished by consuming meals or emergency rations (§6.2). Server-authoritative. **Scope: S**
+- [ ] **Task 2.3: Food/hunger meter** — Secondary metabolic meter that depletes slowly; at zero, starvation damage via the 2.1 pipeline. Replenished by consuming meals or emergency rations (§6.2). Server-authoritative. **Scope: S**
 
 - [ ] **Task 2.4: Death, ghost state, cloning bay** — Death is non-terminal. Deceased players enter Ghost Mode (visible to all players, can float anywhere, cannot interact with physical objects). Cloning Bay respawns at Biomass cost. If no power or biomass, stay ghosted (§6.4). SpacetimeDB manages ghost/clone state. **Scope: L**
 
@@ -143,11 +157,11 @@ SpacetimeDB Scaffold + Client Connection
 
 - [ ] **Task 3.1: Fixed-size hotbar** — 4-slot hotbar (configurable), no hidden inventory (§6.1). Every item = 1 slot regardless of type. SpacetimeDB owns inventory state. Client renders hotbar UI and sends pickup/drop reducers. **Scope: M**
 
-- [ ] **Task 3.2: Item types** — Define item types: raw ore, fuel deposits, biomass, ammunition crates, fuel cells, probes, meals, scrap, components. Items have visual representations for world rendering. Items are SpacetimeDB entities. **Scope: M**
+- [ ] **Task 3.2: Item types** — Define the item-type system plus the types needed by Phases 3-4: raw ore, fuel deposits, biomass, fuel cells, meals, scrap, components. Items have visual representations for world rendering. Items are SpacetimeDB entities. Ammunition crates land with 5.5 and probes with 6.2 — each feature defines its own item types when it ships. **Scope: M**
 
 - [ ] **Task 3.3: Item pickup/drop** — Players can pick up items from the world into hotbar slots and drop items onto the ground. SpacetimeDB validates every pickup/drop. Items are physical entities on the grid. **Scope: M**
 
-- [ ] **Task 3.4: Load verb** — Interact with ship system structures to deposit items directly from hotbar: ammo→weapons, fuel→reactor, biomass→cloning. Walk-up modal shows system status and accepts deposits (§5). SpacetimeDB reducer processes the deposit. **Scope: M**
+- [ ] **Task 3.4: Load verb** — Interact with ship system structures to deposit items directly from hotbar: fuel→reactor, biomass→cloning. Walk-up modal shows system status and accepts deposits (§5). SpacetimeDB reducer processes the deposit. Ammo→weapons is the same verb but lands with 5.5, when weapons exist to receive it. **Scope: M**
 
 **Checkpoint: Inventory** — Full pickup→carry→deposit loop works multiplayer.
 
@@ -159,33 +173,35 @@ SpacetimeDB Scaffold + Client Connection
 
 - [ ] **Task 4.3: Workshop bench + Refine/Craft verb** — Interact with workshop benches to combine raw materials into consumables (§5). Walk-up modal shows available recipes and queue. SpacetimeDB reducer processes crafting. **Scope: M**
 
-- [ ] **Task 4.4: Crafting recipes** — Start with 2 recipes: Fuel Cells (raw fuel + metal) and Meals (biomass). Ammo Crates and Probes deferred to later. Recipes require specific resources and crafting time. **Scope: S**
+- [ ] **Task 4.4: Crafting recipes** — Start with 2 recipes: Fuel Cells (raw fuel + metal) and Meals (biomass). Recipes require specific resources and crafting time. The Ammo Crate recipe ships with 5.5 and the Probe recipe with 6.2, alongside their consumers. **Scope: S**
 
 **Checkpoint: Economy** — Harvest→Refine→Load→Consume loop works end-to-end in multiplayer.
 
 ### Phase 5: Node Activities
 
-- [ ] **Task 5.1: Node type framework** — Abstract Node Activity system supporting multiple node types. Each node has a scene, hazards, resources, and events (§4). SpacetimeDB manages which node is active and its state. **Scope: L**
+- [ ] **Task 5.1: Node type framework + hazard system** — Abstract Node Activity system supporting multiple node types. Each node has a scene, hazards, resources, and events (§4). SpacetimeDB manages which node is active and its state. Includes the hazard framework with **fire** as the first concrete hazard: fire entities deal proximity damage via the 2.1 pipeline (§6.4) — the fire feature lands complete here. **Scope: L**
 
-- [ ] **Task 5.2: Planetside resource harvesting** — Ship lands on a planetary surface grid. Players leave airlocks to mine minerals, siphon fuel, gather biomass. Exterior grid with airlock transition mechanic. SpacetimeDB manages the exterior grid state. **Scope: L**
+- [ ] **Task 5.2: Planetside resource harvesting** — Ship lands on a planetary surface grid. Players leave airlocks to mine minerals, siphon fuel, gather biomass. Exterior grid with airlock transition mechanic. Includes **hostile localized creatures** as a planetside hazard: they roam and deal contact damage via the 2.1 pipeline; players avoid or flee — no player combat (§6.4, §8). SpacetimeDB manages the exterior grid state. **Scope: L**
 
-- [ ] **Task 5.3: Abandoned wreck salvage** — Ship docks with a derelict structure. Players explore corridors for rare components and supplies. Wreck layouts (hand-crafted or procedural). SpacetimeDB manages wreck state and loot. **Scope: L**
+- [ ] **Task 5.3: Abandoned wreck salvage** — Ship docks with a derelict structure. Players explore corridors for rare components and supplies. Wreck layouts (hand-crafted or procedural) reuse the 5.1 hazards (fire, creatures) for variety. SpacetimeDB manages wreck state and loot. **Scope: L**
 
-- [ ] **Task 5.4: Trading posts** — Safe-zone nodes with neutral factions or automated depots. Exchange excess materials for scarce resources, purchase packaged food/fuel, acquire room upgrades. Walk-up terminal interface. SpacetimeDB processes trades. **Scope: M**
+- [ ] **Task 5.4: Trading posts** — Safe-zone nodes with neutral factions or automated depots. Exchange excess materials for scarce resources, purchase packaged food/fuel. Walk-up terminal interface. SpacetimeDB processes trades. (Room upgrades are post-prototype per GDD §2.1 and excluded from trading scope.) **Scope: M**
 
-**Deferred:** Automated defense systems (5.5) and core maintenance node (5.6) — post-prototype.
+- [ ] **Task 5.5: Automated defense node** — Wildlife swarms / cosmic phenomena track the ship; point-defense weapons engage automatically and burn ammo (§4). Ships complete with everything ammo: Ammo Crate item type, Ammo Crate recipe at the workshop, and ammo→weapons via the Load verb (3.4 framework). Players keep guns fed and juggle breaker power to keep them online. No player-aimed shooting (§8). **Scope: L**
 
-**Checkpoint: Nodes** — 3 distinct node types playable, each with unique activities.
+- [ ] **Task 5.6: Core maintenance node + hull breaches** — Quiet-node activity: refine stockpiles, cook rations, restore power (§4). Owns the **hull breach** feature end-to-end: breaches created (by hazards/events; later also by Stellar Night overstay in 6.4), depressurizing their room via the 1.5 state, and patched by players to restore pressure. **Scope: M**
+
+**Checkpoint: Nodes** — 5 distinct node types playable, each with unique activities.
 
 ### Phase 6: Navigation & The Stellar Night
 
 - [ ] **Task 6.1: Star Chart map + fog of war** — Bridge terminal shows adjacent paths clearly; distant sectors obscured (§6.5). Walk-up modal on Bridge console. SpacetimeDB owns star chart state and fog of war per-session. **Scope: L**
 
-- [ ] **Task 6.2: Node scanning + long-range probes** — Short-range scans reveal adjacent node details. Long-range probes (crafted) clear fog of war on distant nodes. SpacetimeDB processes scan/probe results. **Scope: M**
+- [ ] **Task 6.2: Node scanning + long-range probes** — Short-range scans reveal adjacent node details. Long-range probes clear fog of war on distant nodes. Ships complete with the whole probe feature: Probe item type, Probe recipe at the workshop (metal composites, §6.5), and launch from the Bridge console. SpacetimeDB processes scan/probe results. **Scope: M**
 
 - [ ] **Task 6.3: Jump mechanic** — Select destination on Star Chart (any player can initiate), warm up jump drive, transit with effect, anchor at new node. SpacetimeDB manages jump state and anchors. **Scope: M**
 
-- [ ] **Task 6.4: The Stellar Night threat** — Real-time encroaching darkness on Star Chart. Hybrid: real-time by default, architecturally pausable. Staying too long doubles power consumption and inflicts structural damage. SpacetimeDB owns the clock and threat state. Drives the Escape phase (§3). **Scope: L**
+- [ ] **Task 6.4: The Stellar Night threat** — Real-time encroaching darkness on Star Chart. Hybrid: real-time by default, architecturally pausable. Staying too long doubles power consumption and inflicts structural damage via the 5.6 hull-breach system. SpacetimeDB owns the clock and threat state. Drives the Escape phase (§3). **Scope: L**
 
 - [ ] **Task 6.5: Core loop integration** — Wire together Scan→Vote→Jump→Engage→Escape cycle. End-to-end playable session from lobby through one complete node cycle. **Scope: L**
 
@@ -213,7 +229,7 @@ SpacetimeDB Scaffold + Client Connection
 | Client-authoritative movement enables cheating | Medium | Server validates position deltas and speed. Acceptable for prototype — tighten later. |
 | SpacetimeDB reducer determinism constraints | Medium | Keep reducers pure: no I/O, no RNG, no timers. Use scheduled reducers for timed events. |
 | Node activities are nebulous — need playtesting to feel right | Medium | Build the framework (5.1) first, iterate on each type. Validation proves mechanics work; human playtesting tunes feel. |
-| Scope creep from GDD ideas | Medium | Deferred defense systems (5.5), maintenance (5.6), and specializations beyond 2-3 roles to post-prototype. |
+| Scope creep from GDD ideas | Medium | Feature-complete-on-implementation policy: no half-features scattered across phases. Each feature (ammo, probes, fire, creatures, breaches, spacesuits) lands whole inside its owning task. Room upgrades and specializations beyond 2-3 roles remain post-prototype. |
 | Godot C# + SpacetimeDB SDK compatibility | Low | Both are .NET-based. Untrailed proves the integration works. Pin SDK versions. |
 
 ## Resolved Design Decisions
@@ -224,4 +240,7 @@ SpacetimeDB Scaffold + Client Connection
 - **Terminal assignment:** Every room type has a terminal (for consistency). Core terminals: Bridge→Star Chart, Reactor→Power Router, Workshop→Fabricator, Cloning Bay→Clone/Respawn. Others show room status info initially.
 - **Jump voting:** No formal vote — any player can select the next destination and launch. Crew self-organizes.
 - **Stellar Night tick rate:** Configurable constant (e.g. `TICK_RATE_HZ = 1`). Tunable during playtesting.
-- **Room type `.tres` fields:** `room_id` (string), `label` (display name), `power_draw` (int), `terminal_type` (enum: star_chart, power_router, fabricator, cloning, info), `tileset_ref` (visual).
+- **Room type `.tres` fields (as built):** `RoomId` (string), `Label` (display name), `PowerDraw` (int), `TerminalType` (enum: None, StarChart, PowerRouter, Fabricator, Cloning, Info), `Color` (room tint — replaced the planned `tileset_ref`; floor/wall visuals come from the shared `ShipTileSet.tres`).
+- **Hull template (as built):** `HullTemplate` defines `RoomSlots` plus `Corridors` (GridRect array) and `Doors` (cell list); wall cells are derived from floor cells at load. Corvette is 29×16 with a central corridor, not the originally planned 8×6.
+- **Feature-complete on implementation:** when a feature first ships, it ships whole — item types, recipes, consumers, and damage sources are bundled into the task that owns the feature rather than split across phases with deferral notes. (Decided 2026-06-11.)
+- **Room upgrades:** post-prototype, per GDD §2.1 ("not fully fleshed out for the initial prototype"). Trading (5.4) does not sell upgrades in the prototype.
