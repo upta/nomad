@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="HullTemplate" format=3 uid="uid://mu4tgw5dverc"]
+[gd_resource type="Resource" format=3 uid="uid://mu4tgw5dverc"]
 
 [ext_resource type="Script" uid="uid://cv680bx5d4usr" path="res://game/Ship/HullTemplate.cs" id="1"]
 [ext_resource type="Script" uid="uid://chkl1h7gab4xr" path="res://game/Ship/RoomSlot.cs" id="2"]
