@@ -33,6 +33,8 @@ All from repo root unless noted. `godot.exe` is on PATH (godotenv); `GODOT_EXE` 
 | Run both suites | `./scripts/validate_all.ps1` |
 | Boot the real game | use the `run-game` skill |
 
+**Multi-client testing from the editor:** Debug → Customize Run Instances is preconfigured (machine-local, lives in gitignored `client/.godot/editor/project_metadata.cfg`) to launch 2 instances with per-instance args `--position X,Y -- --client one` / `-- --client two`. `DbManager` reads `--client <id>` (after the `--` user-args separator) and keeps a token file per id (`.nomad-<id>`), so each instance authenticates as a distinct SpacetimeDB identity. If `.godot/` is wiped, re-enter those args in the dialog.
+
 ## Validation-first (play-testing, not QA)
 
 Humans play-test for fun, feel, and game-design feedback — **never** to find bugs. Proving the code works in a running Godot engine is your job, before any human launches the game. Concretely:

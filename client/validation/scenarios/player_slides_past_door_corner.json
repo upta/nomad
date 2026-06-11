@@ -1,0 +1,74 @@
+{
+  "scenario_id": "player_slides_past_door_corner",
+  "version": 3,
+  "description": "Player spawns at x=-39, overlapping the Bridge door's right jamb corner (x=-32) by 5px. Holding move_up, a circle collider deflects left around the corner and passes through the door into the room; a square collider jams flat against the jamb face and never enters.",
+  "harness_scene": "res://validation/harnesses/CornerSlideHarness.tscn",
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/CornerSlideHarness.tscn"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 10
+    },
+    {
+      "op": "checkpoint",
+      "name": "start"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "start",
+      "path": "harness_state.player.x",
+      "comparator": "eq",
+      "expected": -39.0
+    },
+    {
+      "op": "press_action",
+      "action": "move_up"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.player.y",
+      "comparator": "lte",
+      "expected": -100.0,
+      "timeout_frames": 300
+    },
+    {
+      "op": "release_action",
+      "action": "move_up"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 15
+    },
+    {
+      "op": "checkpoint",
+      "name": "in_room"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "in_room",
+      "path": "harness_state.player.y",
+      "comparator": "lte",
+      "expected": -100.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "in_room",
+      "path": "harness_state.player.x",
+      "comparator": "lte",
+      "expected": -43.0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "in_room",
+      "path": "harness_state.player.x",
+      "comparator": "gte",
+      "expected": -97.0
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

@@ -8,10 +8,11 @@
 script = ExtResource("2_binding")
 Action = ExtResource("3_move_raw")
 
-[sub_resource type="RectangleShape2D" id="rect"]
-size = Vector2(24, 24)
+[sub_resource type="CircleShape2D" id="circle"]
+radius = 12.0
 
 [node name="Player" type="CharacterBody2D"]
+physics_interpolation_mode = 1
 motion_mode = 1
 script = ExtResource("1")
 MoveAction = SubResource("move_bound")
@@ -20,7 +21,7 @@ Acceleration = 1600.0
 Deceleration = 2400.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("rect")
+shape = SubResource("circle")
 
 [node name="Sprite" type="ColorRect" parent="."]
 size = Vector2(24, 24)

@@ -32,7 +32,12 @@ public partial class DbManager : Node
 
     public void Connect()
     {
-        SpacetimeDB.AuthToken.Init($".nomad-{GetClientId()}");
+        var clientId = GetClientId();
+
+        if (clientId != "main")
+            GetWindow().Title = $"Nomad — {clientId}";
+
+        SpacetimeDB.AuthToken.Init($".nomad-{clientId}");
 
         Connection = DbConnection
             .Builder()

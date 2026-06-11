@@ -22,6 +22,7 @@ HullTemplate = ExtResource("6_hull")
 
 [node name="Camera" type="Camera2D" parent="."]
 unique_name_in_owner = true
+process_callback = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 5.0
 zoom = Vector2(2, 2)

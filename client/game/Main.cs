@@ -71,7 +71,9 @@ public partial class Main : Node2D
         }
     }
 
-    public override void _Process(double delta)
+    // Physics tick, not _Process: with physics interpolation enabled the camera
+    // transform must only change on physics ticks or the interpolator judders.
+    public override void _PhysicsProcess(double delta)
     {
         if (_localPlayer is not null)
             Camera.GlobalPosition = _localPlayer.GlobalPosition;
