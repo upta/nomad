@@ -60,7 +60,7 @@ key = 68
 script = ExtResource("4_input")
 input = SubResource("Resource_d_key")
 
-[sub_resource type="Resource" id="Resource_move_action"]
+[sub_resource type="Resource" id="Resource_m4w3y"]
 script = ExtResource("1_mapping")
 action = ExtResource("2_move")
 input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_w_input"), SubResource("Resource_s_input"), SubResource("Resource_a_input"), SubResource("Resource_d_input")])
@@ -69,7 +69,7 @@ input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_w_input"),
 script = ExtResource("5_key")
 key = 69
 
-[sub_resource type="Resource" id="Resource_interact_input"]
+[sub_resource type="Resource" id="Resource_4e0bc"]
 script = ExtResource("4_input")
 input = SubResource("Resource_e_key")
 
@@ -81,38 +81,38 @@ key = 32
 script = ExtResource("4_input")
 input = SubResource("Resource_453os")
 
-[sub_resource type="Resource" id="Resource_interact_action"]
+[sub_resource type="Resource" id="Resource_x5cs3"]
 script = ExtResource("1_mapping")
 action = ExtResource("9_interact")
-input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_interact_input"), SubResource("Resource_axruf")])
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_4e0bc"), SubResource("Resource_axruf")])
 
 [sub_resource type="Resource" id="Resource_aaq76"]
 script = ExtResource("5_key")
 key = 4194306
 
-[sub_resource type="Resource" id="Resource_cycle_input"]
+[sub_resource type="Resource" id="Resource_8dctr"]
 script = ExtResource("4_input")
 input = SubResource("Resource_aaq76")
 
-[sub_resource type="Resource" id="Resource_cycle_action"]
+[sub_resource type="Resource" id="Resource_q2jpm"]
 script = ExtResource("1_mapping")
 action = ExtResource("10_aaq76")
-input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_cycle_input")])
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_8dctr")])
 metadata/_guide_input_mappings_collapsed = false
 
 [sub_resource type="Resource" id="Resource_g_key"]
 script = ExtResource("5_key")
 key = 71
 
-[sub_resource type="Resource" id="Resource_drop_input"]
+[sub_resource type="Resource" id="Resource_d0qf2"]
 script = ExtResource("4_input")
 input = SubResource("Resource_g_key")
 
-[sub_resource type="Resource" id="Resource_drop_action"]
+[sub_resource type="Resource" id="Resource_rraj4"]
 script = ExtResource("1_mapping")
 action = ExtResource("11_drop")
-input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_drop_input")])
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_d0qf2")])
 
 [resource]
 script = ExtResource("3_ctx")
-mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_interact_action"), SubResource("Resource_cycle_action"), SubResource("Resource_drop_action")])
+mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_m4w3y"), SubResource("Resource_x5cs3"), SubResource("Resource_q2jpm"), SubResource("Resource_rraj4")])

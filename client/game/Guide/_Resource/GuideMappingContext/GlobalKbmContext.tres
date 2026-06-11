@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="GUIDEMappingContext" format=3 uid="uid://dcmm0nvbp4n5d"]
 
 [ext_resource type="Script" uid="uid://mevt8l4svrd6" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
-[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideAction/SwitchToController.tres" id="2_action"]
+[ext_resource type="Resource" uid="uid://dxebwx4d7nuaw" path="res://game/Guide/_Resource/GuideAction/SwitchToController.tres" id="2_action"]
 [ext_resource type="Script" uid="uid://l4fayoe0gchc" path="res://addons/guide/guide_mapping_context.gd" id="3_ctx"]
 [ext_resource type="Script" uid="uid://bnrqk2d5hdkce" path="res://addons/guide/guide_input_mapping.gd" id="4_input"]
 [ext_resource type="Script" uid="uid://dsa2yfbtkqk6r" path="res://addons/guide/inputs/guide_input_any.gd" id="5_any"]
@@ -9,26 +9,26 @@
 [ext_resource type="Script" uid="uid://b4elwochdmo5p" path="res://addons/guide/triggers/guide_trigger.gd" id="7_trigger"]
 [ext_resource type="Script" uid="uid://csep3him3o7bq" path="res://addons/guide/triggers/guide_trigger_pressed.gd" id="8_pressed"]
 
-[sub_resource type="Resource" id="Resource_any_input"]
+[sub_resource type="Resource" id="Resource_qwi6f"]
 script = ExtResource("5_any")
 joy_buttons = true
 joy_axes = true
 mouse = false
 joy = true
 
-[sub_resource type="Resource" id="Resource_pressed"]
+[sub_resource type="Resource" id="Resource_xbbpv"]
 script = ExtResource("8_pressed")
 
-[sub_resource type="Resource" id="Resource_input"]
+[sub_resource type="Resource" id="Resource_otufc"]
 script = ExtResource("4_input")
-input = SubResource("Resource_any_input")
-triggers = Array[ExtResource("7_trigger")]([SubResource("Resource_pressed")])
+input = SubResource("Resource_qwi6f")
+triggers = Array[ExtResource("7_trigger")]([SubResource("Resource_xbbpv")])
 
-[sub_resource type="Resource" id="Resource_action"]
+[sub_resource type="Resource" id="Resource_nmsev"]
 script = ExtResource("1_mapping")
 action = ExtResource("2_action")
-input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_input")])
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_otufc")])
 
 [resource]
 script = ExtResource("3_ctx")
-mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_action")])
+mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_nmsev")])

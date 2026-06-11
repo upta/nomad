@@ -1,105 +1,28 @@
-[gd_resource type="Resource" format=3 uid="uid://br0kis01oyp3y"]
+[gd_resource type="Resource" script_class="InputContext" format=3 uid="uid://br0kis01oyp3y"]
 
 [ext_resource type="Resource" uid="uid://ckxha46mb51xt" path="res://game/Guide/_Resource/GuideMappingContext/GlobalControllerContext.tres" id="1_global_ctrl"]
 [ext_resource type="Script" uid="uid://ceqd1dvxwwqas" path="res://game/Guide/GuideMappingContextBinding.cs" id="2_binding"]
-[ext_resource type="Script" uid="uid://mevt8l4svrd6" path="res://addons/guide/guide_action_mapping.gd" id="2_t0snc"]
 [ext_resource type="Resource" uid="uid://dcmm0nvbp4n5d" path="res://game/Guide/_Resource/GuideMappingContext/GlobalKbmContext.tres" id="3_global_kbm"]
-[ext_resource type="Script" uid="uid://bnrqk2d5hdkce" path="res://addons/guide/guide_input_mapping.gd" id="4_np60q"]
-[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideAction/SwitchToController.tres" id="4_switch_ctrl"]
-[ext_resource type="Script" uid="uid://dsa2yfbtkqk6r" path="res://addons/guide/inputs/guide_input_any.gd" id="5_0r7yy"]
+[ext_resource type="Resource" uid="uid://dxebwx4d7nuaw" path="res://game/Guide/_Resource/GuideAction/SwitchToController.tres" id="4_switch_ctrl"]
 [ext_resource type="Script" uid="uid://c2ill1uu6jrlc" path="res://game/Guide/GuideActionBinding.cs" id="5_action_binding"]
-[ext_resource type="Script" uid="uid://bxbb3tkiaqxwo" path="res://addons/guide/modifiers/guide_modifier.gd" id="6_p57mp"]
-[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="6_switch_kbm"]
+[ext_resource type="Resource" uid="uid://drma62vx030k8" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="6_switch_kbm"]
 [ext_resource type="Script" uid="uid://wdqsf7ryn83f" path="res://game/Guide/InputContext.cs" id="7_ctx"]
-[ext_resource type="Script" uid="uid://b4elwochdmo5p" path="res://addons/guide/triggers/guide_trigger.gd" id="7_dvtqk"]
-[ext_resource type="Script" uid="uid://csep3him3o7bq" path="res://addons/guide/triggers/guide_trigger_pressed.gd" id="8_80hwi"]
-
-[sub_resource type="Resource" id="Resource_any_input"]
-script = ExtResource("5_0r7yy")
-mouse_buttons = true
-mouse_movement = true
-keyboard = true
-mouse = true
-joy = false
-
-[sub_resource type="Resource" id="Resource_pressed"]
-script = ExtResource("8_80hwi")
-
-[sub_resource type="Resource" id="Resource_input"]
-script = ExtResource("4_np60q")
-input = SubResource("Resource_any_input")
-triggers = Array[ExtResource("7_dvtqk")]([SubResource("Resource_pressed")])
-
-[sub_resource type="Resource" id="Resource_action"]
-script = ExtResource("2_t0snc")
-action = ExtResource("6_switch_kbm")
-input_mappings = Array[ExtResource("4_np60q")]([SubResource("Resource_input")])
 
 [sub_resource type="Resource" id="Resource_global_ctrl_binding"]
 script = ExtResource("2_binding")
 MappingContext = ExtResource("1_global_ctrl")
-DisplayName = ""
-Mappings = Array[ExtResource("2_t0snc")]([SubResource("Resource_action")])
-_mappingContext = ExtResource("1_global_ctrl")
-_signalsConnected = true
-_onDisabledCallable = Callable()
-_onEnabledCallable = Callable()
-
-[sub_resource type="Resource" id="Resource_qwi6f"]
-script = ExtResource("5_0r7yy")
-joy_buttons = true
-joy_axes = true
-mouse = false
-joy = true
-
-[sub_resource type="Resource" id="Resource_xbbpv"]
-script = ExtResource("8_80hwi")
-
-[sub_resource type="Resource" id="Resource_otufc"]
-script = ExtResource("4_np60q")
-input = SubResource("Resource_qwi6f")
-triggers = Array[ExtResource("7_dvtqk")]([SubResource("Resource_xbbpv")])
-
-[sub_resource type="Resource" id="Resource_nmsev"]
-script = ExtResource("2_t0snc")
-action = ExtResource("4_switch_ctrl")
-input_mappings = Array[ExtResource("4_np60q")]([SubResource("Resource_otufc")])
 
 [sub_resource type="Resource" id="Resource_global_kbm_binding"]
 script = ExtResource("2_binding")
 MappingContext = ExtResource("3_global_kbm")
-DisplayName = ""
-Mappings = Array[ExtResource("2_t0snc")]([SubResource("Resource_nmsev")])
-_mappingContext = ExtResource("3_global_kbm")
-_signalsConnected = true
-_onDisabledCallable = Callable()
-_onEnabledCallable = Callable()
 
 [sub_resource type="Resource" id="Resource_switch_ctrl_action"]
 script = ExtResource("5_action_binding")
 Action = ExtResource("4_switch_ctrl")
-ActionName = &""
-ActionValueType = 0
-BlockLowerPriorityActions = true
-DisplayCategory = ""
-DisplayName = ""
-EmitAsGodotActions = false
-IsRemappable = false
-_action = ExtResource("4_switch_ctrl")
-_signalsConnected = true
 
 [sub_resource type="Resource" id="Resource_switch_kbm_action"]
 script = ExtResource("5_action_binding")
 Action = ExtResource("6_switch_kbm")
-ActionName = &""
-ActionValueType = 0
-BlockLowerPriorityActions = true
-DisplayCategory = ""
-DisplayName = ""
-EmitAsGodotActions = false
-IsRemappable = false
-_action = ExtResource("6_switch_kbm")
-_signalsConnected = true
 
 [resource]
 script = ExtResource("7_ctx")

@@ -1,12 +1,18 @@
-[gd_resource type="Resource" script_class="HullTemplate" load_steps=12 format=3]
+[gd_resource type="Resource" script_class="HullTemplate" format=3 uid="uid://mu4tgw5dverc"]
 
-[ext_resource type="Script" path="res://game/Ship/HullTemplate.cs" id="1"]
-[ext_resource type="Script" path="res://game/Ship/RoomSlot.cs" id="2"]
-[ext_resource type="Script" path="res://game/Ship/GridRect.cs" id="3"]
+[ext_resource type="Script" uid="uid://cv680bx5d4usr" path="res://game/Ship/HullTemplate.cs" id="1"]
+[ext_resource type="Script" uid="uid://chkl1h7gab4xr" path="res://game/Ship/RoomSlot.cs" id="2"]
+[ext_resource type="Script" uid="uid://b4173ciq2k4x" path="res://game/Ship/GridRect.cs" id="3"]
+
+[sub_resource type="Resource" id="corridor_main"]
+script = ExtResource("3")
+Height = 2
+PositionX = 1
+PositionY = 7
+Width = 27
 
 [sub_resource type="Resource" id="sub_0"]
 script = ExtResource("2")
-SlotIndex = 0
 PositionX = 1
 PositionY = 1
 Width = 6
@@ -60,19 +66,11 @@ PositionY = 10
 Width = 8
 Height = 5
 
-[sub_resource type="Resource" id="corridor_main"]
-script = ExtResource("3")
-PositionX = 1
-PositionY = 7
-Width = 27
-Height = 2
-
 [resource]
 script = ExtResource("1")
-HullId = "corvette"
-GridWidth = 29
-GridHeight = 16
-ArmorRating = 1
-RoomSlots = Array[ExtResource("2")]([SubResource("sub_0"), SubResource("sub_1"), SubResource("sub_2"), SubResource("sub_3"), SubResource("sub_4"), SubResource("sub_5"), SubResource("sub_6")])
 Corridors = Array[ExtResource("3")]([SubResource("corridor_main")])
 Doors = Array[Vector2i]([Vector2i(3, 6), Vector2i(4, 6), Vector2i(11, 6), Vector2i(12, 6), Vector2i(18, 6), Vector2i(19, 6), Vector2i(24, 6), Vector2i(25, 6), Vector2i(4, 9), Vector2i(5, 9), Vector2i(14, 9), Vector2i(15, 9), Vector2i(23, 9), Vector2i(24, 9)])
+GridHeight = 16
+GridWidth = 29
+HullId = "corvette"
+RoomSlots = Array[ExtResource("2")]([SubResource("sub_0"), SubResource("sub_1"), SubResource("sub_2"), SubResource("sub_3"), SubResource("sub_4"), SubResource("sub_5"), SubResource("sub_6")])

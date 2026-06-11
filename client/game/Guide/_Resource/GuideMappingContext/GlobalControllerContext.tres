@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="GUIDEMappingContext" format=3 uid="uid://ckxha46mb51xt"]
 
 [ext_resource type="Script" uid="uid://mevt8l4svrd6" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
-[ext_resource type="Resource" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="2_action"]
+[ext_resource type="Resource" uid="uid://drma62vx030k8" path="res://game/Guide/_Resource/GuideAction/SwitchToKbm.tres" id="2_action"]
 [ext_resource type="Script" uid="uid://l4fayoe0gchc" path="res://addons/guide/guide_mapping_context.gd" id="3_ctx"]
 [ext_resource type="Script" uid="uid://bnrqk2d5hdkce" path="res://addons/guide/guide_input_mapping.gd" id="4_input"]
 [ext_resource type="Script" uid="uid://dsa2yfbtkqk6r" path="res://addons/guide/inputs/guide_input_any.gd" id="5_any"]
