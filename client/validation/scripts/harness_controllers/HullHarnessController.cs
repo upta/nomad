@@ -21,6 +21,10 @@ public partial class HullHarnessController : Node
             GD.Print("[HullHarnessController] .tres load failed, using factory fallback");
             _hull = HullTemplate.CreateCorvette();
         }
+
+        var gridVisual = new HullGridVisualizer { Name = "GridVisual" };
+        gridVisual.SetHull(_hull);
+        AddChild(gridVisual);
     }
 
     public Godot.Collections.Dictionary get_observed_state()
