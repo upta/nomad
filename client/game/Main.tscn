@@ -1,11 +1,24 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Entities/RemoteEntity.tscn" id="2_remote"]
+[ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://game/Ship/RoomTypeRegistry.cs" id="4_registry"]
+[ext_resource type="PackedScene" path="res://game/Map/ShipGrid.tscn" id="5_shipgrid"]
+[ext_resource type="Resource" path="res://game/Ship/CorvetteHull.tres" id="6_hull"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
+PlayerScene = ExtResource("3_player")
 RemoteEntityScene = ExtResource("2_remote")
+
+[node name="RoomTypeRegistry" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("4_registry")
+
+[node name="ShipGrid" parent="." instance=ExtResource("5_shipgrid")]
+unique_name_in_owner = true
+HullTemplate = ExtResource("6_hull")
 
 [node name="Camera" type="Camera2D" parent="."]
 unique_name_in_owner = true

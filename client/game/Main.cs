@@ -11,7 +11,6 @@ public partial class Main : Node2D
 {
     private readonly Dictionary<int, RemoteEntity> _remoteNodes = [];
     private Db.DbManager? _dbManager;
-    private ShipGrid? _shipGrid;
     private Player.Player? _localPlayer;
     private int _localEntityId;
 
@@ -21,7 +20,16 @@ public partial class Main : Node2D
     public ICamera2D Camera { get; set; } = default!;
 
     [Export]
+    public PackedScene PlayerScene { get; set; } = null!;
+
+    [Export]
     public PackedScene RemoteEntityScene { get; set; } = null!;
+
+    [Node]
+    public Ship.RoomTypeRegistry RoomTypeRegistry { get; set; } = default!;
+
+    [Node]
+    public ShipGrid ShipGrid { get; set; } = default!;
 
     public int RemoteEntityCount => _remoteNodes.Count;
 
@@ -29,15 +37,9 @@ public partial class Main : Node2D
 
     public void OnReady()
     {
-        var roomTypeRegistry = new Ship.RoomTypeRegistry();
-        AddChild(roomTypeRegistry);
-
-        var hullTemplate = GD.Load<Ship.HullTemplate>("res://game/Ship/CorvetteHull.tres");
-
-        _shipGrid = GD.Load<PackedScene>("res://game/Map/ShipGrid.tscn").Instantiate<ShipGrid>();
-        _shipGrid.HullTemplate = hullTemplate;
-        _shipGrid.RoomTypeRegistry = roomTypeRegistry;
-        AddChild(_shipGrid);
+        // Node exports don't survive the scene-instance boundary, so the
+        // registry is handed to ShipGrid here instead of in Main.tscn.
+        ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
 
         Camera.MakeCurrent();
     }
@@ -46,13 +48,11 @@ public partial class Main : Node2D
     {
         _dbManager = dbManager;
 
-        if (_shipGrid is not null)
-            _shipGrid.BindToServer(dbManager);
+        ShipGrid.BindToServer(dbManager);
 
         var conn = dbManager.Connection;
 
-        var playerScene = GD.Load<PackedScene>("res://game/Player/Player.tscn");
-        _localPlayer = playerScene.Instantiate<Player.Player>();
+        _localPlayer = PlayerScene.Instantiate<Player.Player>();
         _localPlayer.DbManagerNode = dbManager;
         AddChild(_localPlayer);
 
