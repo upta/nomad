@@ -1,6 +1,8 @@
 # Plan: SpacetimeDB-Aware Validation
 
-**Status:** approved 2026-06-11 (decisions below), not started
+**Status:** implemented 2026-06-11 (all four phases shipped; decisions below)
+
+Implementation notes: `wait_until` landed in the kit (`dbb2ba0`); connected harnesses + `scripts/run_stdb_scenarios.ps1` + 3 scenarios shipped; the multiplayer scenario immediately caught and drove the fix for a real bug (remote players vanished on their first movement update — `Main` subscribed to the PK-less `ActiveEntities` view, whose updates arrive as insert+delete pairs; now both `Main` and `EntityMover` subscribe to the base `Entities` table). `scripts/validate_all.ps1` runs both suites and is the Definition-of-Done entry point.
 **Goal:** validation scenarios that exercise the real client ↔ server path — reducers, subscriptions, remote-entity rendering — so multiplayer behavior (the heart of the game) is provable in-engine, not just client-local logic.
 
 ## Current state (verified 2026-06-11)

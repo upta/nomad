@@ -28,7 +28,9 @@ All from repo root unless noted. `godot.exe` is on PATH (godotenv); `GODOT_EXE` 
 | Publish module | `spacetime publish nomad --yes --server local --module-path ./src` (in `server/`) |
 | Regenerate client bindings | `spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src` (in `server/`) |
 | Run one validation scenario | `./tools/run_scenario.ps1 -Scenario client/validation/scenarios/<name>.json` |
-| Run full validation suite | `./tools/run_all_scenarios.ps1` |
+| Run pure validation suite | `./tools/run_all_scenarios.ps1` |
+| Run SpacetimeDB validation suite | `./scripts/run_stdb_scenarios.ps1` (ephemeral DB, auto-starts server) |
+| Run both suites | `./scripts/validate_all.ps1` |
 | Boot the real game | use the `run-game` skill |
 
 ## Validation-first (play-testing, not QA)
@@ -45,7 +47,7 @@ A feature is not done until all of these hold:
 
 1. **Validation scenarios exist** for the change — intended behavior, not just the happy path.
 2. **New scenarios pass** — run them, confirm green, and **visually review the checkpoint screenshots** in the run artifacts (numeric assertions can pass while rendering is broken).
-3. **Full suite passes** — `./tools/run_all_scenarios.ps1`, no regressions.
+3. **Both suites pass** — `./scripts/validate_all.ps1` (pure scenarios + SpacetimeDB scenarios), no regressions. Anything touching reducers, subscriptions, or networked behavior needs coverage in `client/validation/scenarios_stdb/`.
 4. **Game boots clean** — run the real game headless for ≥10s with zero `ERROR:` log lines (see the `run-game` skill). Test-mode scenarios can miss startup-path bugs.
 5. **Builds and formatting are clean** — `dotnet build` + `dotnet csharpier format .` in `client/`; `spacetime build` + format in `server/`.
 6. **`git push origin`** at the end of every work batch.

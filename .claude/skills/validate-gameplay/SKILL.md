@@ -134,11 +134,27 @@ position = Vector2(0, 0)
 - **Source kinds:** `checkpoint` (`checkpoint` + `path` into `harness_state...`) and `contract` (`path` into `done_contract...`)
 - State paths are dot-separated; list elements by index: `harness_state.room_types.0.room_id`
 
+## SpacetimeDB scenarios (`client/validation/scenarios_stdb/`)
+
+Networked behavior — reducers, subscriptions, remote entities — is validated against a **real local SpacetimeDB** with an ephemeral per-run database. Anything touching the server gets a scenario here, not in the pure suite.
+
+- **Harness:** `ConnectedGameHarness.tscn` (single client) or `MultiplayerGameHarness.tscn` (adds an in-process `PuppetClient` — a second anonymous-identity connection that drives its own entity via reducers). Both use `ConnectedGameHarnessController`, which connects a real `DbManager`, instantiates the real `Main` + `Player`, and bridges InputMap actions to synthetic key events so GUIDE input works.
+- **State paths:** `harness_state.connection.*` (`data_ready`, `local_entity_id`, `player_count`, `local_entity.{x,y,displacement_from_initial,distance_to_node}`), `harness_state.game.*` (`player_exists`, `player.displacement_from_start`, `remote_count`, `remote_node.*`, `remote_node_recreations`), `harness_state.puppet.*`.
+- **Timing rule:** every network-dependent condition uses `wait_until`, never a guessed `wait_frames`. Assert displacements/convergence, not absolute coordinates — hull layout changes must not break netcode scenarios.
+- **Config:** `DbManager` reads `NOMAD_STDB_URI` / `NOMAD_STDB_DB` env vars (the runner sets them) and `--client <id>` / `NOMAD_CLIENT_ID` for per-identity token files.
+
+```powershell
+./scripts/run_stdb_scenarios.ps1                                  # STDB suite (publishes ephemeral DB, deletes after)
+./scripts/run_stdb_scenarios.ps1 -Scenario client/validation/scenarios_stdb/<name>.json
+./scripts/run_stdb_scenarios.ps1 -KeepDatabase                    # keep the DB for inspection
+```
+
 ## Running
 
 ```powershell
-./tools/run_scenario.ps1 -Scenario client/validation/scenarios/<name>.json   # one
-./tools/run_all_scenarios.ps1                                               # suite
+./tools/run_scenario.ps1 -Scenario client/validation/scenarios/<name>.json   # one pure scenario
+./tools/run_all_scenarios.ps1                                               # pure suite
+./scripts/validate_all.ps1                                                  # pure + STDB suites (Definition of Done)
 ./tools/run_all_scenarios.ps1 -RepeatCount 3                                # flakiness check
 ```
 
