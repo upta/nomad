@@ -7,6 +7,9 @@ using SpacetimeDB.Types;
 
 public partial class DbManager : Node
 {
+    private const string DefaultDbName = "nomad";
+    private const string DefaultUri = "http://localhost:3000";
+
     public event Action? OnConnectionFailed;
     public event Action? OnDataReady;
 
@@ -29,10 +32,13 @@ public partial class DbManager : Node
 
     public void Connect()
     {
+        SpacetimeDB.AuthToken.Init($".nomad-{GetClientId()}");
+
         Connection = DbConnection
             .Builder()
-            .WithUri("http://localhost:3000")
-            .WithDatabaseName("nomad")
+            .WithUri(GetConfigValue("NOMAD_STDB_URI", DefaultUri))
+            .WithDatabaseName(GetConfigValue("NOMAD_STDB_DB", DefaultDbName))
+            .WithToken(SpacetimeDB.AuthToken.Token)
             .OnConnect(OnConnected)
             .OnConnectError(e =>
             {
@@ -49,9 +55,27 @@ public partial class DbManager : Node
             .Build();
     }
 
+    private static string GetClientId()
+    {
+        var args = OS.GetCmdlineUserArgs();
+        for (var i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i] == "--client")
+                return args[i + 1];
+        }
+        return GetConfigValue("NOMAD_CLIENT_ID", "main");
+    }
+
+    private static string GetConfigValue(string variable, string fallback)
+    {
+        var value = OS.GetEnvironment(variable);
+        return string.IsNullOrEmpty(value) ? fallback : value;
+    }
+
     private void OnConnected(DbConnection conn, SpacetimeDB.Identity identity, string token)
     {
         GD.Print($"[DbManager] Connected. Identity: {identity}");
+        SpacetimeDB.AuthToken.SaveToken(token);
 
         conn.SubscriptionBuilder()
             .OnApplied(ctx =>

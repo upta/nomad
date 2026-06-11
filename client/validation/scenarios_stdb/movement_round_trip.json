@@ -1,0 +1,83 @@
+{
+  "scenario_id": "movement_round_trip",
+  "version": 3,
+  "description": "Full networking loop: pressing move_right drives the real Player through GUIDE, MovementNetworkSync calls the MoveEntity reducer, the server updates the entity row, and the subscription delivers the new position back to the client cache.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "done_contract": {
+    "min_displacement_pixels": 16.0,
+    "max_converged_distance_pixels": 8.0,
+    "frame_budget": 900,
+    "physics_ticks_per_second": 60
+  },
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/ConnectedGameHarness.tscn"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.connection.data_ready",
+      "comparator": "eq",
+      "expected": true,
+      "timeout_frames": 600
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.game.player_exists",
+      "comparator": "eq",
+      "expected": true,
+      "timeout_frames": 120
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.connection.local_entity.displacement_from_initial",
+      "comparator": "gte",
+      "expected": 0,
+      "timeout_frames": 300
+    },
+    {
+      "op": "checkpoint",
+      "name": "before"
+    },
+    {
+      "op": "press_action",
+      "action": "move_right"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.game.player.displacement_from_start",
+      "comparator": "gte",
+      "expected": 16.0,
+      "timeout_frames": 180
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.connection.local_entity.displacement_from_initial",
+      "comparator": "gte",
+      "expected": 16.0,
+      "timeout_frames": 300
+    },
+    {
+      "op": "release_action",
+      "action": "move_right"
+    },
+    {
+      "op": "wait_frames",
+      "frames": 30
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.connection.local_entity.distance_to_node",
+      "comparator": "lte",
+      "expected": 8.0,
+      "timeout_frames": 120
+    },
+    {
+      "op": "checkpoint",
+      "name": "after"
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

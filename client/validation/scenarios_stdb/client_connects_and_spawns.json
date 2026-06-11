@@ -1,0 +1,65 @@
+{
+  "scenario_id": "client_connects_and_spawns",
+  "version": 3,
+  "description": "Client connects to a real SpacetimeDB instance, the subscription applies, the server creates a player entity via ClientConnected, and the real game scene spawns the local player.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "done_contract": {
+    "frame_budget": 900,
+    "physics_ticks_per_second": 60
+  },
+  "steps": [
+    {
+      "op": "load_harness",
+      "scene": "res://validation/harnesses/ConnectedGameHarness.tscn"
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.connection.data_ready",
+      "comparator": "eq",
+      "expected": true,
+      "timeout_frames": 600
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.connection.local_entity_id",
+      "comparator": "gte",
+      "expected": 1,
+      "timeout_frames": 300
+    },
+    {
+      "op": "wait_until",
+      "path": "harness_state.game.player_exists",
+      "comparator": "eq",
+      "expected": true,
+      "timeout_frames": 120
+    },
+    {
+      "op": "checkpoint",
+      "name": "connected"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "connected",
+      "path": "harness_state.connection.is_active",
+      "comparator": "eq",
+      "expected": true
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "connected",
+      "path": "harness_state.connection.player_count",
+      "comparator": "gte",
+      "expected": 1
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "connected",
+      "path": "harness_state.connection.entity_count",
+      "comparator": "gte",
+      "expected": 1
+    },
+    {
+      "op": "quit"
+    }
+  ]
+}

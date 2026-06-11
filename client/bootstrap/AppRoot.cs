@@ -55,6 +55,9 @@ public partial class AppRoot : Node
         }
         else
         {
+            // Validation harnesses exercise the real input path, so the gameplay
+            // GUIDE context must be active even though OnDataReady never fires here.
+            _guideService.PushContext(GameplayModeContext);
             AddChild(TestScene.Instantiate());
         }
     }
