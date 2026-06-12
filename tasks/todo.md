@@ -329,14 +329,15 @@ Design notes (user-confirmed):
 - RoomTypeRegistry refactor approved: `[Export] Array<RoomType>` wired in scenes replaces the `GD.Load` path list (CLAUDE.md anti-pattern cleanup).
 - Modal is snapshot-at-open — an open RoomInfoModal won't live-update pressure; pre-existing, accept.
 
-## Subtask 1.5.1: Server — corridor slot + SetPressurization reducer — Scope: M
-- [ ] `server/src/Types/RoomTypeId.cs` — append `Corridor`
-- [ ] `server/src/Power/PowerRules.cs` — `PowerDrawFor` gains `Corridor => 0`
-- [ ] `server/src/Reducers/Init.cs` — `SeedRoom(ctx, 7, RoomTypeId.Corridor)`
-- [ ] `server/src/Reducers/AssignRoomType.cs` — reject `RoomTypeId.Corridor` (alongside `None`)
-- [ ] Create `server/src/Reducers/SetPressurization.cs` — sender auth + slot lookup (`is not { } room` → throw) + `Update(room with { IsPressurized = ... })`; no power recompute
-- [ ] Format → `spacetime build` → `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` (Init changed — plain publish keeps old data, no slot-7 row) → `spacetime generate` → `dotnet build` (client); commit `client/Db` wholesale
-- [ ] Acceptance: `spacetime sql` shows 8 rows incl. slot 7 Corridor; `set_pressurization 5 false` flips slot 5, PowerGrid row untouched; `assign_room_type` rejects Corridor
+## Subtask 1.5.1: Server — corridor slot + SetPressurization reducer — Scope: M ✅
+- [x] `server/src/Types/RoomTypeId.cs` — append `Corridor`
+- [x] `server/src/Power/PowerRules.cs` — no edit needed: `PowerDrawFor`'s `_ => 0` default already covers Corridor (same convention as Reactor/CargoBay)
+- [x] `server/src/Reducers/Init.cs` — `SeedRoom(ctx, 7, RoomTypeId.Corridor)`
+- [x] `server/src/Reducers/AssignRoomType.cs` — reject `RoomTypeId.Corridor` (alongside `None`)
+- [x] Create `server/src/Reducers/SetPressurization.cs` — sender auth + slot lookup (`is not { } room` → throw) + `Update(room with { IsPressurized = ... })`; no power recompute
+- [x] Format → `spacetime build` → `spacetime publish nomad --delete-data=always` → `spacetime generate` → `dotnet build` (client). Note: `client/Db` is gitignored — bindings regenerate locally, nothing to commit there
+- [x] Acceptance verified via CLI: 8 rows incl. slot 7 `(corridor = ())`; `set_pressurization 5 false` flipped slot 5 with PowerGrid row identical before/after; slot 7 round-trip; bad slot 9 rejected; `assign_room_type 2 '{"corridor":[]}'` rejected (variant names are camelCase in CLI JSON)
+- [x] stdb suite green against new seed (8/8) before commit
 
 ## Subtask 1.5.2: stdb validation of the reducer loop — Scope: S
 - [ ] `ConnectedGameHarnessController.cs`: `TestReducerActions` += `test_depressurize_kitchen`/`test_repressurize_kitchen` (slot 5) + `test_depressurize_corridor`/`test_repressurize_corridor` (slot 7); keep edge-detected `_PhysicsProcess` polling (gotcha); `BuildPowerState()` rooms += `is_pressurized`

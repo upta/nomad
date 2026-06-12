@@ -9,4 +9,5 @@ public enum RoomTypeId : uint
     Workshop,
     Kitchen,
     CargoBay,
+    Corridor,
 }

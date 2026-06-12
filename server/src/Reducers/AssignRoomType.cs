@@ -9,9 +9,9 @@ public static partial class Module
                 "Slot index must be 0-6 for Corvette hull."
             );
 
-        if (roomTypeId == RoomTypeId.None)
+        if (roomTypeId == RoomTypeId.None || roomTypeId == RoomTypeId.Corridor)
             throw new System.ArgumentException(
-                "Cannot assign None room type to a slot.",
+                "Cannot assign this room type to a slot.",
                 nameof(roomTypeId)
             );
 
