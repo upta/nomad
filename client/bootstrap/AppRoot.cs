@@ -1,12 +1,15 @@
 namespace Nomad.Bootstrap;
 
 using System.Collections.Generic;
+using Chickensoft.AutoInject;
+using Chickensoft.Introspection;
 using Godot;
 using Nomad.Game;
 using Nomad.Game.Db;
 using Nomad.Game.Guide;
 
-public partial class AppRoot : Node
+[Meta(typeof(IAutoNode), typeof(IProvide<GuideService>))]
+public partial class AppRoot : Node, IProvide<GuideService>
 {
     private static readonly Dictionary<string, Key> ActionKeys = new()
     {
@@ -39,6 +42,10 @@ public partial class AppRoot : Node
         _dbManager.OnDataReady -= OnDataReady;
     }
 
+    public override void _Notification(int what) => this.Notify(what);
+
+    GuideService IProvide<GuideService>.Value() => _guideService;
+
     public override void _Ready()
     {
         EnsureInputActions();
@@ -46,6 +53,7 @@ public partial class AppRoot : Node
         _guideService = new GuideService(InputContext);
         AddChild(_guideService);
         _guideService.Initialize();
+        this.Provide();
 
         _dbManager = new DbManager();
         _dbManager.OnDataReady += OnDataReady;

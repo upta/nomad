@@ -1,0 +1,19 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Resource" path="res://game/Ui/_Input/Contexts/UiContextKbm.tres" id="1_kbm"]
+[ext_resource type="Resource" path="res://game/Ui/_Input/Contexts/UiContextController.tres" id="2_controller"]
+[ext_resource type="Script" path="res://game/Guide/GuideMappingContextBinding.cs" id="3_binding"]
+[ext_resource type="Script" path="res://game/Guide/InputModeContext.cs" id="4_mode"]
+
+[sub_resource type="Resource" id="kbm_binding"]
+script = ExtResource("3_binding")
+MappingContext = ExtResource("1_kbm")
+
+[sub_resource type="Resource" id="controller_binding"]
+script = ExtResource("3_binding")
+MappingContext = ExtResource("2_controller")
+
+[resource]
+script = ExtResource("4_mode")
+ControllerContext = SubResource("controller_binding")
+KbmContext = SubResource("kbm_binding")

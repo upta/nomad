@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="GUIDEMappingContext" format=3]
+
+[ext_resource type="Script" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
+[ext_resource type="Script" path="res://addons/guide/guide_mapping_context.gd" id="2_ctx"]
+[ext_resource type="Script" path="res://addons/guide/guide_input_mapping.gd" id="3_input"]
+[ext_resource type="Script" path="res://addons/guide/inputs/guide_input_key.gd" id="4_key"]
+[ext_resource type="Resource" path="res://game/Ui/_Input/Actions/UiCancel.tres" id="5_cancel"]
+
+[sub_resource type="Resource" id="esc_key"]
+script = ExtResource("4_key")
+key = 4194305
+
+[sub_resource type="Resource" id="esc_input"]
+script = ExtResource("3_input")
+input = SubResource("esc_key")
+
+[sub_resource type="Resource" id="cancel_mapping"]
+script = ExtResource("1_mapping")
+action = ExtResource("5_cancel")
+input_mappings = Array[ExtResource("3_input")]([SubResource("esc_input")])
+
+[resource]
+script = ExtResource("2_ctx")
+mappings = Array[ExtResource("1_mapping")]([SubResource("cancel_mapping")])
