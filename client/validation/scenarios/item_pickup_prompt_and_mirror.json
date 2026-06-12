@@ -1,0 +1,70 @@
+{
+  "scenario_id": "item_pickup_prompt_and_mirror",
+  "version": 3,
+  "description": "Pure pickup/drop loop on the test mirror: walking up to a seeded ore shows the pick-up prompt, interact moves it into hotbar slot 0 and frees the world node (prompt clears), and Q drops it back into the world at the player's current position.",
+  "harness_scene": "res://validation/harnesses/InventoryHarness.tscn",
+  "done_contract": { "drop_position_tolerance": 2.0 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/InventoryHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "press_action", "action": "test_seed_ore_at_origin" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_ore_at_origin" },
+    { "op": "wait_until", "path": "harness_state.world_item_nodes", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "press_action", "action": "move_left" },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_label", "comparator": "eq", "expected": "Pick up Raw Ore", "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_left" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "prompt_shown" },
+    { "op": "assert_value", "checkpoint": "prompt_shown", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "prompt_shown", "path": "harness_state.hotbar.slots.0.occupied", "comparator": "eq", "expected": false },
+    { "op": "press_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "interact" },
+    { "op": "wait_until", "path": "harness_state.hotbar.slots.0.occupied", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.world_item_nodes", "comparator": "eq", "expected": 0, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_label", "comparator": "eq", "expected": "", "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "picked_up" },
+    { "op": "assert_value", "checkpoint": "picked_up", "path": "harness_state.hotbar.slots.0.glyph", "comparator": "eq", "expected": "O" },
+    { "op": "assert_value", "checkpoint": "picked_up", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": false },
+    { "op": "press_action", "action": "move_right" },
+    { "op": "wait_until", "path": "harness_state.player.x", "comparator": "gt", "expected": 60, "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_right" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "press_action", "action": "hotbar_drop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "hotbar_drop" },
+    { "op": "wait_until", "path": "harness_state.world_item_nodes", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "dropped" },
+    { "op": "assert_value", "checkpoint": "dropped", "path": "harness_state.hotbar.slots.0.occupied", "comparator": "eq", "expected": false },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "item_x": { "kind": "checkpoint", "checkpoint": "dropped", "path": "harness_state.world_items.0.x" },
+        "player_x": { "kind": "checkpoint", "checkpoint": "dropped", "path": "harness_state.player.x" },
+        "tolerance": { "kind": "contract", "path": "done_contract.drop_position_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["item_x", "player_x"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "item_y": { "kind": "checkpoint", "checkpoint": "dropped", "path": "harness_state.world_items.0.y" },
+        "player_y": { "kind": "checkpoint", "checkpoint": "dropped", "path": "harness_state.player.y" },
+        "tolerance": { "kind": "contract", "path": "done_contract.drop_position_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["item_y", "player_y"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    { "op": "quit" }
+  ]
+}

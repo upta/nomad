@@ -89,6 +89,12 @@ public partial class InventoryHarnessController
         _hotbarHud.Registry = _itemTypeRegistry;
         _shipGrid.TerminalInteracted += OnTerminalInteracted;
 
+        // Mirror Main's pickup/drop wiring so the test-mode mirrors drive
+        // the same consumer chain as the connected game.
+        _itemSpawner.Interacted += itemId => _inventoryService.RequestPickUp(itemId);
+        _hotbarHud.DropRequested += () =>
+            _inventoryService.RequestDrop(_inventoryService.SelectedSlot, _player.GlobalPosition);
+
         _testActions = new Dictionary<string, Action>
         {
             ["test_seed_ore_at_origin"] = () =>
@@ -105,6 +111,8 @@ public partial class InventoryHarnessController
             // is already covered by terminal_interact_opens_modal.
             ["test_open_kitchen_modal"] = () =>
                 _modalHost.Open(new RoomModalInfo("Kitchen", TerminalType.Info, true, true)),
+            ["test_kill"] = () => _player.SetGhostMode(true),
+            ["test_revive"] = () => _player.SetGhostMode(false),
         };
         foreach (var action in _testActions.Keys.Concat(ActionKeyBridge.Keys))
         {
@@ -177,6 +185,7 @@ public partial class InventoryHarnessController
             {
                 ["x"] = _player.GlobalPosition.X,
                 ["y"] = _player.GlobalPosition.Y,
+                ["is_ghost"] = _player.IsGhostMode,
             },
             ["interaction"] = new Godot.Collections.Dictionary
             {
