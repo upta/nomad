@@ -1,8 +1,9 @@
 public static partial class Module
 {
-    // Validation/debug reset; RequestRespawn (Task 2.4) is the real revive path.
+    // Debug/validation setter — the starvation scenario needs a near-empty
+    // stomach without waiting out a real-time drain.
     [SpacetimeDB.Reducer]
-    public static void ResetVitals(ReducerContext ctx)
+    public static void SetHunger(ReducerContext ctx, float value)
     {
         if (ctx.Db.Players.Identity.Find(ctx.Sender) is null)
         {
@@ -14,13 +15,11 @@ public static partial class Module
             throw new System.InvalidOperationException("No vitals row for this identity.");
         }
 
+        var clamped = System.Math.Clamp(value, 0f, vitals.Hunger.Max);
         ctx.Db.VitalsRows.Identity.Update(
             vitals with
             {
-                Health = vitals.Health with { Current = vitals.Health.Max },
-                Oxygen = vitals.Oxygen with { Current = vitals.Oxygen.Max },
-                Hunger = vitals.Hunger with { Current = vitals.Hunger.Max },
-                IsDead = false,
+                Hunger = vitals.Hunger with { Current = clamped },
             }
         );
     }

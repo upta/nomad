@@ -7,6 +7,7 @@ public static partial class Module
         public Identity Identity;
         public Meter Health;
         public Meter Oxygen;
+        public Meter Hunger;
         public bool SuitEquipped;
         public bool IsDead;
     }

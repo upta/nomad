@@ -17,11 +17,11 @@ public static partial class Module
                 continue;
             }
 
-            TickOxygen(ctx, config, player, vitals);
+            TickPlayerVitals(ctx, config, player, vitals);
         }
     }
 
-    private static void TickOxygen(
+    private static void TickPlayerVitals(
         ReducerContext ctx,
         VitalsConfig config,
         Player player,
@@ -46,12 +46,16 @@ public static partial class Module
             oxygen = System.Math.Max(0f, oxygen - config.OxygenDepletePerTick);
         }
 
-        if (oxygen != vitals.Oxygen.Current)
+        // Hunger burns everywhere — metabolic, not environmental.
+        var hunger = System.Math.Max(0f, vitals.Hunger.Current - config.HungerDepletePerTick);
+
+        if (oxygen != vitals.Oxygen.Current || hunger != vitals.Hunger.Current)
         {
             ctx.Db.VitalsRows.Identity.Update(
                 vitals with
                 {
                     Oxygen = vitals.Oxygen with { Current = oxygen },
+                    Hunger = vitals.Hunger with { Current = hunger },
                 }
             );
         }
@@ -63,6 +67,16 @@ public static partial class Module
                 player.Identity,
                 config.SuffocationDamagePerTick,
                 DamageType.Suffocation
+            );
+        }
+
+        if (hunger <= 0f)
+        {
+            ApplyDamage(
+                ctx,
+                player.Identity,
+                config.StarvationDamagePerTick,
+                DamageType.Starvation
             );
         }
     }

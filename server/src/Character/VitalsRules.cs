@@ -1,5 +1,6 @@
 public static partial class Module
 {
+    private const float DefaultMaxHunger = 100f;
     private const float DefaultMaxOxygen = 100f;
 
     private static VitalsConfig GetVitalsConfig(ReducerContext ctx) =>
@@ -14,8 +15,8 @@ public static partial class Module
                 OxygenRefillPerTick = 5f,
                 // ~25s from full health to death once the tank is empty.
                 SuffocationDamagePerTick = 2f,
-                // Hunger arrives with Task 2.3 — zero keeps the meter inert.
-                HungerDepletePerTick = 0f,
+                // ~5 minutes from fed to starving.
+                HungerDepletePerTick = 0.17f,
                 StarvationDamagePerTick = 2f,
                 SuitCapacityMultiplier = 2f,
                 SuitSpeedFactor = 0.8f,

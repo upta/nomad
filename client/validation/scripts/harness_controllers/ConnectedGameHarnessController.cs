@@ -49,6 +49,11 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_set_oxygen_low"] = conn => conn.Reducers.SetOxygen(5),
         ["test_equip_suit"] = conn => conn.Reducers.SetSuitEquipped(true),
         ["test_unequip_suit"] = conn => conn.Reducers.SetSuitEquipped(false),
+        // Fast hunger isolates the metabolic meter: oxygen rates zeroed so
+        // only starvation moves health.
+        ["test_fast_hunger"] = conn => conn.Reducers.SetVitalsConfig(250, 0, 25, 0, 5, 5),
+        ["test_set_hunger_low"] = conn => conn.Reducers.SetHunger(10),
+        ["test_restore_hunger"] = conn => conn.Reducers.RestoreHunger(100),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -343,6 +348,8 @@ public partial class ConnectedGameHarnessController : Node2D
         state["max_health"] = vitals.Health.Max;
         state["oxygen"] = vitals.Oxygen.Current;
         state["max_oxygen"] = vitals.Oxygen.Max;
+        state["hunger"] = vitals.Hunger.Current;
+        state["max_hunger"] = vitals.Hunger.Max;
         state["suit_equipped"] = vitals.SuitEquipped;
         state["is_dead"] = vitals.IsDead;
         return state;

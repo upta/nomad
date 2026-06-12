@@ -452,16 +452,17 @@ Design notes (user-confirmed):
 - [x] `scenarios_stdb/suit_equip_round_trip.json` — real walk to rack in connected Main, interact → server SuitEquipped + Oxygen.Max 100→200 → interact → restored; screenshot shows suited player at emptied rack with "O2 100/200 [SUIT]" HUD
 - [x] `./scripts/validate_all.ps1` green (23 pure + 14 stdb); boots clean 13s zero ERROR; builds + csharpier; push
 
-# Task 2.3: Food/hunger meter 🔄 PLANNED
+# Task 2.3: Food/hunger meter ✅ DONE
 
-## Subtask 2.3.1: Server — hunger on the tick — Scope: S
-- [ ] `Vitals` += `Meter Hunger` (100/100); VitalsTick depletes everywhere, 0 → Starvation damage; real default rates (~5min)
-- [ ] Create `RestoreHunger.cs` (Phase 3 meal entry point + validation path); publish + generate + builds; CLI acceptance
+## Subtask 2.3.1: Server — hunger on the tick — Scope: S ✅
+- [x] `Vitals` += `Meter Hunger` (100/100); `VitalsTick` → `TickPlayerVitals` (oxygen + hunger in one row write); hunger depletes everywhere (0.17/tick ≈5min), 0 → Starvation via pipeline; `ResetVitals` now restores all three meters
+- [x] Create `RestoreHunger.cs` (Phase 3 meal entry point + validation path) + `SetHunger.cs` debug setter; publish + generate + builds
 
-## Subtask 2.3.2: Validation + HUD + mini-sweep — Scope: S
-- [ ] VitalsHud hunger bar; pure scenario `vitals_hunger_bar_renders.json`
-- [ ] Harness hunger observed + test actions; `scenarios_stdb/hunger_starvation_round_trip.json` (red first)
-- [ ] DoD sweep + push
+## Subtask 2.3.2: Validation + HUD + mini-sweep — Scope: S ✅
+- [x] VitalsHud hunger bar (amber FOOD, third perimeter bar); pure scenario `vitals_hunger_bar_renders.json` red first → green; screenshot shows HP/O2/FOOD row
+- [x] Harness hunger observed + `test_fast_hunger` (oxygen rates zeroed to isolate starvation)/`test_set_hunger_low`/`test_restore_hunger`; `scenarios_stdb/hunger_starvation_round_trip.json` — hunger → 0 → health falls (Starvation) → restore → health holds
+- [x] **Suite-isolation gotcha found + fixed:** stdb scenarios share one ephemeral DB and one client identity, so config changes and vitals damage LEAK between scenarios (fast-hunger config starved the oxygen scenario's health guard). Every timing-sensitive vitals scenario now sets its own config and fires `test_reset_vitals` up front — preconditions are the scenario's own job
+- [x] DoD sweep: both suites green (24 pure + 15 stdb), boot clean 13s zero ERROR, builds + format, push
 
 # Task 2.4: Death, ghost state, cloning bay 🔄 PLANNED
 

@@ -174,9 +174,9 @@ SpacetimeDB Scaffold + Client Connection
     - [x] 2.2.5: Client — oxygen HUD bar, `SuitRack` interactable in CargoBay slot, suit speed modifier + tint; pure scenarios. **Scope: M**
     - [x] 2.2.6: stdb suit round trip + DoD sweep. **Scope: S**
 
-- [ ] **Task 2.3: Food/hunger meter** — Secondary metabolic meter that depletes slowly; at zero, starvation damage via the 2.1 pipeline. Replenished via `RestoreHunger` (the entry point Phase 3 meals will call) (§6.2). Server-authoritative. **Scope: S**
-    - [ ] 2.3.1: Server — `Meter Hunger` on Vitals + tick depletion + starvation damage + `RestoreHunger`. **Scope: S**
-    - [ ] 2.3.2: Hunger HUD bar + pure/stdb scenarios + DoD sweep. **Scope: S**
+- [x] **Task 2.3: Food/hunger meter** — Secondary metabolic meter that depletes slowly; at zero, starvation damage via the 2.1 pipeline. Replenished via `RestoreHunger` (the entry point Phase 3 meals will call) (§6.2). Server-authoritative. **Scope: S**
+    - [x] 2.3.1: Server — `Meter Hunger` on Vitals + tick depletion + starvation damage + `RestoreHunger`. **Scope: S**
+    - [x] 2.3.2: Hunger HUD bar + pure/stdb scenarios + DoD sweep. **Scope: S**
 
 - [ ] **Task 2.4: Death, ghost state, cloning bay** — Death is non-terminal. Deceased players enter Ghost Mode (visible to all players, can float anywhere, cannot interact with physical objects — exception: the Cloning Bay terminal, their anchor back to life). Cloning Bay respawns at Biomass cost (`ShipStores.Biomass`, seed 3). If no power or biomass, stay ghosted (§6.4). SpacetimeDB manages ghost/clone state. **Scope: L**
     - [ ] 2.4.1: Server — `ShipStores` table, `RequestRespawn(target)` reducer (dead + CloningBay powered + biomass), `HullGeometry` slot centers, `SetBiomass` debug setter. **Scope: M**

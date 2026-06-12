@@ -17,7 +17,11 @@ public class VitalsService
 
     public float Health { get; private set; } = 100f;
 
+    public float Hunger { get; private set; } = 100f;
+
     public bool IsDead { get; private set; }
+
+    public float MaxHunger { get; private set; } = 100f;
 
     public float MaxHealth { get; private set; } = 100f;
 
@@ -42,6 +46,13 @@ public class VitalsService
         conn.Db.VitalsRows.OnInsert += OnVitalsInserted;
         conn.Db.VitalsRows.OnUpdate += OnVitalsUpdated;
 
+        Changed?.Invoke();
+    }
+
+    public void SetTestHunger(float hunger, float maxHunger)
+    {
+        Hunger = hunger;
+        MaxHunger = maxHunger;
         Changed?.Invoke();
     }
 
@@ -77,6 +88,8 @@ public class VitalsService
         MaxHealth = vitals.Health.Max;
         Oxygen = vitals.Oxygen.Current;
         MaxOxygen = vitals.Oxygen.Max;
+        Hunger = vitals.Hunger.Current;
+        MaxHunger = vitals.Hunger.Max;
         SuitEquipped = vitals.SuitEquipped;
         IsDead = vitals.IsDead;
     }

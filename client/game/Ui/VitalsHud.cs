@@ -32,6 +32,18 @@ public partial class VitalsHud : CanvasLayer
     public IColorRect HealthTrack { get; set; } = default!;
 
     [Export]
+    public Color HungerFillColor { get; set; } = new(0.85f, 0.7f, 0.3f);
+
+    [Node]
+    public IColorRect HungerFill { get; set; } = default!;
+
+    [Node]
+    public ILabel HungerLabel { get; set; } = default!;
+
+    [Node]
+    public IColorRect HungerTrack { get; set; } = default!;
+
+    [Export]
     public Color OxygenFillColor { get; set; } = new(0.3f, 0.65f, 0.9f);
 
     [Node]
@@ -44,6 +56,8 @@ public partial class VitalsHud : CanvasLayer
     public IColorRect OxygenTrack { get; set; } = default!;
 
     public float HealthFillRatio { get; private set; } = 1f;
+
+    public float HungerFillRatio { get; private set; } = 1f;
 
     public float OxygenFillRatio { get; private set; } = 1f;
 
@@ -79,5 +93,12 @@ public partial class VitalsHud : CanvasLayer
         OxygenLabel.Text =
             $"O2 {Mathf.RoundToInt(Vitals.Oxygen)}/{Mathf.RoundToInt(Vitals.MaxOxygen)}"
             + (Vitals.SuitEquipped ? " [SUIT]" : "");
+
+        HungerFillRatio =
+            Vitals.MaxHunger > 0f ? Mathf.Clamp(Vitals.Hunger / Vitals.MaxHunger, 0f, 1f) : 0f;
+        HungerFill.Size = new Vector2(HungerTrack.Size.X * HungerFillRatio, HungerFill.Size.Y);
+        HungerFill.Color = HungerFillColor;
+        HungerLabel.Text =
+            $"FOOD {Mathf.RoundToInt(Vitals.Hunger)}/{Mathf.RoundToInt(Vitals.MaxHunger)}";
     }
 }

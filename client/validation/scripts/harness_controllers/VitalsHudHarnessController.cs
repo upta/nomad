@@ -50,6 +50,7 @@ public partial class VitalsHudHarnessController : Node2D, IProvide<VitalsService
             ["test_seed_health_zero"] = () => _vitalsService.SetTestVitals(0, 100, true),
             ["test_seed_oxygen_30"] = () => _vitalsService.SetTestOxygen(30, 100, false),
             ["test_seed_oxygen_suit"] = () => _vitalsService.SetTestOxygen(150, 200, true),
+            ["test_seed_hunger_25"] = () => _vitalsService.SetTestHunger(25, 100),
         };
         foreach (var action in _testActions.Keys)
         {
@@ -70,6 +71,7 @@ public partial class VitalsHudHarnessController : Node2D, IProvide<VitalsService
             {
                 ["fill_ratio"] = _hud.HealthFillRatio,
                 ["oxygen_fill_ratio"] = _hud.OxygenFillRatio,
+                ["hunger_fill_ratio"] = _hud.HungerFillRatio,
                 ["shows_dead"] = _hud.ShowsDead,
                 ["visible"] = _hud.Visible,
             },

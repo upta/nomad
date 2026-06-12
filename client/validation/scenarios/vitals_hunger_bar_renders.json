@@ -1,0 +1,19 @@
+{
+  "scenario_id": "vitals_hunger_bar_renders",
+  "version": 3,
+  "description": "The VitalsHud hunger bar renders the local player's food reserve: full at spawn, fill ratio drops when hunger is seeded to 25%.",
+  "harness_scene": "res://validation/harnesses/VitalsHudHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/VitalsHudHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "full" },
+    { "op": "assert_value", "checkpoint": "full", "path": "harness_state.hud.hunger_fill_ratio", "comparator": "eq", "expected": 1 },
+    { "op": "press_action", "action": "test_seed_hunger_25" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_hunger_25" },
+    { "op": "wait_until", "path": "harness_state.hud.hunger_fill_ratio", "comparator": "lt", "expected": 0.3, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "hungry" },
+    { "op": "assert_value", "checkpoint": "hungry", "path": "harness_state.hud.hunger_fill_ratio", "comparator": "gt", "expected": 0.2 },
+    { "op": "quit" }
+  ]
+}
