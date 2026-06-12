@@ -497,7 +497,7 @@ Design notes (user-confirmed):
 
 # Phase 3: Inventory & Logistics 🔄 PLANNED
 
-Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. Implementation order: **3.2 → 3.1 → 3.3 → 3.4 → 3.5**. untrailed is the reference, deliberately improved (one Item row vs container indirection; explicit-slot reducers with server reach/alive checks vs client-trust holes; `InventoryConfig` table vs hardcoded capacities; `[Export]` registry vs switch statement; no stacking per GDD).
+Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md` (note: the plan file's headings predate the renumbering — its "3.2 Item types" is Task 3.1 here, its "3.1 hotbar" is Task 3.2). untrailed is the reference, deliberately improved (one Item row vs container indirection; explicit-slot reducers with server reach/alive checks vs client-trust holes; `InventoryConfig` table vs hardcoded capacities; `[Export]` registry vs switch statement; no stacking per GDD).
 
 Design notes (user-confirmed):
 - One `Item` table: `LocationKind` World/Hotbar/Stored + `Holder`/`SlotIndex`/`RoomSlotIndex` discriminator fields, `DbVector2 Position`. No Quantity. `InventoryConfig` (Id 0): HotbarSlots 4, PickupRadius 96, LoadRadius 160, CargoCapacity 12.
@@ -508,44 +508,44 @@ Design notes (user-confirmed):
 - Meals moved whole to 4.4. Phase 3 types: RawOre, FuelDeposit, Biomass, FuelCell, Scrap, Components.
 - Gotcha to honor: pickup/deposit are row UPDATEs — `InventoryService` must evict world entries on OnUpdate, not just OnDelete.
 
-# Task 3.2: Item types
+# Task 3.1: Item types
 
-## Subtask 3.2.1: Server — item schema + world-spawn debug reducers — Scope: M
-- [ ] `ItemTypeId`/`ItemLocationKind` enums, `Item` table (full schema, one publish), `InventoryConfig`, `ItemRules` (config getter + `FindFreeHotbarSlot`), `TerminalType` += Storage
-- [ ] `SpawnWorldItem` + `ClearItems` reducers; Init seeds config
-- [ ] Format → build → publish `--delete-data=always` → generate → client build; CLI acceptance
+## Subtask 3.1.1: Server — item schema + world-spawn debug reducers — Scope: M ✅
+- [x] `ItemTypeId`/`ItemLocationKind` enums, `Item` table (full schema, one publish), `InventoryConfig`, `ItemRules` (config getter + `FindFreeHotbarSlot`), `TerminalType` += Storage
+- [x] `SpawnWorldItem` + `ClearItems` reducers; Init seeds config
+- [x] Format → build → publish `--delete-data=always` → generate → client build; CLI acceptance: config row (4/96/160/12) visible, `spawn_world_item rawOre` inserts, `none` rejected, `clear_items` empties
 
-## Subtask 3.2.2: stdb validation — Scope: S
+## Subtask 3.1.2: stdb validation — Scope: S
 - [ ] Harness `items` observed state + spawn/clear test actions; `world_items_spawn_and_render.json` red first
 
-## Subtask 3.2.3: Client — ItemType resources + WorldItem + ItemSpawner + InventoryService (world half) — Scope: M
+## Subtask 3.1.3: Client — ItemType resources + WorldItem + ItemSpawner + InventoryService (world half) — Scope: M
 - [ ] `ItemType` resource + `ItemTypeRegistry` + 6 `.tres`; `WorldItem.tscn` (InteractTarget, "Pick up {Label}")
 - [ ] `InventoryService` world half (OnUpdate evicts non-World rows) + seeders; `ItemSpawner` node in `Main.tscn`
 - [ ] Main provides service, binds connection, hands registry to spawner
 
-## Subtask 3.2.4: Pure validation — Scope: S
+## Subtask 3.1.4: Pure validation — Scope: S
 - [ ] `InventoryHarness` + controller; `item_types_load.json` (6 types) + `world_items_render.json` red first; screenshots
 
-## Subtask 3.2.5: DoD sweep — Scope: S
+## Subtask 3.1.5: DoD sweep — Scope: S
 - [ ] Both suites green, boot clean, builds + format, plan/todo, push
 
-# Task 3.1: Fixed-size hotbar
+# Task 3.2: Fixed-size hotbar
 
-## Subtask 3.1.1: Server — GiveItem debug reducer — Scope: S
+## Subtask 3.2.1: Server — GiveItem debug reducer — Scope: S
 - [ ] `GiveItem(typeId, slotIndex)` — bounds/occupancy/alive checks; reducer-only publish
 
-## Subtask 3.1.2: stdb validation — Scope: S
+## Subtask 3.2.2: stdb validation — Scope: S
 - [ ] `items.hotbar` + `items.config` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection
 
-## Subtask 3.1.3: Client — service hotbar half + HotbarHud + GUIDE actions — Scope: M
+## Subtask 3.2.3: Client — service hotbar half + HotbarHud + GUIDE actions — Scope: M
 - [ ] InventoryService `Slots`/`SelectedSlot` (client-only)/`SelectSlot`/`SetTestSlot`
 - [ ] `HotbarSlot1..4.tres`; rewire KBM (1–4, drop G→Q) + controller contexts; delete `HotbarCycleSlot.tres` + mappings; `EnsureInputActions` += hotbar actions
 - [ ] `ItemSlotPanel.tscn` shared slot visual; `HotbarHud.tscn` (4 panels, bottom-center) in `Main.tscn`
 
-## Subtask 3.1.4: Pure validation — Scope: M
+## Subtask 3.2.4: Pure validation — Scope: M
 - [ ] `hotbar_renders_items.json` + `hotbar_inert_while_modal_open.json` red first; stdb scenario gains `game.hotbar` assert
 
-## Subtask 3.1.5: DoD sweep — Scope: S
+## Subtask 3.2.5: DoD sweep — Scope: S
 - [ ] Standard checklist
 
 # Task 3.3: Item pickup/drop

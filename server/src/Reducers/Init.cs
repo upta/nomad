@@ -25,6 +25,9 @@ public static partial class Module
 
         // Seeds the ship's shared stores (biomass = three respawns).
         GetShipStores(ctx);
+
+        // Seeds hotbar/storage capacities and reach radii.
+        GetInventoryConfig(ctx);
     }
 
     private static void SeedRoom(ReducerContext ctx, int slotIndex, RoomTypeId roomTypeId)

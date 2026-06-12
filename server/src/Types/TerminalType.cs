@@ -7,4 +7,5 @@ public enum TerminalType : uint
     Fabricator,
     Cloning,
     Info,
+    Storage,
 }
