@@ -11,6 +11,9 @@ public static partial class Module
         SeedRoom(ctx, 4, RoomTypeId.Workshop);
         SeedRoom(ctx, 5, RoomTypeId.Kitchen);
         SeedRoom(ctx, 6, RoomTypeId.CargoBay);
+
+        // Creates the PowerGrid row and settles initial powered state.
+        RecomputePowerGrid(ctx);
     }
 
     private static void SeedRoom(ReducerContext ctx, int slotIndex, RoomTypeId roomTypeId)

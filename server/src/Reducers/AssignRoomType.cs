@@ -33,5 +33,7 @@ public static partial class Module
                 }
             );
         }
+
+        RecomputePowerGrid(ctx);
     }
 }
