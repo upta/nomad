@@ -212,12 +212,12 @@ Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. One `Item`
     - [x] 3.3.4: Pure validation — prompt/mirror round trip, `ghost_cannot_pickup.json`. **Scope: M**
     - [x] 3.3.5: DoD sweep. **Scope: S**
 
-- [ ] **Task 3.4: Load verb — tank deposits + reactor fuel burn** — Deposit items from hotbar into machine intakes via walk-up modals (§5): biomass→Cloning Bay (`ShipStores.Biomass++`), fuel cell→Reactor (`ShipStores.Fuel++`) — tank model: the machine consumes the item into a counter. The Reactor burns fuel on a scheduled tick while generating (`PowerGrid.FuelPerBurn`/`FuelBurnMillis`, DB-tunable, **0 = disabled** so scenarios opt out); dry tank ⇒ output 0 ⇒ overload→blackout via the 1.4 machinery — the keep-the-reactor-fed pressure loop lands whole here. Server-side reach check vs room slot center (`LoadRadius`); never trusts modal-open state. Ammo→weapons is the same verb but lands with 5.5. **Scope: L**
-    - [ ] 3.4.1: Server — `ShipStores.Fuel` + `PowerGrid` burn fields + `FuelBurnTimer`/`FuelBurnTick`, `LoadItem` reducer, `SetFuel`/`SetFuelBurn` setters; publish `--delete-data=always`. **Scope: M**
-    - [ ] 3.4.2: stdb validation — `load_reducer_validation.json` (type + reach rejections), `reactor_fuel_burn_blackout_recovery.json`; existing power scenarios gain a `test_disable_fuel_burn` precondition. **Scope: M**
-    - [ ] 3.4.3: Client — `RoomModalInfo.SlotIndex`, shared `DepositRow`, CloningModal biomass deposit, PowerRouterModal fuel section. **Scope: M**
-    - [ ] 3.4.4: Pure validation — modal deposit scenarios for both terminals. **Scope: M**
-    - [ ] 3.4.5: DoD sweep. **Scope: S**
+- [x] **Task 3.4: Load verb — tank deposits + reactor fuel burn** — Deposit items from hotbar into machine intakes via walk-up modals (§5): biomass→Cloning Bay (`ShipStores.Biomass++`), fuel cell→Reactor (`ShipStores.Fuel++`) — tank model: the machine consumes the item into a counter. The Reactor burns fuel on a scheduled tick while generating (`PowerGrid.FuelPerBurn`/`FuelBurnMillis`, DB-tunable, **0 = disabled** so scenarios opt out); dry tank ⇒ output 0 ⇒ overload→blackout via the 1.4 machinery — the keep-the-reactor-fed pressure loop lands whole here. Server-side reach check vs room slot center (`LoadRadius`); never trusts modal-open state. Ammo→weapons is the same verb but lands with 5.5. **Scope: L**
+    - [x] 3.4.1: Server — `ShipStores.Fuel` + `PowerGrid` burn fields + `FuelBurnTimer`/`FuelBurnTick`, `LoadItem` reducer, `SetFuel`/`SetFuelBurn` setters; publish `--delete-data=always`. **Scope: M**
+    - [x] 3.4.2: stdb validation — `load_reducer_validation.json` (type + reach rejections), `reactor_fuel_burn_blackout_recovery.json`; existing power scenarios gain a `test_disable_fuel_burn` precondition. **Scope: M**
+    - [x] 3.4.3: Client — `RoomModalInfo.SlotIndex`, shared `DepositRow`, CloningModal biomass deposit, PowerRouterModal fuel section. **Scope: M**
+    - [x] 3.4.4: Pure validation — modal deposit scenarios for both terminals. **Scope: M**
+    - [x] 3.4.5: DoD sweep. **Scope: S**
 
 - [ ] **Task 3.5: Cargo Bay storage (store/withdraw)** — The Cargo Bay holds a capacity-limited generic store ("haul back to cargo bay storage", GDD §4): deposit any item from the hotbar, withdraw later. Same `LoadItem` deposit verb (storage branch) + `WithdrawItem`; `StorageModal` on the Cargo Bay terminal is an untrailed-`WagonInventoryUI`-inspired dual slot grid (hotbar ↔ cargo), improved: service-fed, scene-styled, in-place updates, focus-navigable. Stored items are the ship's — unaffected by death. **Scope: M**
     - [ ] 3.5.1: Server — `AcceptsStorage` + `FindFreeStoreSlot`, `LoadItem` storage branch, `WithdrawItem` reducer (reducer-only publish). **Scope: M**

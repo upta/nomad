@@ -573,27 +573,29 @@ Design notes (user-confirmed):
 ## Subtask 3.3.5: DoD sweep — Scope: S ✅
 - [x] `validate_all.ps1` both suites green (pure PASS + stdb 24/24); boot clean zero ERROR (connected + subscribed); builds + csharpier both sides; import pass (no new uids needed); plan/todo checked; push
 
-# Task 3.4: Load verb — tank deposits + reactor fuel burn
+# Task 3.4: Load verb — tank deposits + reactor fuel burn ✅ DONE
 
-## Subtask 3.4.1: Server — ShipStores.Fuel + LoadItem + FuelBurnTick — Scope: M
-- [ ] `ShipStores.Fuel` (seed 10); `PowerGrid.FuelBurnMillis` (120000) + `FuelPerBurn` (1; 0=off); `FuelBurnTimer` scheduled table
-- [ ] `LoadItem(hotbarSlot, roomSlot)` — tank branch (`AcceptsTankDeposit`), reach vs `SlotCenter` within LoadRadius, fuel deposits recompute grid
-- [ ] `FuelBurnTick` (burn while generating; crossing 0 recomputes); `RecomputePowerGrid` output gains `&& (Fuel > 0 || FuelPerBurn == 0)`; `SetFuel`/`SetFuelBurn` setters
-- [ ] Publish `--delete-data=always` → generate → builds; stdb suite green against new seed before commit
+## Subtask 3.4.1: Server — ShipStores.Fuel + LoadItem + FuelBurnTick — Scope: M ✅
+- [x] `ShipStores.Fuel` (seed 10); `PowerGrid.FuelBurnMillis` (120000, ulong) + `FuelPerBurn` (1; 0=off); `FuelBurnTimer` scheduled table (VitalsTickTimer precedent), `RescheduleFuelBurn` in PowerRules
+- [x] `LoadItem(hotbarSlot, roomSlot)` — tank branch (`AcceptsTankDeposit`: CloningBay+Biomass, Reactor+FuelCell), reach vs `SlotCenter` within LoadRadius (never trusts modal-open state), fuel deposits recompute grid (dry-tank recovery)
+- [x] `FuelBurnTick` (burn while reactor assigned + breaker on; crossing 0 recomputes); `ComputeLoad` output gains the fueled condition (`Fuel > 0 || FuelPerBurn == 0`); `SetFuel`/`SetFuelBurn` setters (interval 0 = keep current; both recompute)
+- [x] Publish `--delete-data=always` → generate → builds; stdb suite 25/25 green against new seed before commit
 
-## Subtask 3.4.2: stdb validation — Scope: M
-- [ ] `load_reducer_validation.json` (wrong-type + reach rejections, then success) + `reactor_fuel_burn_blackout_recovery.json` red first
-- [ ] Existing power-asserting scenarios gain `test_disable_fuel_burn` precondition
+## Subtask 3.4.2: stdb validation — Scope: M ✅
+- [x] `load_reducer_validation.json` (wrong-type + reach rejections from the corridor spawn, then walk into the Reactor room — wall-clamp up+right through the door — and load: fuel +1, slot empty) red first
+- [x] `reactor_fuel_burn_blackout_recovery.json` — fast burn (500ms) drains 2→0, grid leaves Stable through Overload into Blackout, slow-burn re-pace kills the tick race, deposit recovers Stable + rooms repowered; burn disabled + fuel restored at scenario end
+- [x] Harness: `stores.fuel` + `power.fuel_per_burn`/`fuel_burn_millis` observed; load/give/set-fuel/burn-tuning test actions; six power-asserting scenarios gain the `test_disable_fuel_burn` precondition
 
-## Subtask 3.4.3: Client — deposit UI + fuel readout — Scope: M
-- [ ] `RoomModalInfo` += `SlotIndex` (4 construction sites); shared `DepositRow.tscn`
-- [ ] InventoryService `CountOf`/`FirstSlotOf`/`RequestLoad`; CloningModal biomass row; PowerRouterModal fuel section (`PowerGridService` mirrors ShipStores)
+## Subtask 3.4.3: Client — deposit UI + fuel readout — Scope: M ✅
+- [x] `RoomModalInfo` += `SlotIndex` (5 construction sites incl. InventoryHarness's kitchen modal); shared `DepositRow.tscn`/`.cs` (held-count label + focusable Deposit button, in-place `Update`)
+- [x] InventoryService `CountOf`/`FirstSlotOf`/`RequestLoad` (+ `TestLoadRequested` mirror event); CloningModal biomass row (first focus when no crew rows); PowerRouterModal fuel section with red DRY cue (`PowerGridService` mirrors ShipStores.Fuel + FuelPerBurn); Ghost/Power harnesses provide InventoryService
+- [x] `load_biomass_modal_round_trip.json` (stdb, red first) — carry biomass → Cloning terminal → deposit → store 3→4, slot empty, modal stays open
 
-## Subtask 3.4.4: Pure validation — Scope: M
-- [ ] `cloning_modal_deposit_biomass.json` + `power_router_modal_deposit_fuel.json` red first; `load_biomass_modal_round_trip.json` (stdb)
+## Subtask 3.4.4: Pure validation — Scope: M ✅
+- [x] `cloning_modal_deposit_biomass.json` (row enabled+focused → accept → store 4, row disables in place, modal open) + `power_router_modal_deposit_fuel.json` (fuel readout, focus-up to deposit row, fuel 5→6) — red first via missing harness probes; screenshots reviewed
 
-## Subtask 3.4.5: DoD sweep — Scope: S
-- [ ] Standard checklist
+## Subtask 3.4.5: DoD sweep — Scope: S ✅
+- [x] `validate_all.ps1` both suites green (35 pure / 28 stdb); boot clean zero ERROR (connected + subscribed, Init seeds fuel + burn timer); builds + csharpier both sides; import pass (DepositRow uid staged); plan/todo checked; push
 
 # Task 3.5: Cargo Bay storage (store/withdraw)
 
