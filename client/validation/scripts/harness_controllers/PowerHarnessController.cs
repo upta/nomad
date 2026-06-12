@@ -4,6 +4,7 @@ namespace Nomad.Validation.HarnessControllers;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Chickensoft.AutoInject;
 using Chickensoft.Introspection;
 using Godot;
@@ -12,9 +13,16 @@ using Nomad.Game.Map;
 using Nomad.Game.Ship;
 using Nomad.Game.Ui;
 
-[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>))]
-public partial class PowerHarnessController : Node2D, IProvide<InteractionService>
+[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>), typeof(IProvide<PowerGridService>))]
+public partial class PowerHarnessController
+    : Node2D,
+        IProvide<InteractionService>,
+        IProvide<PowerGridService>
 {
+    // modal_accept/modal_down are harness-registered aliases bridged to real
+    // Enter/Down key events so scenarios can drive Control focus navigation —
+    // a single deterministic path instead of relying on InputEventAction
+    // reaching the GUI.
     private static readonly Dictionary<string, Key> ActionKeyBridge = new()
     {
         ["move_up"] = Key.W,
@@ -23,10 +31,13 @@ public partial class PowerHarnessController : Node2D, IProvide<InteractionServic
         ["move_right"] = Key.D,
         ["interact"] = Key.E,
         ["ui_cancel_modal"] = Key.Escape,
+        ["modal_accept"] = Key.Enter,
+        ["modal_down"] = Key.Down,
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
     private readonly InteractionService _interactionService = new();
+    private readonly PowerGridService _powerGridService = new();
     private readonly Dictionary<string, bool> _testActionState = [];
     private ModalHost _modalHost = null!;
     private Node2D _player = null!;
@@ -76,26 +87,33 @@ public partial class PowerHarnessController : Node2D, IProvide<InteractionServic
             ["test_restore_power_kitchen"] = () => _shipGrid.SetTestPower(5, true, true),
             ["test_grid_overload"] = () => _shipGrid.SetTestGridStatus("Overload"),
             ["test_grid_stable"] = () => _shipGrid.SetTestGridStatus("Stable"),
+            ["test_assign_kitchen_reactor"] = () => AssignTestRoom(5, "Reactor"),
         };
-        foreach (var action in _testActions.Keys)
+        foreach (var action in _testActions.Keys.Concat(ActionKeyBridge.Keys))
         {
             if (!InputMap.HasAction(action))
                 InputMap.AddAction(action);
         }
 
+        _powerGridService.SetRoomCatalog(GetNode<RoomTypeRegistry>("RoomTypeRegistry").All);
+        _powerGridService.Changed += SyncServiceToGrid;
+        _powerGridService.SetTestGrid(10, "Stable");
+
         this.Provide();
 
         // Mirror the server Init seed so terminals spawn for every room.
-        _shipGrid.SetTestAssignment(0, "Reactor");
-        _shipGrid.SetTestAssignment(1, "Bridge");
-        _shipGrid.SetTestAssignment(2, "CloningBay");
-        _shipGrid.SetTestAssignment(3, "Hydroponics");
-        _shipGrid.SetTestAssignment(4, "Workshop");
-        _shipGrid.SetTestAssignment(5, "Kitchen");
-        _shipGrid.SetTestAssignment(6, "CargoBay");
+        AssignTestRoom(0, "Reactor");
+        AssignTestRoom(1, "Bridge");
+        AssignTestRoom(2, "CloningBay");
+        AssignTestRoom(3, "Hydroponics");
+        AssignTestRoom(4, "Workshop");
+        AssignTestRoom(5, "Kitchen");
+        AssignTestRoom(6, "CargoBay");
     }
 
     InteractionService IProvide<InteractionService>.Value() => _interactionService;
+
+    PowerGridService IProvide<PowerGridService>.Value() => _powerGridService;
 
     public Godot.Collections.Dictionary get_observed_state()
     {
@@ -144,11 +162,23 @@ public partial class PowerHarnessController : Node2D, IProvide<InteractionServic
         }
     }
 
-    // Pure harness has no server: a breaker toggle flips local test state the
-    // way the ToggleBreaker reducer would (binary model, demand never exceeds
-    // output here, so powered == breaker).
+    private void AssignTestRoom(int slotIndex, string roomTypeId)
+    {
+        _shipGrid.SetTestAssignment(slotIndex, roomTypeId);
+        _powerGridService.SeedTestRoom(slotIndex, roomTypeId);
+    }
+
+    // Pure harness has no server: toggles flip local service state the way
+    // the ToggleBreaker reducer would, and SyncServiceToGrid keeps ShipGrid
+    // rendering in agreement.
     private void OnBreakerInteracted(Breaker breaker) =>
-        _shipGrid.SetTestPower(breaker.SlotIndex, !breaker.BreakerOn, !breaker.BreakerOn);
+        _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
+
+    private void SyncServiceToGrid()
+    {
+        foreach (var room in _powerGridService.Rooms)
+            _shipGrid.SetTestPower(room.Slot, room.BreakerOn, room.IsPowered);
+    }
 
     private void OnTerminalInteracted(Terminal terminal) =>
         _modalHost.Open(

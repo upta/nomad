@@ -1,18 +1,25 @@
 namespace Nomad.Validation.HarnessControllers;
 
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Nomad.Game;
 using Nomad.Game.Db;
 
 public partial class ConnectedGameHarnessController : Node2D
 {
+    // modal_accept/modal_down are harness aliases bridged to real Enter/Down
+    // key events so scenarios can drive Control focus navigation.
     private static readonly Dictionary<string, Key> ActionKeyBridge = new()
     {
         ["move_up"] = Key.W,
         ["move_down"] = Key.S,
         ["move_left"] = Key.A,
         ["move_right"] = Key.D,
+        ["interact"] = Key.E,
+        ["ui_cancel_modal"] = Key.Escape,
+        ["modal_accept"] = Key.Enter,
+        ["modal_down"] = Key.Down,
     };
 
     // Harness-only InputMap actions that let scenarios drive reducers the
@@ -70,7 +77,7 @@ public partial class ConnectedGameHarnessController : Node2D
 
     public override void _Ready()
     {
-        foreach (var action in TestReducerActions.Keys)
+        foreach (var action in TestReducerActions.Keys.Concat(ActionKeyBridge.Keys))
         {
             if (!InputMap.HasAction(action))
                 InputMap.AddAction(action);
@@ -227,9 +234,17 @@ public partial class ConnectedGameHarnessController : Node2D
             };
         }
 
+        state["focused_label"] = _main?.Interaction.Focused?.Label ?? "";
         state["remote_count"] = _main?.RemoteEntityCount ?? 0;
         state["terminal_count"] =
             _main?.GetNodeOrNull<Nomad.Game.Map.ShipGrid>("ShipGrid")?.TerminalCount ?? 0;
+
+        var modalHost = _main?.GetNodeOrNull<Nomad.Game.Ui.ModalHost>("ModalHost");
+        state["modal"] = new Godot.Collections.Dictionary
+        {
+            ["open"] = modalHost?.IsOpen ?? false,
+            ["title"] = modalHost?.CurrentTitle ?? "",
+        };
 
         if (_puppet is { EntityId: > 0 } puppet && _main is not null)
         {

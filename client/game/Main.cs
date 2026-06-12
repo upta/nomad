@@ -8,10 +8,15 @@ using Interaction;
 using Map;
 using Ui;
 
-[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>))]
-public partial class Main : Node2D, IProvide<InteractionService>
+[Meta(
+    typeof(IAutoNode),
+    typeof(IProvide<InteractionService>),
+    typeof(IProvide<Ship.PowerGridService>)
+)]
+public partial class Main : Node2D, IProvide<InteractionService>, IProvide<Ship.PowerGridService>
 {
     private readonly InteractionService _interactionService = new();
+    private readonly Ship.PowerGridService _powerGridService = new();
     private readonly Dictionary<int, RemoteEntity> _remoteNodes = [];
     private Db.DbManager? _dbManager;
     private Player.Player? _localPlayer;
@@ -37,6 +42,8 @@ public partial class Main : Node2D, IProvide<InteractionService>
     [Node]
     public ShipGrid ShipGrid { get; set; } = default!;
 
+    public InteractionService Interaction => _interactionService;
+
     public int RemoteEntityCount => _remoteNodes.Count;
 
     public Node2D? GetRemoteNode(int entityId) => _remoteNodes.GetValueOrDefault(entityId);
@@ -49,6 +56,8 @@ public partial class Main : Node2D, IProvide<InteractionService>
         ShipGrid.TerminalInteracted += OnTerminalInteracted;
         ShipGrid.BreakerInteracted += OnBreakerInteracted;
 
+        _powerGridService.SetRoomCatalog(RoomTypeRegistry.All);
+
         Camera.MakeCurrent();
 
         this.Provide();
@@ -56,11 +65,14 @@ public partial class Main : Node2D, IProvide<InteractionService>
 
     InteractionService IProvide<InteractionService>.Value() => _interactionService;
 
+    Ship.PowerGridService IProvide<Ship.PowerGridService>.Value() => _powerGridService;
+
     public void InstantiatePlayer(Db.DbManager dbManager)
     {
         _dbManager = dbManager;
 
         ShipGrid.BindToServer(dbManager);
+        _powerGridService.BindConnection(dbManager.Connection);
 
         var conn = dbManager.Connection;
 
@@ -95,6 +107,7 @@ public partial class Main : Node2D, IProvide<InteractionService>
     {
         ShipGrid.TerminalInteracted -= OnTerminalInteracted;
         ShipGrid.BreakerInteracted -= OnBreakerInteracted;
+        _powerGridService.Unbind();
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {
@@ -116,7 +129,7 @@ public partial class Main : Node2D, IProvide<InteractionService>
     }
 
     private void OnBreakerInteracted(Ship.Breaker breaker) =>
-        _dbManager?.Connection?.Reducers.ToggleBreaker(breaker.SlotIndex);
+        _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
 
     private void OnTerminalInteracted(Ship.Terminal terminal) =>
         ModalHost.Open(

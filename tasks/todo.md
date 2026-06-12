@@ -299,15 +299,15 @@ Design notes (user-confirmed):
 - [x] Scenario `breaker_interact_toggles_power.json` — breaker_count == 7 → walk to "Kitchen Breaker" (wall-clamp navigation: 400px/s + release latency overshoots position waits; wedging into the room corner with held diagonal input is deterministic) → interact → breaker off + dimmed → interact → restored
 - [x] Pure suite green (15/15); screenshot shows breakers as wall fixtures with state-colored levers
 
-## Subtask 1.4.5: PowerGridService + PowerRouter modal — Scope: M
-- [ ] Create `client/game/Ship/_Service/PowerGridService.cs` — plain C#: `Changed` event, Status/ReactorOutput/TotalDemand/room entries, `SetRoomCatalog`, `BindConnection`, `RequestToggleBreaker` (reducer when connected, local flip in test mode), test seeders
-- [ ] `Main.cs` provides `PowerGridService` (alongside InteractionService), feeds catalog + connection, routes breakers through it; harness controllers provide/seed it
-- [ ] Create `client/game/Ui/Modals/PowerRouterModal.tscn` + `.cs` (IRoomModal, `[Dependency]` service) — title, "Output X / Demand Y — Status" line, row container + `[Export] PackedScene RowScene`; rows rebuilt on `Changed` preserving focused index; first toggle grabs focus on open
-- [ ] Create `client/game/Ui/Modals/PowerRouterRow.tscn` + `.cs` — labels + focusable toggle Button → `RequestToggleBreaker`
-- [ ] `ModalHost.tscn`: repoint `PowerRouterModal` export to the new scene; `ConnectedGameHarnessController` exposes modal.open/title
-- [ ] Scenario `power_router_modal_toggles_breaker.json` (pure) — Reactor terminal → modal → `ui_down`/`ui_accept` toggles a row → breaker_on false + dim → `ui_cancel_modal` → movement restored (drift pipeline). Risk: if `InputEventAction` doesn't activate buttons, fall back to ActionKeyBridge Enter/Down entries
-- [ ] Scenario `scenarios_stdb/power_router_modal_server_toggle.json` — real game: walk to Reactor terminal, remote-toggle → server breaker_on flips, modal refreshes
-- [ ] Both scenarios green; screenshots show modal layout
+## Subtask 1.4.5: PowerGridService + PowerRouter modal — Scope: M ✅
+- [x] Create `client/game/Ship/_Service/PowerGridService.cs` (+ `PowerRoomEntry.cs`) — plain C#: `Changed` event, Status/ReactorOutput/TotalDemand/room entries, `SetRoomCatalog`, `BindConnection`/`Unbind`, `RequestToggleBreaker` (reducer when connected, local flip in test mode), test seeders
+- [x] `Main.cs` provides `PowerGridService` (alongside InteractionService), feeds catalog + connection, routes breakers through it, exposes `Interaction` for harness observation; `PowerHarnessController` provides/seeds it and syncs `Changed` → ShipGrid test setters
+- [x] Create `client/game/Ui/Modals/PowerRouterModal.tscn` + `.cs` (IRoomModal, `[Dependency]` service) — title, "Output X / Demand Y — Status" line, row container + `[Export] PackedScene RowScene`; rows update **in place** on `Changed` (rebuild would steal focus); first toggle grabs focus on open
+- [x] Create `client/game/Ui/Modals/PowerRouterRow.tscn` + `.cs` — labels + focusable toggle Button → `RequestToggleBreaker`
+- [x] `ModalHost.tscn`: repoint `PowerRouterModal` export to the new scene; `ConnectedGameHarnessController` exposes game.modal.open/title + game.focused_label
+- [x] Scenario `power_router_modal_toggles_breaker.json` (pure) — `test_assign_kitchen_reactor` puts a PowerRouter terminal on the walkable Kitchen path → modal → `modal_down`×5/`modal_accept` toggles slot-5 row → breaker off + dark → accept restores → Esc closes. (Skipped InputEventAction risk entirely: harness bridges custom `modal_accept`/`modal_down` aliases to real Enter/Down key events.)
+- [x] Scenario `scenarios_stdb/power_router_modal_server_toggle.json` — real game: corner-wedge navigation into the Reactor room, open modal, remote-toggle Kitchen row → server breaker_on flips, modal stays open with live rows
+- [x] Both suites green (16 pure + 8 stdb); screenshots show modal layout + focus ring + live status line
 
 ## Subtask 1.4.6 / Definition of Done (Task 1.4)
 - [ ] All new scenarios pass; screenshots reviewed
