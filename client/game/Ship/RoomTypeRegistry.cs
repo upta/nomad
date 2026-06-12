@@ -8,6 +8,9 @@ public partial class RoomTypeRegistry : Node
 {
     private readonly Dictionary<string, RoomType> _byId = [];
 
+    [Export]
+    public Godot.Collections.Array<RoomType> RoomTypes { get; set; } = [];
+
     public IReadOnlyList<RoomType> All { get; private set; } = [];
 
     public override void _Ready()
@@ -22,22 +25,9 @@ public partial class RoomTypeRegistry : Node
 
     private void LoadAll()
     {
-        var dir = "res://game/Ship/RoomTypes/";
-        var paths = new[]
-        {
-            $"{dir}ReactorRoom.tres",
-            $"{dir}BridgeRoom.tres",
-            $"{dir}CloningBayRoom.tres",
-            $"{dir}HydroponicsRoom.tres",
-            $"{dir}WorkshopRoom.tres",
-            $"{dir}KitchenRoom.tres",
-            $"{dir}CargoBayRoom.tres",
-        };
-
         var list = new List<RoomType>();
-        foreach (var path in paths)
+        foreach (var rt in RoomTypes)
         {
-            var rt = GD.Load<RoomType>(path);
             _byId[rt.RoomId] = rt;
             list.Add(rt);
         }

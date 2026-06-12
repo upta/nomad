@@ -63,6 +63,9 @@ public class PowerGridService
 
     public void SeedTestRoom(int slotIndex, string roomId)
     {
+        if (roomId == nameof(RoomTypeId.Corridor))
+            return;
+
         var (label, draw) = _catalog.TryGetValue(roomId, out var entry) ? entry : (roomId, 0);
         _rooms[slotIndex] = new PowerRoomEntry
         {
@@ -101,6 +104,11 @@ public class PowerGridService
 
     private void ApplyAssignment(RoomAssignment ra)
     {
+        // Corridors carry pressure state only — they draw no power and stay
+        // out of the PowerRouter modal.
+        if (ra.RoomTypeId == RoomTypeId.Corridor)
+            return;
+
         var roomId = ra.RoomTypeId.ToString();
         var (label, draw) = _catalog.TryGetValue(roomId, out var entry) ? entry : (roomId, 0);
 

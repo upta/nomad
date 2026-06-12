@@ -344,13 +344,13 @@ Design notes (user-confirmed):
 - [x] Scenario `scenarios_stdb/pressurization_reducer_round_trip.json` — confirmed red first (assertion_failure on missing path), green after harness changes; seed asserts (slots 5+7) → kitchen round trip with Stable/is_powered/breaker_on guards → corridor round trip
 - [x] Full stdb suite was green against the new seed before this subtask (8/8, run during 1.5.1); screenshots reviewed — rendering intact, vacuum visually identical to initial as expected (tint lands in 1.5.4)
 
-## Subtask 1.5.3: Client — corridor as room + registry refactor — Scope: M
-- [ ] Create `client/game/Ship/RoomTypes/CorridorRoom.tres` — RoomId "Corridor", Label "Corridor", PowerDraw 0, TerminalType None, Color (0.30, 0.33, 0.38)
-- [ ] `RoomTypeRegistry.cs` — `[Export] Godot.Collections.Array<RoomType> RoomTypes` replaces `GD.Load` paths; wire all 8 `.tres` in `Main.tscn` + `{CornerSlide,ShipWalk,Interaction,RoomRender,Power}Harness.tscn`; `RoomTypeHarness.tscn` gains scene-declared registry node, controller switches `new` → `GetNode`
-- [ ] `ShipGrid.cs` — `CorridorSlotIndex => HullTemplate?.RoomSlots.Count ?? -1`; `_Draw()` tints corridor GridRects via `GetRoomColor(CorridorSlotIndex)` (no label); observed state appends corridor entry
-- [ ] `PowerGridService.cs` — `ApplyAssignment` + `SeedTestRoom` skip Corridor (modal rows stay 7)
-- [ ] Update `room_types_load.json` (7→8) + check `rooms_assigned_to_slots.json` for size asserts
-- [ ] Acceptance: builds + pure suite green; corridor renders subtle tint; PowerRouter modal shows exactly 7 rows
+## Subtask 1.5.3: Client — corridor as room + registry refactor — Scope: M ✅
+- [x] Create `client/game/Ship/RoomTypes/CorridorRoom.tres` — RoomId "Corridor", Label "Corridor", PowerDraw 0, TerminalType None, Color (0.30, 0.33, 0.38)
+- [x] `RoomTypeRegistry.cs` — `[Export] Godot.Collections.Array<RoomType> RoomTypes` replaces `GD.Load` paths; all 8 `.tres` wired in `Main.tscn` + `{CornerSlide,ShipWalk,Interaction,RoomRender,Power}Harness.tscn`; `RoomTypeHarness.tscn` gained scene-declared registry node, controller switched `new` → `GetNode`
+- [x] `ShipGrid.cs` — `CorridorSlotIndex => HullTemplate?.RoomSlots.Count ?? -1`; `_Draw()` tints corridor GridRects via `GetRoomColor(CorridorSlotIndex)` (no label); observed state appends corridor entry
+- [x] `PowerGridService.cs` — `ApplyAssignment` + `SeedTestRoom` skip Corridor (modal rows stay 7)
+- [x] `room_types_load.json` updated 7→8 + Corridor asserts (confirmed red before implementing); `rooms_assigned_to_slots.json` uses per-index asserts only — unaffected
+- [x] Acceptance: builds clean; pure suite green 16/16; screenshot shows corridor with subtle neutral tint, rooms/terminals/breakers intact
 
 ## Subtask 1.5.4: Client — vacuum-tint rendering + test surface — Scope: S
 - [ ] `ShipGrid.cs` — `VacuumTint`/`DepressurizedBlend` exports + `GetRoomColor` lerp before power branches; `SetTestAssignment` gains `bool isPressurized = true`; new `SetTestPressurization(slot, isPressurized)` (mutate row, `EnsureRoomNodes`, `QueueRedraw`); observed rooms += `is_pressurized`

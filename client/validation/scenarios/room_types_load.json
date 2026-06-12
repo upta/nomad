@@ -1,7 +1,7 @@
 {
   "scenario_id": "room_types_load",
   "version": 3,
-  "description": "All 7 room types load correctly with proper metadata (IDs, labels, power draws, terminal types).",
+  "description": "All 8 room types load correctly with proper metadata (IDs, labels, power draws, terminal types) — 7 assignable rooms plus the Corridor type (draw 0, no terminal).",
   "harness_scene": "res://validation/harnesses/RoomTypeHarness.tscn",
   "steps": [
     {
@@ -21,7 +21,7 @@
       "checkpoint": "loaded",
       "path": "harness_state.type_count",
       "comparator": "eq",
-      "expected": 7
+      "expected": 8
     },
     {
       "op": "assert_value",
@@ -92,6 +92,27 @@
       "path": "harness_state.room_types.6.room_id",
       "comparator": "eq",
       "expected": "CargoBay"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.7.room_id",
+      "comparator": "eq",
+      "expected": "Corridor"
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.7.power_draw",
+      "comparator": "eq",
+      "expected": 0
+    },
+    {
+      "op": "assert_value",
+      "checkpoint": "loaded",
+      "path": "harness_state.room_types.7.terminal_type",
+      "comparator": "eq",
+      "expected": 0
     },
     {
       "op": "checkpoint",

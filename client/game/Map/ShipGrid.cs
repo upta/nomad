@@ -78,6 +78,11 @@ public partial class ShipGrid : Node2D
 
     public int TerminalCount => _terminals.Count;
 
+    // The corridor network rides the room-assignment table as one extra slot
+    // past the hull's room slots (Corvette: 7); it has no RoomSlot entry, so
+    // terminal/breaker spawning naturally skips it.
+    private int CorridorSlotIndex => HullTemplate?.RoomSlots.Count ?? -1;
+
     private Vector2I GridOffset =>
         HullTemplate is null
             ? Vector2I.Zero
@@ -121,6 +126,18 @@ public partial class ShipGrid : Node2D
                 var labelPos = rect.Position + (rect.Size - labelSize) / 2f;
                 DrawString(_font, labelPos, label, HorizontalAlignment.Left);
             }
+        }
+
+        foreach (var corridor in HullTemplate.Corridors)
+        {
+            var rect = new Rect2(
+                (corridor.PositionX - offset.X) * TileSize,
+                (corridor.PositionY - offset.Y) * TileSize,
+                corridor.Width * TileSize,
+                corridor.Height * TileSize
+            );
+
+            DrawRect(rect, new Color(GetRoomColor(CorridorSlotIndex), RoomTintAlpha), true);
         }
     }
 
@@ -188,6 +205,20 @@ public partial class ShipGrid : Node2D
                 };
                 roomList.Add(entry);
             }
+
+            var corridorAssigned = _assignments.TryGetValue(CorridorSlotIndex, out var cra);
+            roomList.Add(
+                new Godot.Collections.Dictionary
+                {
+                    ["slot_index"] = CorridorSlotIndex,
+                    ["color_r"] = GetRoomColor(CorridorSlotIndex).R,
+                    ["color_g"] = GetRoomColor(CorridorSlotIndex).G,
+                    ["color_b"] = GetRoomColor(CorridorSlotIndex).B,
+                    ["label"] = GetRoomLabel(CorridorSlotIndex),
+                    ["is_powered"] = corridorAssigned && cra!.IsPowered,
+                    ["breaker_on"] = corridorAssigned && cra!.BreakerOn,
+                }
+            );
         }
 
         return new Godot.Collections.Dictionary

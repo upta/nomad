@@ -9,8 +9,7 @@ public partial class RoomTypeHarnessController : Node
 
     public override void _Ready()
     {
-        _registry = new RoomTypeRegistry { Name = "RoomTypeRegistry" };
-        AddChild(_registry);
+        _registry = GetNode<RoomTypeRegistry>("RoomTypeRegistry");
     }
 
     public Godot.Collections.Dictionary get_observed_state()

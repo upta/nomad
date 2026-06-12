@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/InteractPrompt.tscn" id="7_prompt"]
@@ -8,6 +8,15 @@
 [ext_resource type="Script" path="res://game/Ship/RoomTypeRegistry.cs" id="4_registry"]
 [ext_resource type="PackedScene" path="res://game/Map/ShipGrid.tscn" id="5_shipgrid"]
 [ext_resource type="Resource" path="res://game/Ship/CorvetteHull.tres" id="6_hull"]
+[ext_resource type="Script" path="res://game/Ship/RoomType.cs" id="rt_script"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/ReactorRoom.tres" id="rt0"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/BridgeRoom.tres" id="rt1"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/CloningBayRoom.tres" id="rt2"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/HydroponicsRoom.tres" id="rt3"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/WorkshopRoom.tres" id="rt4"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/KitchenRoom.tres" id="rt5"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/CargoBayRoom.tres" id="rt6"]
+[ext_resource type="Resource" path="res://game/Ship/RoomTypes/CorridorRoom.tres" id="rt7"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -17,6 +26,7 @@ RemoteEntityScene = ExtResource("2_remote")
 [node name="RoomTypeRegistry" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("4_registry")
+RoomTypes = Array[ExtResource("rt_script")]([ExtResource("rt0"), ExtResource("rt1"), ExtResource("rt2"), ExtResource("rt3"), ExtResource("rt4"), ExtResource("rt5"), ExtResource("rt6"), ExtResource("rt7")])
 
 [node name="ShipGrid" parent="." instance=ExtResource("5_shipgrid")]
 unique_name_in_owner = true
