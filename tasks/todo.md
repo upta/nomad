@@ -360,13 +360,13 @@ Design notes (user-confirmed):
 - [x] `pressure_depressurized_room_renders_vacuum_tint.json` — red first, green after; screenshots show warm Kitchen → cold desaturated vacuum, clearly distinct from power-dim
 - [x] Acceptance: builds clean; full pure suite green 17/17
 
-## Subtask 1.5.5: Pure validation — PowerHarness scenarios — Scope: M
-- [ ] `PowerHarnessController.cs` — seed corridor (`SetTestAssignment(7, "Corridor")`); `_testActions` += depressurize/repressurize kitchen + depressurize corridor; `modal` dict += `pressure_nominal` (via `ModalHost.CurrentInfo`)
-- [ ] Scenario `pressure_depressurized_room_renders_vacuum_tint.json` — fingerprint `r_delta < 0` AND `b_delta > 0` vs baseline; repressurize round trip `abs(delta) ≤ 0.001`
-- [ ] Scenario `pressure_composes_with_unpowered.json` — depressurize → cut power → `vacuum_dark_r < vacuum_r` AND `vacuum_dark_b > baseline_b` → restore
-- [ ] Scenario `pressure_corridor_depressurizes.json` — corridor fingerprint `b_delta > 0` AND `(b_delta − r_delta) > 0` (hue-shift assert; corridor base is near the tint hue)
-- [ ] Scenario `pressure_modal_shows_lost.json` — depressurize before walking; walk-up Kitchen terminal (wall-clamp/corner-wedge gotchas) → `modal.pressure_nominal == false` + screenshot
-- [ ] `./tools/run_all_scenarios.ps1` green; visually review screenshots (tint vs dim vs composed must read distinctly)
+## Subtask 1.5.5: Pure validation — PowerHarness scenarios — Scope: M ✅
+- [x] `PowerHarnessController.cs` — corridor seed + pressurization test actions + `modal.pressure_nominal` (landed with 1.5.4 so the first scenario could go red→green)
+- [x] Scenario `pressure_depressurized_room_renders_vacuum_tint.json` — fingerprint `r_delta < 0` AND `b_delta > 0`; round trip `abs ≤ 0.001` (committed with 1.5.4)
+- [x] Scenario `pressure_composes_with_unpowered.json` — vacuum → cut power: r drops below vacuum, b stays above powered baseline; repower returns exactly to vacuum color
+- [x] Scenario `pressure_corridor_depressurizes.json` — `b_delta > 0` AND `(b_delta − r_delta) > 0` hue-shift assert (corridor base is near the tint hue); kitchen-stays-pressurized guard
+- [x] Scenario `pressure_modal_shows_lost.json` — depressurize first, walk-up via `move_down` until "Kitchen Terminal" focused (terminal is straight down the corridor door path; no corner-wedge needed), modal `pressure_nominal == false`, Esc closes
+- [x] `./tools/run_all_scenarios.ps1` green 20/20; screenshots reviewed — tint vs dim vs composed read distinctly; corridor band shifts cold blue; modal shows "Pressure: Lost"
 
 ## Subtask 1.5.6: End-to-end render assert + DoD sweep — Scope: S
 - [ ] `ConnectedGameHarnessController.cs` — surface real Main ShipGrid observed state as `game.grid`; stdb assert of the kitchen r↓/b↑ fingerprint in the connected client

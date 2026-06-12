@@ -1,0 +1,65 @@
+{
+  "scenario_id": "pressure_composes_with_unpowered",
+  "version": 3,
+  "description": "Depressurization and power loss layer: cutting power to an already-depressurized Kitchen darkens the vacuum-tinted color (dim applies on top of tint), while the tint stays visible through the dim (blue still above the powered baseline). Restoring power returns exactly to the vacuum color.",
+  "harness_scene": "res://validation/harnesses/PowerHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/PowerHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "baseline" },
+    { "op": "press_action", "action": "test_depressurize_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_depressurize_kitchen" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.is_pressurized", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "vacuum" },
+    { "op": "press_action", "action": "test_cut_power_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_cut_power_kitchen" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "vacuum_dark" },
+    { "op": "assert_value", "checkpoint": "vacuum_dark", "path": "harness_state.grid.rooms.5.is_pressurized", "comparator": "eq", "expected": false },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "vacuum_r": { "kind": "checkpoint", "checkpoint": "vacuum", "path": "harness_state.grid.rooms.5.color_r" },
+        "vacuum_dark_r": { "kind": "checkpoint", "checkpoint": "vacuum_dark", "path": "harness_state.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["vacuum_dark_r", "vacuum_r"], "as": "r_delta" }
+      ],
+      "assert": { "actual": "r_delta", "comparator": "lt", "expected": 0 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_b": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_b" },
+        "vacuum_dark_b": { "kind": "checkpoint", "checkpoint": "vacuum_dark", "path": "harness_state.grid.rooms.5.color_b" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["vacuum_dark_b", "baseline_b"], "as": "b_above_baseline" }
+      ],
+      "assert": { "actual": "b_above_baseline", "comparator": "gt", "expected": 0 }
+    },
+    { "op": "press_action", "action": "test_restore_power_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_restore_power_kitchen" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "repowered_vacuum" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "vacuum_r": { "kind": "checkpoint", "checkpoint": "vacuum", "path": "harness_state.grid.rooms.5.color_r" },
+        "repowered_r": { "kind": "checkpoint", "checkpoint": "repowered_vacuum", "path": "harness_state.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["repowered_r", "vacuum_r"], "as": "r_diff" },
+        { "op": "abs", "inputs": ["r_diff"], "as": "abs_r_diff" }
+      ],
+      "assert": { "actual": "abs_r_diff", "comparator": "lte", "expected": 0.001 }
+    },
+    { "op": "quit" }
+  ]
+}
