@@ -28,14 +28,21 @@ public partial class InventoryHarnessController
         ["move_right"] = Key.D,
         ["interact"] = Key.E,
         ["ui_cancel_modal"] = Key.Escape,
+        ["hotbar_slot_1"] = Key.Key1,
+        ["hotbar_slot_2"] = Key.Key2,
+        ["hotbar_slot_3"] = Key.Key3,
+        ["hotbar_slot_4"] = Key.Key4,
+        ["hotbar_drop"] = Key.Q,
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
     private readonly InteractionService _interactionService = new();
     private readonly InventoryService _inventoryService = new();
     private readonly Dictionary<string, bool> _testActionState = [];
+    private HotbarHud _hotbarHud = null!;
     private ItemSpawner _itemSpawner = null!;
     private ItemTypeRegistry _itemTypeRegistry = null!;
+    private ModalHost _modalHost = null!;
     private int _oreItemId;
     private Nomad.Game.Player.Player _player = null!;
     private InteractPrompt _prompt = null!;
@@ -75,8 +82,12 @@ public partial class InventoryHarnessController
         _prompt = GetNode<InteractPrompt>("InteractPrompt");
         _itemSpawner = GetNode<ItemSpawner>("ItemSpawner");
         _itemTypeRegistry = GetNode<ItemTypeRegistry>("ItemTypeRegistry");
+        _modalHost = GetNode<ModalHost>("ModalHost");
+        _hotbarHud = GetNode<HotbarHud>("HotbarHud");
         _shipGrid.RoomTypeRegistry = GetNode<RoomTypeRegistry>("RoomTypeRegistry");
         _itemSpawner.Registry = _itemTypeRegistry;
+        _hotbarHud.Registry = _itemTypeRegistry;
+        _shipGrid.TerminalInteracted += OnTerminalInteracted;
 
         _testActions = new Dictionary<string, Action>
         {
@@ -87,6 +98,13 @@ public partial class InventoryHarnessController
                 _inventoryService.SeedTestWorldItem("FuelCell", new Vector2(16, 144)),
             ["test_remove_ore"] = () => _inventoryService.RemoveTestWorldItem(_oreItemId),
             ["test_clear_items"] = () => _inventoryService.ClearTestItems(),
+            ["test_seed_biomass_slot0"] = () => _inventoryService.SetTestSlot(0, "Biomass"),
+            ["test_seed_ore_slot2"] = () => _inventoryService.SetTestSlot(2, "RawOre"),
+            // Drives the real ModalHost.Open path (exclusive UiModeContext
+            // push) without depending on navigation — the walk-up→modal flow
+            // is already covered by terminal_interact_opens_modal.
+            ["test_open_kitchen_modal"] = () =>
+                _modalHost.Open(new RoomModalInfo("Kitchen", TerminalType.Info, true, true)),
         };
         foreach (var action in _testActions.Keys.Concat(ActionKeyBridge.Keys))
         {
@@ -166,8 +184,24 @@ public partial class InventoryHarnessController
                 ["focused_label"] = _interactionService.Focused?.Label ?? "",
                 ["prompt_visible"] = _prompt.Visible,
             },
+            ["hotbar"] = _hotbarHud.GetObservedState(),
+            ["modal"] = new Godot.Collections.Dictionary
+            {
+                ["open"] = _modalHost.IsOpen,
+                ["title"] = _modalHost.CurrentTitle,
+            },
         };
     }
+
+    private void OnTerminalInteracted(Terminal terminal) =>
+        _modalHost.Open(
+            new RoomModalInfo(
+                terminal.RoomLabel,
+                terminal.TerminalType,
+                terminal.IsPowered,
+                terminal.IsPressurized
+            )
+        );
 
     // The validation runtime presses InputMap actions, but GUIDE only sees
     // physical key events — forward action state as synthetic key presses.

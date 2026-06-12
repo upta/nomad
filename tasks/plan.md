@@ -198,12 +198,12 @@ Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. One `Item`
     - [x] 3.1.4: Pure validation — `InventoryHarness`, `item_types_load.json`, `world_items_render.json`. **Scope: S**
     - [x] 3.1.5: DoD sweep. **Scope: S**
 
-- [ ] **Task 3.2: Fixed-size hotbar** — 4-slot hotbar (DB-configurable), no hidden inventory (§6.1). Every item = 1 slot regardless of type, no stacking. SpacetimeDB owns inventory state; hotbar selection is client-only UI state. Direct-select keys 1–4 + drop on Q (repurpose the leftover `HotbarDropItem.tres`, delete `HotbarCycleSlot.tres`). **Scope: M**
-    - [ ] 3.2.1: Server — `GiveItem` debug reducer (slot bounds + occupancy + alive checks). **Scope: S**
-    - [ ] 3.2.2: stdb validation — `items.hotbar` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection. **Scope: S**
-    - [ ] 3.2.3: Client — InventoryService hotbar half, `HotbarSlot1..4.tres` GUIDE actions + context rewiring, `ItemSlotPanel` shared slot visual, `HotbarHud` in Main. **Scope: M**
-    - [ ] 3.2.4: Pure validation — `hotbar_renders_items.json`, `hotbar_inert_while_modal_open.json` (exclusive-context proof). **Scope: M**
-    - [ ] 3.2.5: DoD sweep. **Scope: S**
+- [x] **Task 3.2: Fixed-size hotbar** — 4-slot hotbar (DB-configurable), no hidden inventory (§6.1). Every item = 1 slot regardless of type, no stacking. SpacetimeDB owns inventory state; hotbar selection is client-only UI state. Direct-select keys 1–4 + drop on Q (repurpose the leftover `HotbarDropItem.tres`, delete `HotbarCycleSlot.tres`). **Scope: M**
+    - [x] 3.2.1: Server — `GiveItem` debug reducer (slot bounds + occupancy + alive checks). **Scope: S**
+    - [x] 3.2.2: stdb validation — `items.hotbar` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection. **Scope: S**
+    - [x] 3.2.3: Client — InventoryService hotbar half, `HotbarSlot1..4.tres` GUIDE actions + context rewiring, `ItemSlotPanel` shared slot visual, `HotbarHud` in Main. **Scope: M**
+    - [x] 3.2.4: Pure validation — `hotbar_renders_items.json`, `hotbar_inert_while_modal_open.json` (exclusive-context proof). **Scope: M**
+    - [x] 3.2.5: DoD sweep. **Scope: S**
 
 - [ ] **Task 3.3: Item pickup/drop** — Walk-up + E interact picks an item into the first free hotbar slot; Q drops the selected item at the player's position. SpacetimeDB validates every pickup/drop: reach (server-side distance vs `PickupRadius`), alive, slot occupancy. Death drops all hotbar items at the death position (single hook in `DamageRules.ApplyDamage`). **Scope: M**
     - [ ] 3.3.1: Server — `PickUpItem`/`DropItem` reducers + `DropAllHotbarItems` death hook. **Scope: M**

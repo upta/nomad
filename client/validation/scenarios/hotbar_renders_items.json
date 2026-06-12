@@ -1,0 +1,64 @@
+{
+  "scenario_id": "hotbar_renders_items",
+  "version": 3,
+  "description": "The hotbar HUD renders 4 empty slots, seeded items appear in their slots with per-type glyph and color fingerprint (Biomass slot 0, RawOre slot 2), and the direct-select key 2 moves the selection highlight to slot index 1.",
+  "harness_scene": "res://validation/harnesses/InventoryHarness.tscn",
+  "done_contract": { "biomass_color_r": 0.45, "ore_color_r": 0.62, "color_tolerance": 0.01 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/InventoryHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "empty" },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.hotbar.slot_count", "comparator": "eq", "expected": 4 },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.hotbar.selected", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.hotbar.slots.0.occupied", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.hotbar.slots.3.occupied", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.hotbar.slots.0.selected", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "test_seed_biomass_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_biomass_slot0" },
+    { "op": "press_action", "action": "test_seed_ore_slot2" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_ore_slot2" },
+    { "op": "wait_until", "path": "harness_state.hotbar.slots.0.glyph", "comparator": "eq", "expected": "B", "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "seeded" },
+    { "op": "assert_value", "checkpoint": "seeded", "path": "harness_state.hotbar.slots.2.glyph", "comparator": "eq", "expected": "O" },
+    { "op": "assert_value", "checkpoint": "seeded", "path": "harness_state.hotbar.slots.1.occupied", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "seeded", "path": "harness_state.hotbar.slots.3.occupied", "comparator": "eq", "expected": false },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "observed_r": { "kind": "checkpoint", "checkpoint": "seeded", "path": "harness_state.hotbar.slots.0.color_r" },
+        "expected_r": { "kind": "contract", "path": "done_contract.biomass_color_r" },
+        "tolerance": { "kind": "contract", "path": "done_contract.color_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["observed_r", "expected_r"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "observed_r": { "kind": "checkpoint", "checkpoint": "seeded", "path": "harness_state.hotbar.slots.2.color_r" },
+        "expected_r": { "kind": "contract", "path": "done_contract.ore_color_r" },
+        "tolerance": { "kind": "contract", "path": "done_contract.color_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["observed_r", "expected_r"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    { "op": "press_action", "action": "hotbar_slot_2" },
+    { "op": "wait_frames", "frames": 12 },
+    { "op": "release_action", "action": "hotbar_slot_2" },
+    { "op": "wait_until", "path": "harness_state.hotbar.selected", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "slot2_selected" },
+    { "op": "assert_value", "checkpoint": "slot2_selected", "path": "harness_state.hotbar.slots.1.selected", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "slot2_selected", "path": "harness_state.hotbar.slots.0.selected", "comparator": "eq", "expected": false },
+    { "op": "quit" }
+  ]
+}

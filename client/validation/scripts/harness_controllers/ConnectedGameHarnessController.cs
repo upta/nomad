@@ -69,6 +69,13 @@ public partial class ConnectedGameHarnessController : Node2D
         // away from the origin, inside a room.
         ["test_spawn_fuelcell_in_kitchen"] = conn =>
             conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.FuelCell, 16, 144),
+        ["test_give_biomass_slot0"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Biomass, 0),
+        ["test_give_ore_slot2"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.RawOre, 2),
+        // Occupied-slot rejection probe — fired after slot 0 is filled.
+        ["test_give_ore_slot0"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.RawOre, 0),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -283,6 +290,9 @@ public partial class ConnectedGameHarnessController : Node2D
         if (shipGrid is not null)
             state["grid"] = shipGrid.GetObservedRoomState();
 
+        if (_main?.GetNodeOrNull<Nomad.Game.Ui.HotbarHud>("HotbarHud") is { } hotbarHud)
+            state["hotbar"] = hotbarHud.GetObservedState();
+
         var modalHost = _main?.GetNodeOrNull<Nomad.Game.Ui.ModalHost>("ModalHost");
         state["modal"] = new Godot.Collections.Dictionary
         {
@@ -382,6 +392,9 @@ public partial class ConnectedGameHarnessController : Node2D
         {
             ["world_count"] = 0,
             ["by_type"] = new Godot.Collections.Dictionary(),
+            ["hotbar_count"] = 0,
+            ["hotbar"] = new Godot.Collections.Dictionary(),
+            ["config"] = new Godot.Collections.Dictionary(),
         };
 
         if (!_dataReady || _dbManager?.Connection is not { } conn)
@@ -389,18 +402,42 @@ public partial class ConnectedGameHarnessController : Node2D
 
         var worldCount = 0;
         var byType = new Godot.Collections.Dictionary();
+        var hotbarCount = 0;
+        var hotbar = new Godot.Collections.Dictionary();
         foreach (var item in conn.Db.Items.Iter())
         {
-            if (item.LocationKind != SpacetimeDB.Types.ItemLocationKind.World)
+            if (item.LocationKind == SpacetimeDB.Types.ItemLocationKind.World)
+            {
+                worldCount++;
+                var key = item.ItemTypeId.ToString();
+                byType[key] = byType.TryGetValue(key, out var prior) ? prior.AsInt32() + 1 : 1;
                 continue;
+            }
 
-            worldCount++;
-            var key = item.ItemTypeId.ToString();
-            byType[key] = byType.TryGetValue(key, out var prior) ? prior.AsInt32() + 1 : 1;
+            if (
+                item.LocationKind == SpacetimeDB.Types.ItemLocationKind.Hotbar
+                && conn.Identity is { } me
+                && item.Holder == me
+            )
+            {
+                hotbarCount++;
+                hotbar[item.SlotIndex.ToString()] = item.ItemTypeId.ToString();
+            }
         }
 
         state["world_count"] = worldCount;
         state["by_type"] = byType;
+        state["hotbar_count"] = hotbarCount;
+        state["hotbar"] = hotbar;
+
+        if (conn.Db.InventoryConfigs.Id.Find(0) is { } config)
+        {
+            state["config"] = new Godot.Collections.Dictionary
+            {
+                ["hotbar_slots"] = config.HotbarSlots,
+            };
+        }
+
         return state;
     }
 

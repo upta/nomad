@@ -529,24 +529,27 @@ Design notes (user-confirmed):
 ## Subtask 3.1.5: DoD sweep — Scope: S ✅
 - [x] `validate_all.ps1` both suites green (29 pure + 19 stdb); boot clean 13s zero ERROR, DbManager connected + subscription applied, ItemTypeRegistry loads 6 types; builds + csharpier both sides; plan/todo checked; push
 
-# Task 3.2: Fixed-size hotbar
+# Task 3.2: Fixed-size hotbar ✅ DONE
 
-## Subtask 3.2.1: Server — GiveItem debug reducer — Scope: S
-- [ ] `GiveItem(typeId, slotIndex)` — bounds/occupancy/alive checks; reducer-only publish
+## Subtask 3.2.1: Server — GiveItem debug reducer — Scope: S ✅
+- [x] `GiveItem(typeId, slotIndex)` — known-player + alive + type-not-None + slot bounds (vs `InventoryConfig.HotbarSlots`) + occupancy checks, distinct throw messages; reducer-only publish + generate + builds
 
-## Subtask 3.2.2: stdb validation — Scope: S
-- [ ] `items.hotbar` + `items.config` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection
+## Subtask 3.2.2: stdb validation — Scope: S ✅
+- [x] Harness `items.hotbar` (slot→type for local identity) + `items.hotbar_count` + `items.config.hotbar_slots` observed; test actions `test_give_biomass_slot0`/`test_give_ore_slot2`/`test_give_ore_slot0` (occupied probe)
+- [x] `hotbar_state_round_trip.json` red first (timed out at the `game.hotbar` HUD wait with the server half already green — pulled-forward pattern), fully green after 3.2.3; occupied-slot give leaves slot 0 = Biomass and count = 2; clears items at scenario end (suite-isolation convention)
 
-## Subtask 3.2.3: Client — service hotbar half + HotbarHud + GUIDE actions — Scope: M
-- [ ] InventoryService `Slots`/`SelectedSlot` (client-only)/`SelectSlot`/`SetTestSlot`
-- [ ] `HotbarSlot1..4.tres`; rewire KBM (1–4, drop G→Q) + controller contexts; delete `HotbarCycleSlot.tres` + mappings; `EnsureInputActions` += hotbar actions
-- [ ] `ItemSlotPanel.tscn` shared slot visual; `HotbarHud.tscn` (4 panels, bottom-center) in `Main.tscn`
+## Subtask 3.2.3: Client — service hotbar half + HotbarHud + GUIDE actions — Scope: M ✅
+- [x] InventoryService hotbar half: `_hotbarItems` keyed by itemId (local-identity + Hotbar filter on the same Items subscriptions), `Slots`/`HotbarSlotCount` (from InventoryConfigs, default 4), `SelectedSlot` (pure client UI state)/`SelectSlot`/`SetTestSlot`
+- [x] `HotbarSlot1..4.tres`; KBM context rewired (keys 1–4, drop G→Q), controller context (slots → dpad, drop stays X); `HotbarCycleSlot.tres` + its Tab/axis-5 mappings deleted; `EnsureInputActions` += `hotbar_slot_1..4` + `hotbar_drop`
+- [x] `ItemSlotPanel.tscn`/`.cs` shared slot visual (type color fill + glyph, empty state, selection ring; colors scene-exported); `HotbarHud.tscn`/`.cs` (CanvasLayer, bottom-center HBox of 4 panels, `[Export] GuideActionBinding` ×5, `[Dependency]` InventoryService, registry handed by Main, `DropRequested` inert until 3.3) declared in `Main.tscn`
 
-## Subtask 3.2.4: Pure validation — Scope: M
-- [ ] `hotbar_renders_items.json` + `hotbar_inert_while_modal_open.json` red first; stdb scenario gains `game.hotbar` assert
+## Subtask 3.2.4: Pure validation — Scope: M ✅
+- [x] InventoryHarness gains HotbarHud + ModalHost (TerminalInteracted wired), hotbar key bridges, slot-seed + `test_open_kitchen_modal` test actions (drives the real `ModalHost.Open` exclusive push — the walk-up→modal flow is already covered by `terminal_interact_opens_modal`), observed `hotbar` (per-slot occupied/glyph/color/selected via `HotbarHud.GetObservedState()`) + `modal`
+- [x] `hotbar_renders_items.json` (4 empty slots → seed Biomass@0 + Ore@2 → glyph/color-fingerprint asserts → key 2 moves the selection ring) + `hotbar_inert_while_modal_open.json` (modal open mutes key 3, Esc restores it) — both red first; screenshots reviewed
+- [x] stdb scenario asserts `game.hotbar.slots.*` from the real Main HUD
 
-## Subtask 3.2.5: DoD sweep — Scope: S
-- [ ] Standard checklist
+## Subtask 3.2.5: DoD sweep — Scope: S ✅
+- [x] `validate_all.ps1` both suites green; boot clean zero ERROR; builds + csharpier both sides; uids imported; plan/todo checked; push
 
 # Task 3.3: Item pickup/drop
 
