@@ -6,6 +6,7 @@
 script = ExtResource("1")
 HealthFillColor = Color(0.8, 0.25, 0.25, 1)
 DeadFillColor = Color(0.45, 0.1, 0.1, 1)
+OxygenFillColor = Color(0.3, 0.65, 0.9, 1)
 
 [node name="Root" type="Control" parent="."]
 layout_mode = 3
@@ -41,3 +42,31 @@ unique_name_in_owner = true
 offset_right = 200.0
 offset_bottom = 16.0
 color = Color(0.8, 0.25, 0.25, 1)
+
+[node name="OxygenLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 232.0
+offset_top = -60.0
+offset_right = 432.0
+offset_bottom = -40.0
+text = "O2 100/100"
+
+[node name="OxygenTrack" type="ColorRect" parent="Root"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 232.0
+offset_top = -36.0
+offset_right = 432.0
+offset_bottom = -20.0
+color = Color(0.12, 0.13, 0.16, 1)
+
+[node name="OxygenFill" type="ColorRect" parent="Root/OxygenTrack"]
+unique_name_in_owner = true
+offset_right = 200.0
+offset_bottom = 16.0
+color = Color(0.3, 0.65, 0.9, 1)

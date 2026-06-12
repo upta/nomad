@@ -31,7 +31,21 @@ public partial class VitalsHud : CanvasLayer
     [Node]
     public IColorRect HealthTrack { get; set; } = default!;
 
+    [Export]
+    public Color OxygenFillColor { get; set; } = new(0.3f, 0.65f, 0.9f);
+
+    [Node]
+    public IColorRect OxygenFill { get; set; } = default!;
+
+    [Node]
+    public ILabel OxygenLabel { get; set; } = default!;
+
+    [Node]
+    public IColorRect OxygenTrack { get; set; } = default!;
+
     public float HealthFillRatio { get; private set; } = 1f;
+
+    public float OxygenFillRatio { get; private set; } = 1f;
 
     public bool ShowsDead { get; private set; }
 
@@ -57,5 +71,13 @@ public partial class VitalsHud : CanvasLayer
         HealthLabel.Text = ShowsDead
             ? "DECEASED"
             : $"HP {Mathf.RoundToInt(Vitals.Health)}/{Mathf.RoundToInt(Vitals.MaxHealth)}";
+
+        OxygenFillRatio =
+            Vitals.MaxOxygen > 0f ? Mathf.Clamp(Vitals.Oxygen / Vitals.MaxOxygen, 0f, 1f) : 0f;
+        OxygenFill.Size = new Vector2(OxygenTrack.Size.X * OxygenFillRatio, OxygenFill.Size.Y);
+        OxygenFill.Color = OxygenFillColor;
+        OxygenLabel.Text =
+            $"O2 {Mathf.RoundToInt(Vitals.Oxygen)}/{Mathf.RoundToInt(Vitals.MaxOxygen)}"
+            + (Vitals.SuitEquipped ? " [SUIT]" : "");
     }
 }

@@ -1,0 +1,25 @@
+{
+  "scenario_id": "vitals_oxygen_bar_renders",
+  "version": 3,
+  "description": "The VitalsHud oxygen bar renders the local player's tank: full at spawn, fill ratio drops when oxygen is seeded to 30%, and a suit-expanded tank (150/200) renders as 75% — the bar tracks Current/Max, not absolute units.",
+  "harness_scene": "res://validation/harnesses/VitalsHudHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/VitalsHudHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "full" },
+    { "op": "assert_value", "checkpoint": "full", "path": "harness_state.hud.oxygen_fill_ratio", "comparator": "eq", "expected": 1 },
+    { "op": "press_action", "action": "test_seed_oxygen_30" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_oxygen_30" },
+    { "op": "wait_until", "path": "harness_state.hud.oxygen_fill_ratio", "comparator": "lt", "expected": 0.4, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "low" },
+    { "op": "assert_value", "checkpoint": "low", "path": "harness_state.hud.oxygen_fill_ratio", "comparator": "gt", "expected": 0.2 },
+    { "op": "press_action", "action": "test_seed_oxygen_suit" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_oxygen_suit" },
+    { "op": "wait_until", "path": "harness_state.hud.oxygen_fill_ratio", "comparator": "gt", "expected": 0.7, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "suit_tank" },
+    { "op": "assert_value", "checkpoint": "suit_tank", "path": "harness_state.hud.oxygen_fill_ratio", "comparator": "lt", "expected": 0.8 },
+    { "op": "quit" }
+  ]
+}

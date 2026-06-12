@@ -166,13 +166,13 @@ SpacetimeDB Scaffold + Client Connection
     - [x] 2.1.3: Client — `VitalsService` (plain C#) + `VitalsHud` health bar in Main; `VitalsHudHarness` + `vitals_health_bar_renders.json`. **Scope: M**
     - [x] 2.1.4: DoD sweep. **Scope: S**
 
-- [ ] **Task 2.2: Oxygen tether + spacesuits** — Personal oxygen tank depletes in vacuum/unpressurized areas, refills in pressurized powered rooms; empty tank applies suffocation damage via the 2.1 pipeline (§6.2). SpacetimeDB owns oxygen state. Includes spacesuits: equipped at a suit rack interactable (Task 1.3 framework) in the Cargo Bay, expanding tank capacity at the cost of movement speed — the full oxygen feature lands here. Room presence tracked via client-computed `SetPlayerRoom` reducer calls on transitions. **Scope: L**
-    - [ ] 2.2.1: Server room tracking — `Player.CurrentSlotIndex` + `SetPlayerRoom` reducer. **Scope: S**
-    - [ ] 2.2.2: Client `RoomLocator` service + Player transition calls; `player_room_tracking.json` (stdb). **Scope: M**
-    - [ ] 2.2.3: Server oxygen — `Meter Oxygen`/`SuitEquipped` on Vitals, `VitalsConfig` table, repeating `VitalsTick` scheduled reducer, `SetSuitEquipped` + config/debug reducers. **Scope: M**
-    - [ ] 2.2.4: stdb validation — `oxygen_depletes_and_refills.json`, `oxygen_empty_suffocates.json`. **Scope: M**
-    - [ ] 2.2.5: Client — oxygen HUD bar, `SuitRack` interactable in CargoBay slot, suit speed modifier + tint; pure scenarios. **Scope: M**
-    - [ ] 2.2.6: stdb suit round trip + DoD sweep. **Scope: S**
+- [x] **Task 2.2: Oxygen tether + spacesuits** — Personal oxygen tank depletes in vacuum/unpressurized areas, refills in pressurized powered rooms; empty tank applies suffocation damage via the 2.1 pipeline (§6.2). SpacetimeDB owns oxygen state. Includes spacesuits: equipped at a suit rack interactable (Task 1.3 framework) in the Cargo Bay, expanding tank capacity at the cost of movement speed — the full oxygen feature lands here. Room presence tracked via client-computed `SetPlayerRoom` reducer calls on transitions. **Scope: L**
+    - [x] 2.2.1: Server room tracking — `Player.CurrentSlotIndex` + `SetPlayerRoom` reducer. **Scope: S**
+    - [x] 2.2.2: Client `RoomLocator` service + Player transition calls; `player_room_tracking.json` (stdb). **Scope: M**
+    - [x] 2.2.3: Server oxygen — `Meter Oxygen`/`SuitEquipped` on Vitals, `VitalsConfig` table, repeating `VitalsTick` scheduled reducer, `SetSuitEquipped` + config/debug reducers. **Scope: M**
+    - [x] 2.2.4: stdb validation — `oxygen_depletes_and_refills.json`, `oxygen_empty_suffocates.json`. **Scope: M**
+    - [x] 2.2.5: Client — oxygen HUD bar, `SuitRack` interactable in CargoBay slot, suit speed modifier + tint; pure scenarios. **Scope: M**
+    - [x] 2.2.6: stdb suit round trip + DoD sweep. **Scope: S**
 
 - [ ] **Task 2.3: Food/hunger meter** — Secondary metabolic meter that depletes slowly; at zero, starvation damage via the 2.1 pipeline. Replenished via `RestoreHunger` (the entry point Phase 3 meals will call) (§6.2). Server-authoritative. **Scope: S**
     - [ ] 2.3.1: Server — `Meter Hunger` on Vitals + tick depletion + starvation damage + `RestoreHunger`. **Scope: S**

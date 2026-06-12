@@ -28,6 +28,7 @@ public partial class ShipGrid : Node2D
 
     private readonly Dictionary<int, StdbRa> _assignments = [];
     private readonly Dictionary<int, Ship.Breaker> _breakers = [];
+    private readonly Dictionary<int, Ship.SuitRack> _suitRacks = [];
     private readonly HashSet<Vector2I> _floorCells = [];
     private readonly Dictionary<int, Ship.Terminal> _terminals = [];
     private readonly HashSet<Vector2I> _wallCells = [];
@@ -39,6 +40,8 @@ public partial class ShipGrid : Node2D
     public override void _Notification(int what) => this.Notify(what);
 
     public event Action<Ship.Breaker>? BreakerInteracted;
+
+    public event Action<Ship.SuitRack>? SuitRackInteracted;
 
     public event Action<Ship.Terminal>? TerminalInteracted;
 
@@ -59,6 +62,9 @@ public partial class ShipGrid : Node2D
 
     [Export]
     public PackedScene? BreakerScene { get; set; }
+
+    [Export]
+    public PackedScene? SuitRackScene { get; set; }
 
     [Export]
     public PackedScene? TerminalScene { get; set; }
@@ -239,6 +245,7 @@ public partial class ShipGrid : Node2D
                 ["door_count"] = HullTemplate?.Doors.Count ?? 0,
                 ["terminal_count"] = _terminals.Count,
                 ["breaker_count"] = _breakers.Count,
+                ["suit_rack_count"] = _suitRacks.Count,
             },
             ["power"] = new Godot.Collections.Dictionary
             {
@@ -246,6 +253,12 @@ public partial class ShipGrid : Node2D
                 ["flicker_cycles"] = FlickerCycles,
             },
         };
+    }
+
+    public void SetSuitRackState(bool suitTaken)
+    {
+        foreach (var rack in _suitRacks.Values)
+            rack.SetSuitTaken(suitTaken);
     }
 
     public void SetTestAssignment(
@@ -382,7 +395,51 @@ public partial class ShipGrid : Node2D
     {
         EnsureTerminal(slotIndex);
         EnsureBreaker(slotIndex);
+        EnsureSuitRack(slotIndex);
     }
+
+    // The suit rack is gear storage, so it spawns only in the CargoBay-
+    // assigned slot — top-right interior cell, clear of the breaker (top-left)
+    // and terminal (center).
+    private void EnsureSuitRack(int slotIndex)
+    {
+        if (SuitRackScene is null || HullTemplate is null)
+            return;
+
+        var isCargoBay =
+            _assignments.TryGetValue(slotIndex, out var ra) && ra.RoomTypeId == StdbRt.CargoBay;
+
+        if (!isCargoBay)
+        {
+            if (_suitRacks.TryGetValue(slotIndex, out var stale))
+            {
+                _suitRacks.Remove(slotIndex);
+                stale.Interacted -= OnSuitRackInteracted;
+                stale.QueueFree();
+            }
+            return;
+        }
+
+        if (_suitRacks.ContainsKey(slotIndex))
+            return;
+
+        var slot = HullTemplate.RoomSlots.FirstOrDefault(s => s.SlotIndex == slotIndex);
+        if (slot is null)
+            return;
+
+        var rack = SuitRackScene.Instantiate<Ship.SuitRack>();
+        var offset = GridOffset;
+        rack.Position = new Vector2(
+            (slot.PositionX - offset.X + slot.Width - 0.5f) * TileSize,
+            (slot.PositionY - offset.Y + 0.5f) * TileSize
+        );
+
+        rack.Interacted += OnSuitRackInteracted;
+        AddChild(rack);
+        _suitRacks[slotIndex] = rack;
+    }
+
+    private void OnSuitRackInteracted(Ship.SuitRack rack) => SuitRackInteracted?.Invoke(rack);
 
     // Terminals are data-driven (one per assigned room slot), spawned at the
     // slot's center cell and refreshed whenever the assignment changes.

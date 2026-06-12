@@ -4,10 +4,12 @@
 [ext_resource type="TileSet" uid="uid://fwuyvfk4o1q0" path="res://game/Map/ShipTileSet.tres" id="2"]
 [ext_resource type="PackedScene" path="res://game/Ship/Terminal/Terminal.tscn" id="3_terminal"]
 [ext_resource type="PackedScene" path="res://game/Ship/Breaker/Breaker.tscn" id="4_breaker"]
+[ext_resource type="PackedScene" path="res://game/Ship/SuitRack/SuitRack.tscn" id="5_suit_rack"]
 
 [node name="ShipGrid" type="Node2D" unique_id=284884670]
 script = ExtResource("1")
 BreakerScene = ExtResource("4_breaker")
+SuitRackScene = ExtResource("5_suit_rack")
 TerminalScene = ExtResource("3_terminal")
 DepressurizedBlend = 0.55
 FlickerDimFactor = 0.6

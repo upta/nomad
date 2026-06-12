@@ -1,0 +1,41 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://game/Ship/SuitRack/SuitRack.cs" id="1"]
+[ext_resource type="Script" path="res://game/Interaction/_Component/InteractTarget.cs" id="2_target"]
+[ext_resource type="Script" path="res://game/Guide/GuideActionBinding.cs" id="3_binding"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/Interact.tres" id="4_interact"]
+
+[sub_resource type="Resource" id="interact_bound"]
+script = ExtResource("3_binding")
+Action = ExtResource("4_interact")
+
+[sub_resource type="CircleShape2D" id="target_circle"]
+radius = 20.0
+
+[node name="SuitRack" type="Node2D"]
+script = ExtResource("1")
+SuitColor = Color(0.9, 0.65, 0.2, 1)
+EmptyColor = Color(0.25, 0.27, 0.32, 1)
+
+[node name="Frame" type="ColorRect" parent="."]
+offset_left = -8.0
+offset_top = -10.0
+offset_right = 8.0
+offset_bottom = 10.0
+color = Color(0.18, 0.19, 0.23, 1)
+
+[node name="Suit" type="ColorRect" parent="."]
+unique_name_in_owner = true
+offset_left = -5.0
+offset_top = -7.0
+offset_right = 5.0
+offset_bottom = 7.0
+color = Color(0.9, 0.65, 0.2, 1)
+
+[node name="Target" type="Area2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_target")
+Trigger = SubResource("interact_bound")
+
+[node name="TargetShape" type="CollisionShape2D" parent="Target"]
+shape = SubResource("target_circle")

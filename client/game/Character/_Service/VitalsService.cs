@@ -21,6 +21,14 @@ public class VitalsService
 
     public float MaxHealth { get; private set; } = 100f;
 
+    public float MaxOxygen { get; private set; } = 100f;
+
+    public float Oxygen { get; private set; } = 100f;
+
+    public bool SuitEquipped { get; private set; }
+
+    public float SuitSpeedFactor { get; private set; } = 0.8f;
+
     public void BindConnection(DbConnection conn)
     {
         _conn = conn;
@@ -28,9 +36,20 @@ public class VitalsService
         if (conn.Identity is { } me && conn.Db.VitalsRows.Identity.Find(me) is { } vitals)
             Apply(vitals);
 
+        if (conn.Db.VitalsConfigs.Id.Find(0) is { } config)
+            SuitSpeedFactor = config.SuitSpeedFactor;
+
         conn.Db.VitalsRows.OnInsert += OnVitalsInserted;
         conn.Db.VitalsRows.OnUpdate += OnVitalsUpdated;
 
+        Changed?.Invoke();
+    }
+
+    public void SetTestOxygen(float oxygen, float maxOxygen, bool suitEquipped)
+    {
+        Oxygen = oxygen;
+        MaxOxygen = maxOxygen;
+        SuitEquipped = suitEquipped;
         Changed?.Invoke();
     }
 
@@ -56,6 +75,9 @@ public class VitalsService
     {
         Health = vitals.Health.Current;
         MaxHealth = vitals.Health.Max;
+        Oxygen = vitals.Oxygen.Current;
+        MaxOxygen = vitals.Oxygen.Max;
+        SuitEquipped = vitals.SuitEquipped;
         IsDead = vitals.IsDead;
     }
 

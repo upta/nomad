@@ -48,6 +48,8 @@ public partial class VitalsHudHarnessController : Node2D, IProvide<VitalsService
             ["test_seed_health_full"] = () => _vitalsService.SetTestVitals(100, 100, false),
             ["test_seed_health_40"] = () => _vitalsService.SetTestVitals(40, 100, false),
             ["test_seed_health_zero"] = () => _vitalsService.SetTestVitals(0, 100, true),
+            ["test_seed_oxygen_30"] = () => _vitalsService.SetTestOxygen(30, 100, false),
+            ["test_seed_oxygen_suit"] = () => _vitalsService.SetTestOxygen(150, 200, true),
         };
         foreach (var action in _testActions.Keys)
         {
@@ -67,6 +69,7 @@ public partial class VitalsHudHarnessController : Node2D, IProvide<VitalsService
             ["hud"] = new Godot.Collections.Dictionary
             {
                 ["fill_ratio"] = _hud.HealthFillRatio,
+                ["oxygen_fill_ratio"] = _hud.OxygenFillRatio,
                 ["shows_dead"] = _hud.ShowsDead,
                 ["visible"] = _hud.Visible,
             },

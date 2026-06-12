@@ -61,6 +61,8 @@ public partial class Main
         ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
         ShipGrid.TerminalInteracted += OnTerminalInteracted;
         ShipGrid.BreakerInteracted += OnBreakerInteracted;
+        ShipGrid.SuitRackInteracted += OnSuitRackInteracted;
+        _vitalsService.Changed += OnVitalsChanged;
 
         _powerGridService.SetRoomCatalog(RoomTypeRegistry.All);
 
@@ -117,6 +119,8 @@ public partial class Main
     {
         ShipGrid.TerminalInteracted -= OnTerminalInteracted;
         ShipGrid.BreakerInteracted -= OnBreakerInteracted;
+        ShipGrid.SuitRackInteracted -= OnSuitRackInteracted;
+        _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
         _vitalsService.Unbind();
 
@@ -141,6 +145,15 @@ public partial class Main
 
     private void OnBreakerInteracted(Ship.Breaker breaker) =>
         _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
+
+    private void OnSuitRackInteracted(Ship.SuitRack rack) =>
+        _dbManager?.Connection?.Reducers.SetSuitEquipped(!_vitalsService.SuitEquipped);
+
+    private void OnVitalsChanged()
+    {
+        _localPlayer?.SetSuitEquipped(_vitalsService.SuitEquipped, _vitalsService.SuitSpeedFactor);
+        ShipGrid.SetSuitRackState(_vitalsService.SuitEquipped);
+    }
 
     private void OnTerminalInteracted(Ship.Terminal terminal) =>
         ModalHost.Open(

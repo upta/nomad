@@ -12,6 +12,7 @@ using StdbPlayer = SpacetimeDB.Types.Player;
 [Meta(typeof(IAutoNode))]
 public partial class Player : CharacterBody2D
 {
+    private Color _baseSpriteColor;
     private float _currentRotation;
     private MovementNetworkSync? _networkSync;
     private ProbeData? _probeData;
@@ -23,6 +24,12 @@ public partial class Player : CharacterBody2D
 
     [Dependency]
     private InteractionService Interaction => this.DependOn<InteractionService>();
+
+    [Node]
+    public Chickensoft.GodotNodeInterfaces.IColorRect Sprite { get; set; } = default!;
+
+    [Export]
+    public Color SuitedColor { get; set; } = new(0.9f, 0.65f, 0.2f);
 
     [Export]
     public GuideActionBinding MoveAction { get; set; } = null!;
@@ -44,6 +51,10 @@ public partial class Player : CharacterBody2D
     public Nomad.Game.Ship.HullTemplate? Hull { get; set; }
 
     public int CurrentSlotIndex { get; private set; } = int.MinValue;
+
+    public float SpeedModifier => _speedModifier;
+
+    public bool SuitEquipped { get; private set; }
 
     private DbConnection? Server => (DbManagerNode as Db.DbManager)?.Connection;
 
@@ -88,6 +99,9 @@ public partial class Player : CharacterBody2D
 
     public override void _Ready()
     {
+        if (Sprite is not null)
+            _baseSpriteColor = Sprite.Color;
+
         if (Server is { } svr)
         {
             _networkSync = new MovementNetworkSync(svr);
@@ -113,6 +127,17 @@ public partial class Player : CharacterBody2D
     private void OnPlayerUpdated(EventContext ctx, StdbPlayer oldPlayer, StdbPlayer newPlayer)
     {
         _ = newPlayer.IsConnected;
+    }
+
+    // The suit trades speed for tank capacity; the tint makes equipped state
+    // readable on every client (single-piece sprite per GDD §7.1).
+    public void SetSuitEquipped(bool equipped, float speedFactor)
+    {
+        SuitEquipped = equipped;
+        _speedModifier = equipped ? speedFactor : 1.0f;
+
+        if (Sprite is not null)
+            Sprite.Color = equipped ? SuitedColor : _baseSpriteColor;
     }
 
     // Reports room transitions only — the reducer must not be spammed with

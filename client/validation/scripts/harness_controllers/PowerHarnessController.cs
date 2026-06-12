@@ -40,7 +40,8 @@ public partial class PowerHarnessController
     private readonly PowerGridService _powerGridService = new();
     private readonly Dictionary<string, bool> _testActionState = [];
     private ModalHost _modalHost = null!;
-    private Node2D _player = null!;
+    private Nomad.Game.Player.Player _player = null!;
+    private bool _suitEquipped;
     private InteractPrompt _prompt = null!;
     private ShipGrid _shipGrid = null!;
     private Dictionary<string, Action> _testActions = [];
@@ -73,13 +74,14 @@ public partial class PowerHarnessController
 
     public override void _Ready()
     {
-        _player = GetNode<Node2D>("Player");
+        _player = GetNode<Nomad.Game.Player.Player>("Player");
         _shipGrid = GetNode<ShipGrid>("ShipGrid");
         _modalHost = GetNode<ModalHost>("ModalHost");
         _prompt = GetNode<InteractPrompt>("InteractPrompt");
         _shipGrid.RoomTypeRegistry = GetNode<RoomTypeRegistry>("RoomTypeRegistry");
         _shipGrid.TerminalInteracted += OnTerminalInteracted;
         _shipGrid.BreakerInteracted += OnBreakerInteracted;
+        _shipGrid.SuitRackInteracted += OnSuitRackInteracted;
 
         _testActions = new Dictionary<string, Action>
         {
@@ -128,7 +130,9 @@ public partial class PowerHarnessController
             {
                 ["x"] = _player.GlobalPosition.X,
                 ["y"] = _player.GlobalPosition.Y,
+                ["speed_modifier"] = _player.SpeedModifier,
             },
+            ["vitals"] = new Godot.Collections.Dictionary { ["suit_equipped"] = _suitEquipped },
             ["interaction"] = new Godot.Collections.Dictionary
             {
                 ["focused_exists"] = _interactionService.Focused is not null,
@@ -179,6 +183,14 @@ public partial class PowerHarnessController
     // rendering in agreement.
     private void OnBreakerInteracted(Breaker breaker) =>
         _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
+
+    // Pure-mode suit equip: flip local state the way SetSuitEquipped would.
+    private void OnSuitRackInteracted(SuitRack rack)
+    {
+        _suitEquipped = !_suitEquipped;
+        _player.SetSuitEquipped(_suitEquipped, 0.8f);
+        _shipGrid.SetSuitRackState(_suitEquipped);
+    }
 
     private void SyncServiceToGrid()
     {

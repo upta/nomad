@@ -419,7 +419,7 @@ Design notes (user-confirmed):
 - [x] Game boots clean 13s headless, zero ERROR lines, DbManager connected + subscription applied
 - [x] Builds + csharpier both sides; plan/todo checked; push
 
-# Task 2.2: Oxygen tether + spacesuits 🔄 PLANNED
+# Task 2.2: Oxygen tether + spacesuits ✅ DONE
 
 ## Subtask 2.2.1: Server room tracking — Scope: S ✅
 - [x] `Player` table += `int CurrentSlotIndex` (seed −1); `SetPlayerRoom.cs` reducer (validate −1 or existing slot)
@@ -441,14 +441,16 @@ Design notes (user-confirmed):
 - [x] Harness: vitals += oxygen/max_oxygen/suit_equipped; test actions `test_fast_vitals` (250ms/5/25/5)/`test_set_oxygen_low`/`test_equip_suit`/`test_unequip_suit`
 - [x] `oxygen_depletes_and_refills.json` (walk to Kitchen → depressurize → drains → repressurize → refills, health guarded) + `oxygen_empty_suffocates.json` (corridor vacuum + low tank → health falls → repressurize → health holds, assert_pipeline delta 0) — red first, green after; suite green (13/13)
 
-## Subtask 2.2.5: Client — oxygen HUD + suit rack — Scope: M
-- [ ] VitalsHud oxygen bar; VitalsService += oxygen/suit
-- [ ] Create `client/game/Ship/SuitRack/SuitRack.tscn` + `.cs` (Breaker pattern); ShipGrid spawns in CargoBay slot; `SuitRackInteracted` event
-- [ ] `Main.cs` → `SetSuitEquipped`; `Player.cs` suit speed modifier + tint
-- [ ] Pure scenarios `vitals_oxygen_bar_renders.json` + `suit_rack_equip_toggles.json`; suite green
+## Subtask 2.2.5: Client — oxygen HUD + suit rack — Scope: M ✅
+- [x] VitalsHud oxygen bar (cyan, "[SUIT]" tag); VitalsService += oxygen/suit/SuitSpeedFactor (reads VitalsConfigs) + SetTestOxygen
+- [x] Create `client/game/Ship/SuitRack/SuitRack.tscn` + `.cs` (Breaker pattern; rack hanger empties when suit taken); ShipGrid spawns in CargoBay-assigned slot top-right interior, frees on reassignment; `SuitRackInteracted` event + `SetSuitRackState`
+- [x] `Main.cs` → `SetSuitEquipped` reducer + `OnVitalsChanged` syncs player/rack; `Player.cs` `SetSuitEquipped(equipped, factor)` — speed modifier + orange suit tint (%Sprite bound)
+- [x] Pure scenarios red first → green: `vitals_oxygen_bar_renders.json` (ratio tracks Current/Max incl. suit tank 150/200) + `suit_rack_equip_toggles.json` (speed_modifier observed 1.0→0.8→1.0; suit tint screenshot reviewed). Navigation gotcha: diagonal toward a convex door-corner WEDGES (inverse of the helpful wall-slide); sequence straight-line legs + wall-slide wedges instead
+- [x] Pure suite green (23/23)
 
-## Subtask 2.2.6: stdb suit round trip + DoD sweep — Scope: S
-- [ ] Scenario `scenarios_stdb/suit_equip_round_trip.json`; full DoD sweep + push
+## Subtask 2.2.6: stdb suit round trip + DoD sweep — Scope: S ✅
+- [x] `scenarios_stdb/suit_equip_round_trip.json` — real walk to rack in connected Main, interact → server SuitEquipped + Oxygen.Max 100→200 → interact → restored; screenshot shows suited player at emptied rack with "O2 100/200 [SUIT]" HUD
+- [x] `./scripts/validate_all.ps1` green (23 pure + 14 stdb); boots clean 13s zero ERROR; builds + csharpier; push
 
 # Task 2.3: Food/hunger meter 🔄 PLANNED
 
