@@ -16,5 +16,6 @@ Pick the next pending task from tasks/plan.md. For each task:
 7. Verify the rest of the Definition of Done: `dotnet build` + `spacetime build` clean, `dotnet csharpier format .` in client/ and server/, and for startup-path changes the game boots clean (run-game skill)
 8. **Generate uids before committing** — run `godot --headless --path client --import` so Godot assigns uids to any `.tres`/`.cs` files created outside the editor. Stage the resulting `*.uid` sidecars and any uid-attribute additions to `.tres` files so they land in the same commit as the code that needs them.
 9. Commit with a conventional message; mark the task complete in tasks/plan.md and tasks/todo.md
+10. **Close the report with a "Try it in-game" section** — enumerate how Brian can see the change from a player's perspective: what to do in the running game (which room, which interactable, which keys) and what he should observe. If the change has no player-visible surface (pure refactor, server schema, validation plumbing), say that explicitly instead of inventing one.
 
 If any step fails, follow the agent-skills:debugging-and-error-recovery skill. Never delete or weaken a failing scenario to get the suite green.
