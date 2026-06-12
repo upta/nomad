@@ -22,6 +22,7 @@ public static partial class Module
                     Identity = ctx.Sender,
                     IsConnected = true,
                     PlayerEntityId = 0,
+                    CurrentSlotIndex = -1,
                 }
             );
         }

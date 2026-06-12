@@ -421,14 +421,15 @@ Design notes (user-confirmed):
 
 # Task 2.2: Oxygen tether + spacesuits 🔄 PLANNED
 
-## Subtask 2.2.1: Server room tracking — Scope: S
-- [ ] `Player` table += `int CurrentSlotIndex` (seed −1); `SetPlayerRoom.cs` reducer (validate −1 or existing slot)
-- [ ] Publish + generate + builds; CLI acceptance
+## Subtask 2.2.1: Server room tracking — Scope: S ✅
+- [x] `Player` table += `int CurrentSlotIndex` (seed −1); `SetPlayerRoom.cs` reducer (validate −1 or existing slot)
+- [x] Publish + generate + builds; acceptance proven end-to-end by `player_room_tracking.json`
 
-## Subtask 2.2.2: Client RoomLocator + stdb proof — Scope: M
-- [ ] Create `client/game/Ship/_Service/RoomLocator.cs` — position → slot (RoomSlot rects, corridor cells, else −1)
-- [ ] `Player.cs`: track slot per physics frame, call `SetPlayerRoom` on change only
-- [ ] Observed `vitals.current_slot`; scenario `scenarios_stdb/player_room_tracking.json` (Kitchen walk, red first)
+## Subtask 2.2.2: Client RoomLocator + stdb proof — Scope: M ✅
+- [x] Create `client/game/Ship/_Service/RoomLocator.cs` — position → slot (RoomSlot rects, corridor rects + door cells → corridor slot, else −1); TileSize const must match ShipGrid
+- [x] `Player.cs`: `Hull` property set by Main, `TrackCurrentRoom()` in `_PhysicsProcess` calls `SetPlayerRoom` on change only
+- [x] Observed `vitals.current_slot` (server Players row); scenario `scenarios_stdb/player_room_tracking.json` red first, green after — corridor 7 → Kitchen 5 → corridor 7. Gotcha confirmed: wait for `game.terminal_count` before pressing movement (GUIDE context must be active when the bridged key-press edge fires — held state never re-registers); diagonal wedge into the door per 1.4.4
+- [x] Full stdb suite green (11/11)
 
 ## Subtask 2.2.3: Server oxygen model + VitalsTick — Scope: M
 - [ ] `Vitals` += `Meter Oxygen` (100/100), `bool SuitEquipped`

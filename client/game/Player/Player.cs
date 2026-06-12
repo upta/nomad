@@ -15,6 +15,7 @@ public partial class Player : CharacterBody2D
     private float _currentRotation;
     private MovementNetworkSync? _networkSync;
     private ProbeData? _probeData;
+    private Nomad.Game.Ship.RoomLocator? _roomLocator;
     private float _speedModifier = 1.0f;
     private int _entityId;
 
@@ -38,6 +39,12 @@ public partial class Player : CharacterBody2D
     [Export]
     public Node? DbManagerNode { get; set; }
 
+    // Set by Main when instantiating (exports don't cross scene-instance
+    // boundaries); enables room tracking when present.
+    public Nomad.Game.Ship.HullTemplate? Hull { get; set; }
+
+    public int CurrentSlotIndex { get; private set; } = int.MinValue;
+
     private DbConnection? Server => (DbManagerNode as Db.DbManager)?.Connection;
 
     public override void _PhysicsProcess(double delta)
@@ -60,6 +67,8 @@ public partial class Player : CharacterBody2D
             _currentRotation = direction.Angle();
 
         _networkSync?.Update(_entityId, GlobalPosition, Velocity, _currentRotation, delta);
+
+        TrackCurrentRoom();
 
         if (_probeData is not null)
         {
@@ -104,5 +113,22 @@ public partial class Player : CharacterBody2D
     private void OnPlayerUpdated(EventContext ctx, StdbPlayer oldPlayer, StdbPlayer newPlayer)
     {
         _ = newPlayer.IsConnected;
+    }
+
+    // Reports room transitions only — the reducer must not be spammed with
+    // per-frame calls while the player stands still or moves within a room.
+    private void TrackCurrentRoom()
+    {
+        if (Hull is null)
+            return;
+
+        _roomLocator ??= new Nomad.Game.Ship.RoomLocator(Hull);
+
+        var slot = _roomLocator.SlotAt(GlobalPosition);
+        if (slot == CurrentSlotIndex)
+            return;
+
+        CurrentSlotIndex = slot;
+        Server?.Reducers.SetPlayerRoom(slot);
     }
 }

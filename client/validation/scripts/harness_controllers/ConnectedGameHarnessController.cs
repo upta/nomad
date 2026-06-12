@@ -326,6 +326,9 @@ public partial class ConnectedGameHarnessController : Node2D
         if (!_dataReady || _dbManager?.Connection is not { } conn || conn.Identity is not { } me)
             return state;
 
+        if (conn.Db.Players.Identity.Find(me) is { } player)
+            state["current_slot"] = player.CurrentSlotIndex;
+
         if (conn.Db.VitalsRows.Identity.Find(me) is not { } vitals)
             return state;
 

@@ -87,6 +87,7 @@ public partial class Main
 
         _localPlayer = PlayerScene.Instantiate<Player.Player>();
         _localPlayer.DbManagerNode = dbManager;
+        _localPlayer.Hull = ShipGrid.HullTemplate;
         AddChild(_localPlayer);
 
         _localEntityId = GetLocalEntityId(conn);
