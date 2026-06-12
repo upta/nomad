@@ -39,6 +39,9 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_repressurize_kitchen"] = conn => conn.Reducers.SetPressurization(5, true),
         ["test_depressurize_corridor"] = conn => conn.Reducers.SetPressurization(7, false),
         ["test_repressurize_corridor"] = conn => conn.Reducers.SetPressurization(7, true),
+        ["test_damage_30"] = conn => conn.Reducers.ApplyDebugDamage(30),
+        ["test_damage_kill"] = conn => conn.Reducers.ApplyDebugDamage(999),
+        ["test_reset_vitals"] = conn => conn.Reducers.ResetVitals(),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -107,6 +110,7 @@ public partial class ConnectedGameHarnessController : Node2D
             ["connection"] = BuildConnectionState(),
             ["game"] = BuildGameState(),
             ["power"] = BuildPowerState(),
+            ["vitals"] = BuildVitalsState(),
         };
 
         if (_puppet is { } puppet)
@@ -312,6 +316,22 @@ public partial class ConnectedGameHarnessController : Node2D
         }
         state["rooms"] = rooms;
 
+        return state;
+    }
+
+    private Godot.Collections.Dictionary BuildVitalsState()
+    {
+        var state = new Godot.Collections.Dictionary();
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn || conn.Identity is not { } me)
+            return state;
+
+        if (conn.Db.VitalsRows.Identity.Find(me) is not { } vitals)
+            return state;
+
+        state["health"] = vitals.Health.Current;
+        state["max_health"] = vitals.Health.Max;
+        state["is_dead"] = vitals.IsDead;
         return state;
     }
 
