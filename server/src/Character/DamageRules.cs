@@ -23,13 +23,25 @@ public static partial class Module
         }
 
         var current = System.Math.Max(0f, vitals.Health.Current - amount);
+        var died = current <= 0f;
         ctx.Db.VitalsRows.Identity.Update(
             vitals with
             {
                 Health = vitals.Health with { Current = current },
-                IsDead = current <= 0f,
+                IsDead = died,
             }
         );
+
+        // Death scatters the hotbar at the body. Missing player/entity rows
+        // skip the drop — the damage itself must still commit.
+        if (
+            died
+            && ctx.Db.Players.Identity.Find(identity) is { } player
+            && ctx.Db.Entities.EntityId.Find(player.PlayerEntityId) is { } entity
+        )
+        {
+            DropAllHotbarItems(ctx, identity, entity.Position);
+        }
     }
 
     private static void EnsureVitals(ReducerContext ctx, Identity identity)

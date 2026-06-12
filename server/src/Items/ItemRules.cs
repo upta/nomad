@@ -37,4 +37,35 @@ public static partial class Module
 
         return null;
     }
+
+    private static void DropAllHotbarItems(ReducerContext ctx, Identity holder, DbVector2 position)
+    {
+        var held = new System.Collections.Generic.List<Item>();
+        foreach (var item in ctx.Db.Items.Holder.Filter(holder))
+        {
+            if (item.LocationKind == ItemLocationKind.Hotbar)
+            {
+                held.Add(item);
+            }
+        }
+
+        foreach (var item in held)
+        {
+            ctx.Db.Items.ItemId.Update(
+                item with
+                {
+                    LocationKind = ItemLocationKind.World,
+                    // Deterministic per-slot spread keeps stacked drops
+                    // individually interactable.
+                    Position = new DbVector2
+                    {
+                        X = position.X + item.SlotIndex * 12f,
+                        Y = position.Y,
+                    },
+                    Holder = default,
+                    SlotIndex = 0,
+                }
+            );
+        }
+    }
 }
