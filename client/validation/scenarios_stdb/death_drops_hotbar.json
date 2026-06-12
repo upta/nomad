@@ -1,0 +1,101 @@
+{
+  "scenario_id": "death_drops_hotbar",
+  "version": 3,
+  "description": "Death scatters the hotbar at the body: a player holding Biomass (slot 0) and RawOre (slot 2) walks into the Kitchen and dies — both items become World-located at the death position with a per-slot spread, the ghost standing on them gets no pickup focus, and after respawning at the Cloning Bay the items are still lying in the Kitchen.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "done_contract": { "drop_position_tolerance": 2.0, "slot2_spread": 24.0 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_reset_vitals" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_reset_vitals" },
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.world_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_give_biomass_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_biomass_slot0" },
+    { "op": "press_action", "action": "test_give_ore_slot2" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_ore_slot2" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+    { "op": "press_action", "action": "move_down" },
+    { "op": "press_action", "action": "move_right" },
+    { "op": "wait_until", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": 5, "timeout_frames": 600 },
+    { "op": "release_action", "action": "move_down" },
+    { "op": "release_action", "action": "move_right" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "in_kitchen_holding_items" },
+    { "op": "press_action", "action": "test_damage_kill" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_damage_kill" },
+    { "op": "wait_until", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.items.world_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.game.world_item_nodes", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "dead_items_scattered" },
+    { "op": "assert_value", "checkpoint": "dead_items_scattered", "path": "harness_state.items.world.0.type", "comparator": "eq", "expected": "Biomass" },
+    { "op": "assert_value", "checkpoint": "dead_items_scattered", "path": "harness_state.items.world.1.type", "comparator": "eq", "expected": "RawOre" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "item_x": { "kind": "checkpoint", "checkpoint": "dead_items_scattered", "path": "harness_state.items.world.0.x" },
+        "entity_x": { "kind": "checkpoint", "checkpoint": "dead_items_scattered", "path": "harness_state.connection.local_entity.x" },
+        "tolerance": { "kind": "contract", "path": "done_contract.drop_position_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["item_x", "entity_x"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "slot0_x": { "kind": "checkpoint", "checkpoint": "dead_items_scattered", "path": "harness_state.items.world.0.x" },
+        "slot2_x": { "kind": "checkpoint", "checkpoint": "dead_items_scattered", "path": "harness_state.items.world.1.x" },
+        "spread": { "kind": "contract", "path": "done_contract.slot2_spread" },
+        "tolerance": { "kind": "contract", "path": "done_contract.drop_position_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["slot2_x", "slot0_x"], "as": "spread_x" },
+        { "op": "subtract", "inputs": ["spread_x", "spread"], "as": "spread_error" },
+        { "op": "abs", "inputs": ["spread_error"], "as": "abs_error" }
+      ],
+      "assert": { "actual": "abs_error", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    { "op": "assert_value", "checkpoint": "dead_items_scattered", "path": "harness_state.game.focused_label", "comparator": "eq", "expected": "" },
+    { "op": "press_action", "action": "test_request_respawn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_request_respawn" },
+    { "op": "wait_until", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.game.player.y", "comparator": "lt", "expected": -100, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "respawned_items_stayed" },
+    { "op": "assert_value", "checkpoint": "respawned_items_stayed", "path": "harness_state.items.world_count", "comparator": "eq", "expected": 2 },
+    { "op": "assert_value", "checkpoint": "respawned_items_stayed", "path": "harness_state.items.world.0.y", "comparator": "gt", "expected": 60 },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "x_at_death": { "kind": "checkpoint", "checkpoint": "dead_items_scattered", "path": "harness_state.items.world.0.x" },
+        "x_after_respawn": { "kind": "checkpoint", "checkpoint": "respawned_items_stayed", "path": "harness_state.items.world.0.x" },
+        "tolerance": { "kind": "contract", "path": "done_contract.drop_position_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["x_after_respawn", "x_at_death"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.world_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "quit" }
+  ]
+}

@@ -20,6 +20,7 @@ public partial class ConnectedGameHarnessController : Node2D
         ["ui_cancel_modal"] = Key.Escape,
         ["modal_accept"] = Key.Enter,
         ["modal_down"] = Key.Down,
+        ["hotbar_drop"] = Key.Q,
     };
 
     // Harness-only InputMap actions that let scenarios drive reducers the
@@ -76,6 +77,22 @@ public partial class ConnectedGameHarnessController : Node2D
         // Occupied-slot rejection probe — fired after slot 0 is filled.
         ["test_give_ore_slot0"] = conn =>
             conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.RawOre, 0),
+        // Direct reducer call (no navigation) so rejection probes exercise
+        // the server rule even with the hotbar full or the item far away.
+        ["test_pickup_nearest_world_item"] = conn =>
+        {
+            if (FindNearestWorldItemId(conn) is { } itemId)
+                conn.Reducers.PickUpItem(itemId);
+        },
+        ["test_drop_slot0"] = conn => conn.Reducers.DropItem(0),
+        ["test_fill_hotbar"] = conn =>
+        {
+            for (var slot = 0; slot < 4; slot++)
+                conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Scrap, slot);
+        },
+        // Well beyond PickupRadius (96) from anywhere on the hull.
+        ["test_spawn_ore_far"] = conn =>
+            conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.RawOre, 2000, 2000),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -204,6 +221,33 @@ public partial class ConnectedGameHarnessController : Node2D
                 call(conn);
             }
         }
+    }
+
+    private static int? FindNearestWorldItemId(SpacetimeDB.Types.DbConnection conn)
+    {
+        if (conn.Identity is not { } me || conn.Db.Players.Identity.Find(me) is not { } player)
+            return null;
+
+        if (conn.Db.Entities.EntityId.Find(player.PlayerEntityId) is not { } entity)
+            return null;
+
+        var origin = new Vector2(entity.Position.X, entity.Position.Y);
+        int? nearest = null;
+        var nearestDistSq = float.MaxValue;
+        foreach (var item in conn.Db.Items.Iter())
+        {
+            if (item.LocationKind != SpacetimeDB.Types.ItemLocationKind.World)
+                continue;
+
+            var distSq = origin.DistanceSquaredTo(new Vector2(item.Position.X, item.Position.Y));
+            if (distSq < nearestDistSq)
+            {
+                nearestDistSq = distSq;
+                nearest = item.ItemId;
+            }
+        }
+
+        return nearest;
     }
 
     private Godot.Collections.Dictionary BuildConnectionState()
@@ -394,6 +438,7 @@ public partial class ConnectedGameHarnessController : Node2D
             ["by_type"] = new Godot.Collections.Dictionary(),
             ["hotbar_count"] = 0,
             ["hotbar"] = new Godot.Collections.Dictionary(),
+            ["world"] = new Godot.Collections.Array(),
             ["config"] = new Godot.Collections.Dictionary(),
         };
 
@@ -404,11 +449,13 @@ public partial class ConnectedGameHarnessController : Node2D
         var byType = new Godot.Collections.Dictionary();
         var hotbarCount = 0;
         var hotbar = new Godot.Collections.Dictionary();
+        var worldRows = new List<SpacetimeDB.Types.Item>();
         foreach (var item in conn.Db.Items.Iter())
         {
             if (item.LocationKind == SpacetimeDB.Types.ItemLocationKind.World)
             {
                 worldCount++;
+                worldRows.Add(item);
                 var key = item.ItemTypeId.ToString();
                 byType[key] = byType.TryGetValue(key, out var prior) ? prior.AsInt32() + 1 : 1;
                 continue;
@@ -429,6 +476,21 @@ public partial class ConnectedGameHarnessController : Node2D
         state["by_type"] = byType;
         state["hotbar_count"] = hotbarCount;
         state["hotbar"] = hotbar;
+
+        // Stable ItemId order so scenarios can address world.0.x etc.
+        var world = new Godot.Collections.Array();
+        foreach (var item in worldRows.OrderBy(i => i.ItemId))
+        {
+            world.Add(
+                new Godot.Collections.Dictionary
+                {
+                    ["type"] = item.ItemTypeId.ToString(),
+                    ["x"] = item.Position.X,
+                    ["y"] = item.Position.Y,
+                }
+            );
+        }
+        state["world"] = world;
 
         if (conn.Db.InventoryConfigs.Id.Find(0) is { } config)
         {
