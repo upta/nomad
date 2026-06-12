@@ -176,6 +176,8 @@ public partial class ConnectedGameHarnessController : Node2D
         }
 
         state["remote_count"] = _main?.RemoteEntityCount ?? 0;
+        state["terminal_count"] =
+            _main?.GetNodeOrNull<Nomad.Game.Map.ShipGrid>("ShipGrid")?.TerminalCount ?? 0;
 
         if (_puppet is { EntityId: > 0 } puppet && _main is not null)
         {

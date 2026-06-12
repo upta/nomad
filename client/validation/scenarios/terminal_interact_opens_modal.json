@@ -1,0 +1,73 @@
+{
+  "scenario_id": "terminal_interact_opens_modal",
+  "version": 3,
+  "description": "Walking up to the Kitchen terminal shows the interact prompt; pressing interact opens the Kitchen room modal; movement is locked while the modal is open; cancel closes it and restores movement.",
+  "harness_scene": "res://validation/harnesses/InteractionHarness.tscn",
+  "done_contract": {
+    "max_locked_drift": 2.0,
+    "min_restored_delta": 10.0
+  },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/InteractionHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "spawn" },
+    { "op": "assert_value", "checkpoint": "spawn", "path": "harness_state.modal.open", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "spawn", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "spawn", "path": "harness_state.grid.terminal_count", "comparator": "eq", "expected": 7 },
+    { "op": "press_action", "action": "move_down" },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_exists", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_down" },
+    { "op": "wait_frames", "frames": 20 },
+    { "op": "checkpoint", "name": "prompt" },
+    { "op": "assert_value", "checkpoint": "prompt", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "prompt", "path": "harness_state.interaction.focused_label", "comparator": "contains", "expected": "Kitchen" },
+    { "op": "assert_value", "checkpoint": "prompt", "path": "harness_state.modal.open", "comparator": "eq", "expected": false },
+    { "op": "press_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "interact" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "modal_open" },
+    { "op": "assert_value", "checkpoint": "modal_open", "path": "harness_state.modal.title", "comparator": "eq", "expected": "Kitchen" },
+    { "op": "press_action", "action": "move_down" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "release_action", "action": "move_down" },
+    { "op": "checkpoint", "name": "while_locked" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "open_y": { "kind": "checkpoint", "checkpoint": "modal_open", "path": "harness_state.player.y" },
+        "locked_y": { "kind": "checkpoint", "checkpoint": "while_locked", "path": "harness_state.player.y" },
+        "limit": { "kind": "contract", "path": "done_contract.max_locked_drift" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["locked_y", "open_y"], "as": "drift" },
+        { "op": "abs", "inputs": ["drift"], "as": "abs_drift" }
+      ],
+      "assert": { "actual": "abs_drift", "comparator": "lte", "expected_source": "limit" }
+    },
+    { "op": "press_action", "action": "ui_cancel_modal" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "ui_cancel_modal" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "modal_closed" },
+    { "op": "assert_value", "checkpoint": "modal_closed", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "move_up" },
+    { "op": "wait_frames", "frames": 40 },
+    { "op": "release_action", "action": "move_up" },
+    { "op": "checkpoint", "name": "moved_after_close" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "closed_y": { "kind": "checkpoint", "checkpoint": "modal_closed", "path": "harness_state.player.y" },
+        "moved_y": { "kind": "checkpoint", "checkpoint": "moved_after_close", "path": "harness_state.player.y" },
+        "threshold": { "kind": "contract", "path": "done_contract.min_restored_delta" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["closed_y", "moved_y"], "as": "upward_delta" }
+      ],
+      "assert": { "actual": "upward_delta", "comparator": "gte", "expected_source": "threshold" }
+    },
+    { "op": "quit" }
+  ]
+}

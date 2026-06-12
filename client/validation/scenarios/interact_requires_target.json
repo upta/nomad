@@ -1,0 +1,31 @@
+{
+  "scenario_id": "interact_requires_target",
+  "version": 3,
+  "description": "Pressing interact in the corridor (no interactable in range) does nothing; walking near a terminal shows the prompt; walking away hides it without opening a modal.",
+  "harness_scene": "res://validation/harnesses/InteractionHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/InteractionHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "press_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "pressed_in_corridor" },
+    { "op": "assert_value", "checkpoint": "pressed_in_corridor", "path": "harness_state.modal.open", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "pressed_in_corridor", "path": "harness_state.interaction.registration_count", "comparator": "eq", "expected": 0 },
+    { "op": "press_action", "action": "move_down" },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_exists", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_down" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "near_terminal" },
+    { "op": "assert_value", "checkpoint": "near_terminal", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "move_up" },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_exists", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_up" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "walked_away" },
+    { "op": "assert_value", "checkpoint": "walked_away", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "walked_away", "path": "harness_state.modal.open", "comparator": "eq", "expected": false },
+    { "op": "quit" }
+  ]
+}

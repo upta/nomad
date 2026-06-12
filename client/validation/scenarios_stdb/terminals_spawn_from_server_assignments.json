@@ -1,0 +1,18 @@
+{
+  "scenario_id": "terminals_spawn_from_server_assignments",
+  "version": 3,
+  "description": "Connected to a real SpacetimeDB instance, the server's Init-seeded RoomAssignments drive the client to spawn one terminal per assigned Corvette room slot.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "done_contract": {
+    "expected_terminals": 7
+  },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "terminals_spawned" },
+    { "op": "assert_value", "checkpoint": "terminals_spawned", "path": "harness_state.game.terminal_count", "comparator": "eq", "expected": 7 },
+    { "op": "quit" }
+  ]
+}
