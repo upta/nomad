@@ -47,6 +47,7 @@ public partial class Main : Node2D, IProvide<InteractionService>
         // registry is handed to ShipGrid here instead of in Main.tscn.
         ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
         ShipGrid.TerminalInteracted += OnTerminalInteracted;
+        ShipGrid.BreakerInteracted += OnBreakerInteracted;
 
         Camera.MakeCurrent();
 
@@ -93,6 +94,7 @@ public partial class Main : Node2D, IProvide<InteractionService>
     public override void _ExitTree()
     {
         ShipGrid.TerminalInteracted -= OnTerminalInteracted;
+        ShipGrid.BreakerInteracted -= OnBreakerInteracted;
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {
@@ -112,6 +114,9 @@ public partial class Main : Node2D, IProvide<InteractionService>
         }
         return 0;
     }
+
+    private void OnBreakerInteracted(Ship.Breaker breaker) =>
+        _dbManager?.Connection?.Reducers.ToggleBreaker(breaker.SlotIndex);
 
     private void OnTerminalInteracted(Ship.Terminal terminal) =>
         ModalHost.Open(

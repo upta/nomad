@@ -292,12 +292,12 @@ Design notes (user-confirmed):
 - [x] Scenario `power_overload_flickers.json` — flicker_cycles increases during Overload, stops on Stable
 - [x] `./tools/run_all_scenarios.ps1` green (14/14; `room_types_load` updated for Reactor PowerDraw 3→0 design change); `dotnet build` + format
 
-## Subtask 1.4.4: Physical wall breakers — Scope: M
-- [ ] Create `client/game/Ship/Breaker/Breaker.tscn` + `Breaker.cs` — pattern-copy Terminal: ColorRect box + lever (`[Export]` on/off colors), `InteractTarget` with `Interact.tres`, `SlotIndex`, `SetState(roomLabel, breakerOn)`, `Interacted` event, label "{Room} Breaker"
-- [ ] `ShipGrid.cs`: `[Export] PackedScene? BreakerScene`, `_breakers` dict, `EnsureBreaker()` at every `EnsureTerminal()` call site, placement top-left interior cell (+0.5 tile), `BreakerInteracted` event, `breaker_count` observed; wire export where `TerminalScene` is wired
-- [ ] `Main.cs`: `BreakerInteracted` → `ToggleBreaker` reducer (null-guarded, unsubscribe in `_ExitTree`); `PowerHarnessController`: local `SetTestPower` flip
-- [ ] Scenario `breaker_interact_toggles_power.json` — breaker_count == 7 → walk to "Kitchen Breaker" → interact → breaker off + dimmed → interact → restored
-- [ ] Pure suite green; screenshot shows breaker distinct from terminal
+## Subtask 1.4.4: Physical wall breakers — Scope: M ✅
+- [x] Create `client/game/Ship/Breaker/Breaker.tscn` + `Breaker.cs` — pattern-copy Terminal: ColorRect box + lever (`[Export]` on/off colors), `InteractTarget` with `Interact.tres`, `SlotIndex`, `SetState(roomLabel, breakerOn)`, `Interacted` event, label "{Room} Breaker"
+- [x] `ShipGrid.cs`: `[Export] PackedScene? BreakerScene`, `_breakers` dict, `EnsureRoomNodes()` (terminal + breaker) at every assignment-change site, placement top-left interior cell (+0.5 tile), `BreakerInteracted` event, `breaker_count` observed; export wired in `ShipGrid.tscn`
+- [x] `Main.cs`: `BreakerInteracted` → `ToggleBreaker` reducer (null-guarded, unsubscribe in `_ExitTree`); `PowerHarnessController`: local `SetTestPower` flip
+- [x] Scenario `breaker_interact_toggles_power.json` — breaker_count == 7 → walk to "Kitchen Breaker" (wall-clamp navigation: 400px/s + release latency overshoots position waits; wedging into the room corner with held diagonal input is deterministic) → interact → breaker off + dimmed → interact → restored
+- [x] Pure suite green (15/15); screenshot shows breakers as wall fixtures with state-colored levers
 
 ## Subtask 1.4.5: PowerGridService + PowerRouter modal — Scope: M
 - [ ] Create `client/game/Ship/_Service/PowerGridService.cs` — plain C#: `Changed` event, Status/ReactorOutput/TotalDemand/room entries, `SetRoomCatalog`, `BindConnection`, `RequestToggleBreaker` (reducer when connected, local flip in test mode), test seeders

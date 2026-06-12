@@ -1,0 +1,51 @@
+{
+  "scenario_id": "breaker_interact_toggles_power",
+  "version": 3,
+  "description": "One wall breaker spawns per assigned room; walking up to the Kitchen breaker and interacting flips it off (room loses power and dims), interacting again restores power.",
+  "harness_scene": "res://validation/harnesses/PowerHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/PowerHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "spawn" },
+    { "op": "assert_value", "checkpoint": "spawn", "path": "harness_state.grid.map.breaker_count", "comparator": "eq", "expected": 7 },
+    { "op": "assert_value", "checkpoint": "spawn", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "move_down" },
+    { "op": "wait_until", "path": "harness_state.player.y", "comparator": "gte", "expected": 150, "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_down" },
+    { "op": "press_action", "action": "move_up" },
+    { "op": "press_action", "action": "move_left" },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_label", "comparator": "contains", "expected": "Breaker", "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_up" },
+    { "op": "release_action", "action": "move_left" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "at_breaker" },
+    { "op": "assert_value", "checkpoint": "at_breaker", "path": "harness_state.interaction.focused_label", "comparator": "contains", "expected": "Kitchen Breaker" },
+    { "op": "assert_value", "checkpoint": "at_breaker", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "interact" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.breaker_on", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "breaker_off" },
+    { "op": "assert_value", "checkpoint": "breaker_off", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": false },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "powered_r": { "kind": "checkpoint", "checkpoint": "at_breaker", "path": "harness_state.grid.rooms.5.color_r" },
+        "cut_r": { "kind": "checkpoint", "checkpoint": "breaker_off", "path": "harness_state.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["cut_r", "powered_r"], "as": "r_delta" }
+      ],
+      "assert": { "actual": "r_delta", "comparator": "lt", "expected": 0 }
+    },
+    { "op": "press_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "interact" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.breaker_on", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "restored" },
+    { "op": "assert_value", "checkpoint": "restored", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": true },
+    { "op": "quit" }
+  ]
+}

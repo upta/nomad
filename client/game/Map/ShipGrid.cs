@@ -27,6 +27,7 @@ public partial class ShipGrid : Node2D
     private static readonly Vector2I WallTile = new(1, 0);
 
     private readonly Dictionary<int, StdbRa> _assignments = [];
+    private readonly Dictionary<int, Ship.Breaker> _breakers = [];
     private readonly HashSet<Vector2I> _floorCells = [];
     private readonly Dictionary<int, Ship.Terminal> _terminals = [];
     private readonly HashSet<Vector2I> _wallCells = [];
@@ -36,6 +37,8 @@ public partial class ShipGrid : Node2D
     private StdbGs _gridStatus = StdbGs.Stable;
 
     public override void _Notification(int what) => this.Notify(what);
+
+    public event Action<Ship.Breaker>? BreakerInteracted;
 
     public event Action<Ship.Terminal>? TerminalInteracted;
 
@@ -55,6 +58,9 @@ public partial class ShipGrid : Node2D
     public RoomTypeRegistry? RoomTypeRegistry { get; set; }
 
     [Export]
+    public PackedScene? BreakerScene { get; set; }
+
+    [Export]
     public PackedScene? TerminalScene { get; set; }
 
     [Export(PropertyHint.Range, "0,1")]
@@ -65,6 +71,8 @@ public partial class ShipGrid : Node2D
 
     [Export(PropertyHint.Range, "0,1")]
     public float UnpoweredDimFactor { get; set; } = 0.35f;
+
+    public int BreakerCount => _breakers.Count;
 
     public int FlickerCycles { get; private set; }
 
@@ -191,6 +199,7 @@ public partial class ShipGrid : Node2D
                 ["wall_count"] = _wallCells.Count,
                 ["door_count"] = HullTemplate?.Doors.Count ?? 0,
                 ["terminal_count"] = _terminals.Count,
+                ["breaker_count"] = _breakers.Count,
             },
             ["power"] = new Godot.Collections.Dictionary
             {
@@ -216,7 +225,7 @@ public partial class ShipGrid : Node2D
             BreakerOn = breakerOn,
             Health = 100f,
         };
-        EnsureTerminal(slotIndex);
+        EnsureRoomNodes(slotIndex);
         QueueRedraw();
     }
 
@@ -233,7 +242,7 @@ public partial class ShipGrid : Node2D
 
         ra.BreakerOn = breakerOn;
         ra.IsPowered = isPowered;
-        EnsureTerminal(slotIndex);
+        EnsureRoomNodes(slotIndex);
         QueueRedraw();
     }
 
@@ -282,6 +291,49 @@ public partial class ShipGrid : Node2D
             WallLayer.SetCell(cell - offset, 0, WallTile);
     }
 
+    // Breakers are data-driven like terminals (one per assigned room slot),
+    // mounted at the room's top-left interior cell so they read as wall
+    // fixtures and stay clear of the slot-center terminal.
+    private void EnsureBreaker(int slotIndex)
+    {
+        if (BreakerScene is null || HullTemplate is null)
+            return;
+
+        var slot = HullTemplate.RoomSlots.FirstOrDefault(s => s.SlotIndex == slotIndex);
+        if (slot is null)
+            return;
+
+        if (!_breakers.TryGetValue(slotIndex, out var breaker))
+        {
+            breaker = BreakerScene.Instantiate<Ship.Breaker>();
+            breaker.SlotIndex = slotIndex;
+
+            var offset = GridOffset;
+            breaker.Position = new Vector2(
+                (slot.PositionX - offset.X + 0.5f) * TileSize,
+                (slot.PositionY - offset.Y + 0.5f) * TileSize
+            );
+
+            breaker.Interacted += OnBreakerInteracted;
+            AddChild(breaker);
+            _breakers[slotIndex] = breaker;
+        }
+
+        if (
+            _assignments.TryGetValue(slotIndex, out var ra)
+            && RoomTypeRegistry?.Find(ra.RoomTypeId.ToString()) is { } rt
+        )
+        {
+            breaker.SetState(rt.Label, ra.BreakerOn);
+        }
+    }
+
+    private void EnsureRoomNodes(int slotIndex)
+    {
+        EnsureTerminal(slotIndex);
+        EnsureBreaker(slotIndex);
+    }
+
     // Terminals are data-driven (one per assigned room slot), spawned at the
     // slot's center cell and refreshed whenever the assignment changes.
     private void EnsureTerminal(int slotIndex)
@@ -318,6 +370,8 @@ public partial class ShipGrid : Node2D
         }
     }
 
+    private void OnBreakerInteracted(Ship.Breaker breaker) => BreakerInteracted?.Invoke(breaker);
+
     private void OnTerminalInteracted(Ship.Terminal terminal) =>
         TerminalInteracted?.Invoke(terminal);
 
@@ -351,14 +405,14 @@ public partial class ShipGrid : Node2D
     private void OnAssignmentInserted(EventContext ctx, StdbRa ra)
     {
         _assignments[ra.SlotIndex] = ra;
-        EnsureTerminal(ra.SlotIndex);
+        EnsureRoomNodes(ra.SlotIndex);
         QueueRedraw();
     }
 
     private void OnAssignmentUpdated(EventContext ctx, StdbRa oldRa, StdbRa newRa)
     {
         _assignments[newRa.SlotIndex] = newRa;
-        EnsureTerminal(newRa.SlotIndex);
+        EnsureRoomNodes(newRa.SlotIndex);
         QueueRedraw();
     }
 
@@ -379,7 +433,7 @@ public partial class ShipGrid : Node2D
         foreach (var ra in svr.Db.RoomAssignments.Iter())
         {
             _assignments[ra.SlotIndex] = ra;
-            EnsureTerminal(ra.SlotIndex);
+            EnsureRoomNodes(ra.SlotIndex);
         }
 
         if (svr.Db.PowerGrids.Id.Find(0) is { } grid)
