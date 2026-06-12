@@ -54,6 +54,14 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_fast_hunger"] = conn => conn.Reducers.SetVitalsConfig(250, 0, 25, 0, 5, 5),
         ["test_set_hunger_low"] = conn => conn.Reducers.SetHunger(10),
         ["test_restore_hunger"] = conn => conn.Reducers.RestoreHunger(100),
+        ["test_set_biomass_zero"] = conn => conn.Reducers.SetBiomass(0),
+        ["test_set_biomass_full"] = conn => conn.Reducers.SetBiomass(3),
+        ["test_toggle_breaker_2"] = conn => conn.Reducers.ToggleBreaker(2),
+        ["test_request_respawn"] = conn =>
+        {
+            if (conn.Identity is { } me)
+                conn.Reducers.RequestRespawn(me);
+        },
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -123,6 +131,7 @@ public partial class ConnectedGameHarnessController : Node2D
             ["game"] = BuildGameState(),
             ["power"] = BuildPowerState(),
             ["vitals"] = BuildVitalsState(),
+            ["stores"] = BuildStoresState(),
         };
 
         if (_puppet is { } puppet)
@@ -352,6 +361,19 @@ public partial class ConnectedGameHarnessController : Node2D
         state["max_hunger"] = vitals.Hunger.Max;
         state["suit_equipped"] = vitals.SuitEquipped;
         state["is_dead"] = vitals.IsDead;
+        return state;
+    }
+
+    private Godot.Collections.Dictionary BuildStoresState()
+    {
+        var state = new Godot.Collections.Dictionary();
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        if (conn.Db.ShipStoresRows.Id.Find(0) is { } stores)
+            state["biomass"] = stores.Biomass;
+
         return state;
     }
 

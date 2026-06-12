@@ -22,6 +22,9 @@ public static partial class Module
         // Creates the VitalsConfig row and starts the repeating vitals tick.
         var vitalsConfig = GetVitalsConfig(ctx);
         RescheduleVitalsTick(ctx, vitalsConfig.TickMillis);
+
+        // Seeds the ship's shared stores (biomass = three respawns).
+        GetShipStores(ctx);
     }
 
     private static void SeedRoom(ReducerContext ctx, int slotIndex, RoomTypeId roomTypeId)

@@ -27,6 +27,7 @@ public partial class Main
     private Db.DbManager? _dbManager;
     private Player.Player? _localPlayer;
     private int _localEntityId;
+    private bool _wasDead;
 
     public override void _Notification(int what) => this.Notify(what);
 
@@ -153,6 +154,29 @@ public partial class Main
     {
         _localPlayer?.SetSuitEquipped(_vitalsService.SuitEquipped, _vitalsService.SuitSpeedFactor);
         ShipGrid.SetSuitRackState(_vitalsService.SuitEquipped);
+
+        // Position is normally client-authoritative; respawn is the one case
+        // where the server places the body (at the Cloning Bay), so the local
+        // node snaps to the server entity on the revive transition.
+        if (_wasDead && !_vitalsService.IsDead)
+            SnapLocalPlayerToServerEntity();
+        _wasDead = _vitalsService.IsDead;
+    }
+
+    private void SnapLocalPlayerToServerEntity()
+    {
+        if (
+            _localPlayer is null
+            || _dbManager?.Connection is not { } conn
+            || conn.Db.Entities.EntityId.Find(_localEntityId) is not { } entity
+        )
+        {
+            return;
+        }
+
+        _localPlayer.GlobalPosition = new Vector2(entity.Position.X, entity.Position.Y);
+        _localPlayer.Velocity = Vector2.Zero;
+        _localPlayer.ResetPhysicsInterpolation();
     }
 
     private void OnTerminalInteracted(Ship.Terminal terminal) =>
