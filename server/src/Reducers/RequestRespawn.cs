@@ -92,5 +92,14 @@ public static partial class Module
 
     private static ShipStores GetShipStores(ReducerContext ctx) =>
         ctx.Db.ShipStoresRows.Id.Find(0)
-        ?? ctx.Db.ShipStoresRows.Insert(new ShipStores { Id = 0, Biomass = 3 });
+        ?? ctx.Db.ShipStoresRows.Insert(
+            new ShipStores
+            {
+                Id = 0,
+                Biomass = 3,
+                // Generous tank so dev/validation runs aren't starved at the
+                // default two-minute burn interval.
+                Fuel = 10,
+            }
+        );
 }

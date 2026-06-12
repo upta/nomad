@@ -19,6 +19,9 @@ public static partial class Module
         // Creates the PowerGrid row and settles initial powered state.
         RecomputePowerGrid(ctx);
 
+        // Starts the repeating reactor fuel burn.
+        RescheduleFuelBurn(ctx, GetPowerGrid(ctx).FuelBurnMillis);
+
         // Creates the VitalsConfig row and starts the repeating vitals tick.
         var vitalsConfig = GetVitalsConfig(ctx);
         RescheduleVitalsTick(ctx, vitalsConfig.TickMillis);

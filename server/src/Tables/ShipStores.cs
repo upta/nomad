@@ -6,5 +6,6 @@ public static partial class Module
         [PrimaryKey]
         public int Id;
         public int Biomass;
+        public int Fuel;
     }
 }

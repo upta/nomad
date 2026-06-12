@@ -1,5 +1,15 @@
 public static partial class Module
 {
+    // Tank deposits: the machine consumes the item into a ship-stores
+    // counter. Ammo joins in 5.5; the storage branch joins in 3.5.
+    private static bool AcceptsTankDeposit(RoomTypeId roomTypeId, ItemTypeId itemTypeId) =>
+        (roomTypeId, itemTypeId) switch
+        {
+            (RoomTypeId.CloningBay, ItemTypeId.Biomass) => true,
+            (RoomTypeId.Reactor, ItemTypeId.FuelCell) => true,
+            _ => false,
+        };
+
     private static InventoryConfig GetInventoryConfig(ReducerContext ctx) =>
         ctx.Db.InventoryConfigs.Id.Find(0)
         ?? ctx.Db.InventoryConfigs.Insert(

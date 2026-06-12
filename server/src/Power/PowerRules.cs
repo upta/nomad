@@ -2,6 +2,8 @@ public static partial class Module
 {
     private const int DefaultGraceMillis = 10_000;
     private const int DefaultReactorOutput = 10;
+    private const int DefaultFuelPerBurn = 1;
+    private const ulong DefaultFuelBurnMillis = 120_000;
 
     // Demand sums the draw of every breaker-on room; output is the reactor's
     // rated output, but only while the reactor's own breaker is closed —
@@ -26,7 +28,11 @@ public static partial class Module
             demand += PowerDrawFor(ra.RoomTypeId);
         }
 
-        return (demand, reactorOnline ? grid.ReactorOutput : 0);
+        // A dry tank silences the reactor; FuelPerBurn = 0 opts out of the
+        // fuel loop entirely (validation scenarios lean on this).
+        var fueled = grid.FuelPerBurn == 0 || GetShipStores(ctx).Fuel > 0;
+
+        return (demand, reactorOnline && fueled ? grid.ReactorOutput : 0);
     }
 
     private static PowerGrid GetPowerGrid(ReducerContext ctx) =>
@@ -38,6 +44,8 @@ public static partial class Module
                 ReactorOutput = DefaultReactorOutput,
                 GraceMillis = DefaultGraceMillis,
                 Status = GridStatus.Stable,
+                FuelPerBurn = DefaultFuelPerBurn,
+                FuelBurnMillis = DefaultFuelBurnMillis,
             }
         );
 
@@ -64,6 +72,32 @@ public static partial class Module
         {
             ctx.Db.GridBlackoutTimers.Id.Delete(id);
         }
+    }
+
+    // The repeating burn tick is a single row; replacing it (rather than
+    // updating) is the only way to change the interval of a scheduled table.
+    private static void RescheduleFuelBurn(ReducerContext ctx, ulong intervalMillis)
+    {
+        var stale = new System.Collections.Generic.List<ulong>();
+        foreach (var timer in ctx.Db.FuelBurnTimers.Iter())
+        {
+            stale.Add(timer.Id);
+        }
+
+        foreach (var id in stale)
+        {
+            ctx.Db.FuelBurnTimers.Id.Delete(id);
+        }
+
+        ctx.Db.FuelBurnTimers.Insert(
+            new FuelBurnTimer
+            {
+                Id = 0,
+                ScheduledAt = new ScheduleAt.Interval(
+                    System.TimeSpan.FromMilliseconds(intervalMillis)
+                ),
+            }
+        );
     }
 
     private static void RecomputePowerGrid(ReducerContext ctx)
