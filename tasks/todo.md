@@ -526,8 +526,8 @@ Design notes (user-confirmed):
 ## Subtask 3.1.4: Pure validation — Scope: S ✅
 - [x] `InventoryHarness` + controller (provides Interaction + Inventory services, seed/remove/clear test actions, observed item_types + world_items w/ color/glyph/position + focused_label); `item_types_load.json` (6 types, ids/labels/glyphs) + `world_items_render.json` (seed 2 → nodes at positions w/ color fingerprint → remove → freed) confirmed red first (missing harness); pure suite 29/29; screenshots reviewed
 
-## Subtask 3.1.5: DoD sweep — Scope: S
-- [ ] Both suites green, boot clean, builds + format, plan/todo, push
+## Subtask 3.1.5: DoD sweep — Scope: S ✅
+- [x] `validate_all.ps1` both suites green (29 pure + 19 stdb); boot clean 13s zero ERROR, DbManager connected + subscription applied, ItemTypeRegistry loads 6 types; builds + csharpier both sides; plan/todo checked; push
 
 # Task 3.2: Fixed-size hotbar
 
