@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using Chickensoft.GodotNodeInterfaces;
 using Entities;
 using Godot;
+using Interaction;
 using Map;
 
-[Meta(typeof(IAutoNode))]
-public partial class Main : Node2D
+[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>))]
+public partial class Main : Node2D, IProvide<InteractionService>
 {
+    private readonly InteractionService _interactionService = new();
     private readonly Dictionary<int, RemoteEntity> _remoteNodes = [];
     private Db.DbManager? _dbManager;
     private Player.Player? _localPlayer;
@@ -42,7 +44,11 @@ public partial class Main : Node2D
         ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
 
         Camera.MakeCurrent();
+
+        this.Provide();
     }
+
+    InteractionService IProvide<InteractionService>.Value() => _interactionService;
 
     public void InstantiatePlayer(Db.DbManager dbManager)
     {

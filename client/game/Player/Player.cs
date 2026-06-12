@@ -1,15 +1,27 @@
+#nullable enable
+
 namespace Nomad.Game.Player;
 
+using Chickensoft.AutoInject;
+using Chickensoft.Introspection;
 using Godot;
 using Guide;
+using Nomad.Game.Interaction;
 using StdbPlayer = SpacetimeDB.Types.Player;
 
+[Meta(typeof(IAutoNode))]
 public partial class Player : CharacterBody2D
 {
     private float _currentRotation;
     private MovementNetworkSync? _networkSync;
+    private ProbeData? _probeData;
     private float _speedModifier = 1.0f;
     private int _entityId;
+
+    public override void _Notification(int what) => this.Notify(what);
+
+    [Dependency]
+    private InteractionService Interaction => this.DependOn<InteractionService>();
 
     [Export]
     public GuideActionBinding MoveAction { get; set; } = null!;
@@ -48,6 +60,21 @@ public partial class Player : CharacterBody2D
             _currentRotation = direction.Angle();
 
         _networkSync?.Update(_entityId, GlobalPosition, Velocity, _currentRotation, delta);
+
+        if (_probeData is not null)
+        {
+            _probeData.Position = GlobalPosition;
+            Interaction.Process();
+        }
+    }
+
+    // Runs once the ancestor providing InteractionService has called Provide();
+    // until then the interaction system stays dormant (harnesses without a
+    // provider still get full movement).
+    public void OnResolved()
+    {
+        _probeData = new ProbeData(_entityId, GlobalPosition);
+        Interaction.UpdateProbeData(_probeData);
     }
 
     public override void _Ready()

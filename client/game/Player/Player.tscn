@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://game/Player/Player.cs" id="1"]
 [ext_resource type="Script" path="res://game/Guide/GuideActionBinding.cs" id="2_binding"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/CharacterMove.tres" id="3_move_raw"]
+[ext_resource type="Script" path="res://game/Interaction/_Component/InteractProbe.cs" id="4_probe"]
 
 [sub_resource type="Resource" id="move_bound"]
 script = ExtResource("2_binding")
@@ -10,6 +11,9 @@ Action = ExtResource("3_move_raw")
 
 [sub_resource type="CircleShape2D" id="circle"]
 radius = 12.0
+
+[sub_resource type="CircleShape2D" id="probe_circle"]
+radius = 40.0
 
 [node name="Player" type="CharacterBody2D"]
 physics_interpolation_mode = 1
@@ -27,3 +31,9 @@ shape = SubResource("circle")
 size = Vector2(24, 24)
 position = Vector2(-12, -12)
 color = Color(0.2, 0.8, 0.3, 1)
+
+[node name="InteractProbe" type="Area2D" parent="."]
+script = ExtResource("4_probe")
+
+[node name="ProbeShape" type="CollisionShape2D" parent="InteractProbe"]
+shape = SubResource("probe_circle")
