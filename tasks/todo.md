@@ -249,3 +249,68 @@ Design notes:
 - [x] Game boots clean ≥10s, zero `ERROR:` lines (`run-game` skill)
 - [x] `dotnet build` + `dotnet csharpier format .` (client), `spacetime build` + format (server — untouched unless stdb scenario needs seeding help)
 - [x] `git push origin`
+
+---
+
+# Task 1.4: Power Grid + Breaker Switches 🔄 IN PROGRESS
+
+Full plan: `C:\Users\upta\.claude\plans\parsed-sniffing-quill.md`. Scheduled-table syntax reference: untrailed `server/src/Tables/TravelTimer.cs`.
+
+Design notes (user-confirmed):
+- Varied draw per RoomTypeId (server-owned): Reactor 0 (generator), Bridge 2, CloningBay 2, Hydroponics 1, Workshop 2, Kitchen 1, CargoBay 0 — total 8. `ReactorRoom.tres` PowerDraw 3→0.
+- `PowerGrid` single-row public table: Id (PK 0), ReactorOutput (seed 10), GraceMillis (seed 10000), GridStatus Status (Stable/Overload/Blackout), Timestamp BlackoutAt.
+- `RecomputePowerGrid(ctx)`: demand = Σ draws of assigned breaker-on rooms; output = reactor assigned && breaker on ? ReactorOutput : 0. demand ≤ output → Stable (cancel timers, every room IsPowered = BreakerOn — doubles as blackout recovery). demand > output from Stable → Overload, BlackoutAt = now + GraceMillis, insert scheduled `GridBlackoutTimer`. `GridBlackoutTick`: still overloaded → Blackout, all IsPowered = false. Rooms stay powered during grace; flicker is client-side rendering of Overload.
+- PowerRouter modal = overview + remote toggles (same `ToggleBreaker` reducer as wall breakers).
+
+## Subtask 1.4.1: Server power model + reducers — Scope: M
+- [ ] Create `server/src/Types/GridStatus.cs` — `[SpacetimeDB.Type]` enum Stable/Overload/Blackout
+- [ ] Create `server/src/Tables/PowerGrid.cs` — single-row public table per design notes
+- [ ] Create `server/src/Tables/GridBlackoutTimer.cs` — private scheduled table (`Scheduled = nameof(GridBlackoutTick)`, AutoInc ulong Id + ScheduleAt ScheduledAt)
+- [ ] Create `server/src/Power/PowerRules.cs` — partial Module: `PowerDrawFor(RoomTypeId)` switch + `RecomputePowerGrid(ctx)` (lazily insert PowerGrid row if missing)
+- [ ] Create `server/src/Reducers/ToggleBreaker.cs` — validate slot 0–6 + assignment exists + sender is known player; flip BreakerOn; recompute
+- [ ] Create `server/src/Reducers/SetReactorOutput.cs` — validate 0–100; update row; recompute
+- [ ] Create `server/src/Reducers/SetBlackoutGrace.cs` — validate > 0; update GraceMillis
+- [ ] Create `server/src/Reducers/GridBlackoutTick.cs` — scheduled; if still overloaded → Blackout, all rooms unpowered
+- [ ] Modify `server/src/Reducers/Init.cs` — seed PowerGrid row; `AssignRoomType.cs` — recompute at end
+- [ ] Modify `client/game/Ship/RoomTypes/ReactorRoom.tres` — PowerDraw = 0
+- [ ] Format → `spacetime build` → `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` → `spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src` → `dotnet build` (client)
+- [ ] Acceptance: `spacetime sql` shows PowerGrid (output 10, grace 10000); `ToggleBreaker '[5]'` flips Kitchen breaker+power; `SetBlackoutGrace '[1000]'` + `SetReactorOutput '[3]'` → Overload → Blackout ~1s later; logs clean
+
+## Subtask 1.4.2: stdb validation of the reducer loop — Scope: S
+- [ ] `ConnectedGameHarnessController.cs`: `power` section in `get_observed_state()` (per-slot breaker_on/is_powered, grid status/reactor_output/grace_millis); harness-registered InputMap test actions (`test_toggle_breaker_5`, `test_reactor_output_low`/`_high`, `test_short_grace`(500ms)/`test_long_grace`(3s)) firing reducers on IsActionJustPressed
+- [ ] Scenario `scenarios_stdb/power_breaker_reducer_round_trip.json` — toggle off → unpowered → toggle back → powered
+- [ ] Scenario `scenarios_stdb/power_overload_blackout.json` — short grace → low output → Overload (rooms still powered, BlackoutAt set) → Blackout (all unpowered) → high output → Stable + repowered
+- [ ] Scenario `scenarios_stdb/power_overload_grace_recovery.json` — 3s grace → overload → restore output within grace → wait past window → still Stable, never blacked out
+- [ ] `./scripts/run_stdb_scenarios.ps1` green; screenshots reviewed
+
+## Subtask 1.4.3: Client rendering — dim + flicker — Scope: M
+- [ ] `ShipGrid.cs`: subscribe `PowerGrids` OnInsert/OnUpdate (+ fix `_ExitTree` to unsubscribe everything); `[Export]` `UnpoweredDimFactor` (~0.35), `FlickerIntervalSeconds` (~0.12), `FlickerDimFactor` set in scene; dim inside `GetRoomColor`; `_Process` flicker + `QueueRedraw` only while Overload; public `FlickerCycles`
+- [ ] `ShipGrid.cs` test paths: `SetTestAssignment(slot, type, isPowered = true, breakerOn = true)`, `SetTestPower(slot, breakerOn, isPowered)`, `SetTestGridStatus(status)`; observed state gains per-room is_powered/breaker_on + power.status/flicker_cycles
+- [ ] Create `client/validation/harnesses/PowerHarness.tscn` + `PowerHarnessController.cs` (clone InteractionHarness; seeds 7 rooms; ActionKeyBridge; pure test actions → ShipGrid test setters)
+- [ ] Scenario `power_unpowered_room_renders_dim.json` — cut Kitchen → dimmed color vs powered baseline (assert_pipeline); screenshot
+- [ ] Scenario `power_overload_flickers.json` — flicker_cycles increases during Overload, stops on Stable
+- [ ] `./tools/run_all_scenarios.ps1` green; `dotnet build` + format
+
+## Subtask 1.4.4: Physical wall breakers — Scope: M
+- [ ] Create `client/game/Ship/Breaker/Breaker.tscn` + `Breaker.cs` — pattern-copy Terminal: ColorRect box + lever (`[Export]` on/off colors), `InteractTarget` with `Interact.tres`, `SlotIndex`, `SetState(roomLabel, breakerOn)`, `Interacted` event, label "{Room} Breaker"
+- [ ] `ShipGrid.cs`: `[Export] PackedScene? BreakerScene`, `_breakers` dict, `EnsureBreaker()` at every `EnsureTerminal()` call site, placement top-left interior cell (+0.5 tile), `BreakerInteracted` event, `breaker_count` observed; wire export where `TerminalScene` is wired
+- [ ] `Main.cs`: `BreakerInteracted` → `ToggleBreaker` reducer (null-guarded, unsubscribe in `_ExitTree`); `PowerHarnessController`: local `SetTestPower` flip
+- [ ] Scenario `breaker_interact_toggles_power.json` — breaker_count == 7 → walk to "Kitchen Breaker" → interact → breaker off + dimmed → interact → restored
+- [ ] Pure suite green; screenshot shows breaker distinct from terminal
+
+## Subtask 1.4.5: PowerGridService + PowerRouter modal — Scope: M
+- [ ] Create `client/game/Ship/_Service/PowerGridService.cs` — plain C#: `Changed` event, Status/ReactorOutput/TotalDemand/room entries, `SetRoomCatalog`, `BindConnection`, `RequestToggleBreaker` (reducer when connected, local flip in test mode), test seeders
+- [ ] `Main.cs` provides `PowerGridService` (alongside InteractionService), feeds catalog + connection, routes breakers through it; harness controllers provide/seed it
+- [ ] Create `client/game/Ui/Modals/PowerRouterModal.tscn` + `.cs` (IRoomModal, `[Dependency]` service) — title, "Output X / Demand Y — Status" line, row container + `[Export] PackedScene RowScene`; rows rebuilt on `Changed` preserving focused index; first toggle grabs focus on open
+- [ ] Create `client/game/Ui/Modals/PowerRouterRow.tscn` + `.cs` — labels + focusable toggle Button → `RequestToggleBreaker`
+- [ ] `ModalHost.tscn`: repoint `PowerRouterModal` export to the new scene; `ConnectedGameHarnessController` exposes modal.open/title
+- [ ] Scenario `power_router_modal_toggles_breaker.json` (pure) — Reactor terminal → modal → `ui_down`/`ui_accept` toggles a row → breaker_on false + dim → `ui_cancel_modal` → movement restored (drift pipeline). Risk: if `InputEventAction` doesn't activate buttons, fall back to ActionKeyBridge Enter/Down entries
+- [ ] Scenario `scenarios_stdb/power_router_modal_server_toggle.json` — real game: walk to Reactor terminal, remote-toggle → server breaker_on flips, modal refreshes
+- [ ] Both scenarios green; screenshots show modal layout
+
+## Subtask 1.4.6 / Definition of Done (Task 1.4)
+- [ ] All new scenarios pass; screenshots reviewed
+- [ ] `./scripts/validate_all.ps1` — both suites green, no regressions
+- [ ] Game boots clean ≥10s, zero `ERROR:` lines (`run-game` skill)
+- [ ] `dotnet build` + `dotnet csharpier format .` (client), `spacetime build` + format (server)
+- [ ] `tasks/plan.md` + `tasks/todo.md` updated; `git push origin`
