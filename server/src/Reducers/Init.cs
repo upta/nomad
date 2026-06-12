@@ -28,6 +28,28 @@ public static partial class Module
 
         // Seeds hotbar/storage capacities and reach radii.
         GetInventoryConfig(ctx);
+
+        // Dev/test convenience until real item sources (harvesting) land in
+        // Phase 4: a couple of pickupable items in the corridor west of the
+        // spawn point, off every validation scenario's walk path.
+        SeedWorldItem(ctx, ItemTypeId.RawOre, -96f, 0f);
+        SeedWorldItem(ctx, ItemTypeId.FuelCell, -160f, 0f);
+    }
+
+    private static void SeedWorldItem(ReducerContext ctx, ItemTypeId itemTypeId, float x, float y)
+    {
+        ctx.Db.Items.Insert(
+            new Item
+            {
+                ItemId = 0,
+                ItemTypeId = itemTypeId,
+                LocationKind = ItemLocationKind.World,
+                Position = new DbVector2 { X = x, Y = y },
+                Holder = default,
+                SlotIndex = 0,
+                RoomSlotIndex = -1,
+            }
+        );
     }
 
     private static void SeedRoom(ReducerContext ctx, int slotIndex, RoomTypeId roomTypeId)
