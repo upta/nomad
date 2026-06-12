@@ -189,21 +189,21 @@ SpacetimeDB Scaffold + Client Connection
 
 ### Phase 3: Inventory & Logistics
 
-Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. Implementation order: **3.2 → 3.1 → 3.3 → 3.4 → 3.5**. One `Item` table row per item with a `LocationKind` discriminator (World / Hotbar / Stored) — deliberately avoiding untrailed's 5-rows-per-dropped-item container indirection, its client-trust holes (reducers here take explicit slot indexes with server-side reach/alive/ownership checks; hotbar selection is pure client UI state), and its hardcoded capacities (`InventoryConfig` single-row table).
+Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. One `Item` table row per item with a `LocationKind` discriminator (World / Hotbar / Stored) — deliberately avoiding untrailed's 5-rows-per-dropped-item container indirection, its client-trust holes (reducers here take explicit slot indexes with server-side reach/alive/ownership checks; hotbar selection is pure client UI state), and its hardcoded capacities (`InventoryConfig` single-row table).
 
-- [ ] **Task 3.2: Item types** — Define the item-type system plus the types needed by Phases 3-4: raw ore, fuel deposits, biomass, fuel cells, scrap, components (meals moved to 4.4 — see Resolved Design Decisions). Items have visual representations for world rendering. Items are SpacetimeDB entities. Ammunition crates land with 5.5 and probes with 6.2 — each feature defines its own item types when it ships. **Scope: M**
-    - [ ] 3.2.1: Server — `ItemTypeId`/`ItemLocationKind` enums, `Item` table (full schema incl. Hotbar + Stored fields, one publish), `InventoryConfig` single-row table, `ItemRules` helpers, `SpawnWorldItem`/`ClearItems` debug reducers, Init seeding; publish `--delete-data=always` + bindings. **Scope: M**
-    - [ ] 3.2.2: stdb validation — `items` observed state + spawn/clear test actions; `world_items_spawn_and_render.json`. **Scope: S**
-    - [ ] 3.2.3: Client — `ItemType` resource + `ItemTypeRegistry` + 6 `.tres`, `WorldItem` scene (InteractTarget), `ItemSpawner` node in Main, `InventoryService` world half (OnUpdate evicts rows leaving World). **Scope: M**
-    - [ ] 3.2.4: Pure validation — `InventoryHarness`, `item_types_load.json`, `world_items_render.json`. **Scope: S**
-    - [ ] 3.2.5: DoD sweep. **Scope: S**
-
-- [ ] **Task 3.1: Fixed-size hotbar** — 4-slot hotbar (DB-configurable), no hidden inventory (§6.1). Every item = 1 slot regardless of type, no stacking. SpacetimeDB owns inventory state; hotbar selection is client-only UI state. Direct-select keys 1–4 + drop on Q (repurpose the leftover `HotbarDropItem.tres`, delete `HotbarCycleSlot.tres`). **Scope: M**
-    - [ ] 3.1.1: Server — `GiveItem` debug reducer (slot bounds + occupancy + alive checks). **Scope: S**
-    - [ ] 3.1.2: stdb validation — `items.hotbar` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection. **Scope: S**
-    - [ ] 3.1.3: Client — InventoryService hotbar half, `HotbarSlot1..4.tres` GUIDE actions + context rewiring, `ItemSlotPanel` shared slot visual, `HotbarHud` in Main. **Scope: M**
-    - [ ] 3.1.4: Pure validation — `hotbar_renders_items.json`, `hotbar_inert_while_modal_open.json` (exclusive-context proof). **Scope: M**
+- [ ] **Task 3.1: Item types** — Define the item-type system plus the types needed by Phases 3-4: raw ore, fuel deposits, biomass, fuel cells, scrap, components (meals moved to 4.4 — see Resolved Design Decisions). Items have visual representations for world rendering. Items are SpacetimeDB entities. Ammunition crates land with 5.5 and probes with 6.2 — each feature defines its own item types when it ships. **Scope: M**
+    - [ ] 3.1.1: Server — `ItemTypeId`/`ItemLocationKind` enums, `Item` table (full schema incl. Hotbar + Stored fields, one publish), `InventoryConfig` single-row table, `ItemRules` helpers, `SpawnWorldItem`/`ClearItems` debug reducers, Init seeding; publish `--delete-data=always` + bindings. **Scope: M**
+    - [ ] 3.1.2: stdb validation — `items` observed state + spawn/clear test actions; `world_items_spawn_and_render.json`. **Scope: S**
+    - [ ] 3.1.3: Client — `ItemType` resource + `ItemTypeRegistry` + 6 `.tres`, `WorldItem` scene (InteractTarget), `ItemSpawner` node in Main, `InventoryService` world half (OnUpdate evicts rows leaving World). **Scope: M**
+    - [ ] 3.1.4: Pure validation — `InventoryHarness`, `item_types_load.json`, `world_items_render.json`. **Scope: S**
     - [ ] 3.1.5: DoD sweep. **Scope: S**
+
+- [ ] **Task 3.2: Fixed-size hotbar** — 4-slot hotbar (DB-configurable), no hidden inventory (§6.1). Every item = 1 slot regardless of type, no stacking. SpacetimeDB owns inventory state; hotbar selection is client-only UI state. Direct-select keys 1–4 + drop on Q (repurpose the leftover `HotbarDropItem.tres`, delete `HotbarCycleSlot.tres`). **Scope: M**
+    - [ ] 3.2.1: Server — `GiveItem` debug reducer (slot bounds + occupancy + alive checks). **Scope: S**
+    - [ ] 3.2.2: stdb validation — `items.hotbar` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection. **Scope: S**
+    - [ ] 3.2.3: Client — InventoryService hotbar half, `HotbarSlot1..4.tres` GUIDE actions + context rewiring, `ItemSlotPanel` shared slot visual, `HotbarHud` in Main. **Scope: M**
+    - [ ] 3.2.4: Pure validation — `hotbar_renders_items.json`, `hotbar_inert_while_modal_open.json` (exclusive-context proof). **Scope: M**
+    - [ ] 3.2.5: DoD sweep. **Scope: S**
 
 - [ ] **Task 3.3: Item pickup/drop** — Walk-up + E interact picks an item into the first free hotbar slot; Q drops the selected item at the player's position. SpacetimeDB validates every pickup/drop: reach (server-side distance vs `PickupRadius`), alive, slot occupancy. Death drops all hotbar items at the death position (single hook in `DamageRules.ApplyDamage`). **Scope: M**
     - [ ] 3.3.1: Server — `PickUpItem`/`DropItem` reducers + `DropAllHotbarItems` death hook. **Scope: M**
