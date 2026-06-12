@@ -19,7 +19,7 @@ Build this game the way a human Godot developer would: **scenes and resources ar
 4. **Game data lives in `.tres` resources** (e.g. `game/Ship/CorvetteHull.tres` is a `HullTemplate` resource). New content of an existing type = new `.tres`, not new code.
 5. **Acceptable procedural work:** painting `TileMapLayer` cells from data, `_Draw()` overlays, spawning entities from server state. The *nodes* doing that work (the `TileMapLayer`, the container) still belong in the scene, and their `TileSet` belongs in a `.tres`.
 
-Anti-patterns currently in the codebase — do not copy them; refactor toward scenes when touching these files: `game/Ship/RoomTypeRegistry.cs` still `GD.Load`s the seven `RoomTypes/*.tres` files via string paths in `LoadAll()` (should be an `[Export]` array of `RoomType` resources wired in the scene). (`game/Main.cs` was refactored to exports + scene-declared nodes in `Main.tscn` — note that `ShipGrid.RoomTypeRegistry` is still assigned in `Main.OnReady()` because Node exports don't bind across scene-instance boundaries.)
+Known wrinkle: `ShipGrid.RoomTypeRegistry` is assigned in `Main.OnReady()` (and in harness controllers) rather than the scene because Node exports don't bind across scene-instance boundaries. (`RoomTypeRegistry` itself takes its `RoomType` resources from a scene-wired `[Export]` array — keep new room types wired in every scene that declares the registry.)
 
 ### Node and resource references
 

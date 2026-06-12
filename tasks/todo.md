@@ -368,9 +368,9 @@ Design notes (user-confirmed):
 - [x] Scenario `pressure_modal_shows_lost.json` — depressurize first, walk-up via `move_down` until "Kitchen Terminal" focused (terminal is straight down the corridor door path; no corner-wedge needed), modal `pressure_nominal == false`, Esc closes
 - [x] `./tools/run_all_scenarios.ps1` green 20/20; screenshots reviewed — tint vs dim vs composed read distinctly; corridor band shifts cold blue; modal shows "Pressure: Lost"
 
-## Subtask 1.5.6: End-to-end render assert + DoD sweep — Scope: S
-- [ ] `ConnectedGameHarnessController.cs` — surface real Main ShipGrid observed state as `game.grid`; stdb assert of the kitchen r↓/b↑ fingerprint in the connected client
-- [ ] `./scripts/validate_all.ps1` — both suites green, no regressions; screenshot review of every new checkpoint
-- [ ] Game boots clean ≥10s, zero `ERROR:` lines (`run-game` skill — local dev DB needs one `--delete-data=always` publish for slot 7)
-- [ ] `dotnet build` + `dotnet csharpier format .` (client), `spacetime build` + format (server)
-- [ ] `tasks/plan.md` + `tasks/todo.md` checked off; `git push origin`
+## Subtask 1.5.6: End-to-end render assert + DoD sweep — Scope: S ✅
+- [x] `ConnectedGameHarnessController.cs` — real Main ShipGrid observed state surfaced as `game.grid`; stdb scenario waits on `game.grid.rooms.5.is_pressurized` and asserts the kitchen r↓/b↑ fingerprint in the connected client (screenshot shows the tinted Kitchen in the real Main)
+- [x] `./scripts/validate_all.ps1` — both suites green: 20/20 pure + 9/9 stdb, no regressions; all new checkpoints visually reviewed
+- [x] Game boots clean 13s, zero `ERROR:` lines, DbManager connected + subscription applied, registry loaded 8 types (local dev DB was wiped during 1.5.1's `--delete-data=always` publish)
+- [x] `dotnet build` + csharpier (client), `spacetime build` + format (server); stale RoomTypeRegistry anti-pattern note in `client/CLAUDE.md` updated to reflect the refactor
+- [x] `tasks/plan.md` + `tasks/todo.md` checked off; `git push origin`

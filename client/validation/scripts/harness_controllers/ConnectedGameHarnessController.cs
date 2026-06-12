@@ -240,8 +240,11 @@ public partial class ConnectedGameHarnessController : Node2D
 
         state["focused_label"] = _main?.Interaction.Focused?.Label ?? "";
         state["remote_count"] = _main?.RemoteEntityCount ?? 0;
-        state["terminal_count"] =
-            _main?.GetNodeOrNull<Nomad.Game.Map.ShipGrid>("ShipGrid")?.TerminalCount ?? 0;
+
+        var shipGrid = _main?.GetNodeOrNull<Nomad.Game.Map.ShipGrid>("ShipGrid");
+        state["terminal_count"] = shipGrid?.TerminalCount ?? 0;
+        if (shipGrid is not null)
+            state["grid"] = shipGrid.GetObservedRoomState();
 
         var modalHost = _main?.GetNodeOrNull<Nomad.Game.Ui.ModalHost>("ModalHost");
         state["modal"] = new Godot.Collections.Dictionary

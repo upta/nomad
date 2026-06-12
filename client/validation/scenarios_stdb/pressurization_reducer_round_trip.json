@@ -1,12 +1,13 @@
 {
   "scenario_id": "pressurization_reducer_round_trip",
   "version": 3,
-  "description": "SetPressurization round-trips through the server for a room (Kitchen, slot 5) and the corridor (slot 7): depressurizing flips is_pressurized without touching grid status, power, or breaker state; repressurizing restores it.",
+  "description": "SetPressurization round-trips through the server for a room (Kitchen, slot 5) and the corridor (slot 7): depressurizing flips is_pressurized without touching grid status, power, or breaker state, and the connected client's ShipGrid renders the vacuum tint (red falls, blue rises); repressurizing restores it.",
   "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
   "steps": [
     { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
     { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
     { "op": "wait_until", "path": "harness_state.power.rooms.5.is_pressurized", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.game.grid.rooms.5.is_pressurized", "comparator": "eq", "expected": true, "timeout_frames": 300 },
     { "op": "checkpoint", "name": "initial" },
     { "op": "assert_value", "checkpoint": "initial", "path": "harness_state.power.rooms.7.is_pressurized", "comparator": "eq", "expected": true },
     { "op": "assert_value", "checkpoint": "initial", "path": "harness_state.power.status", "comparator": "eq", "expected": "Stable" },
@@ -14,10 +15,34 @@
     { "op": "wait_frames", "frames": 10 },
     { "op": "release_action", "action": "test_depressurize_kitchen" },
     { "op": "wait_until", "path": "harness_state.power.rooms.5.is_pressurized", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.game.grid.rooms.5.is_pressurized", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 5 },
     { "op": "checkpoint", "name": "kitchen_vacuum" },
     { "op": "assert_value", "checkpoint": "kitchen_vacuum", "path": "harness_state.power.status", "comparator": "eq", "expected": "Stable" },
     { "op": "assert_value", "checkpoint": "kitchen_vacuum", "path": "harness_state.power.rooms.5.is_powered", "comparator": "eq", "expected": true },
     { "op": "assert_value", "checkpoint": "kitchen_vacuum", "path": "harness_state.power.rooms.5.breaker_on", "comparator": "eq", "expected": true },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "initial_r": { "kind": "checkpoint", "checkpoint": "initial", "path": "harness_state.game.grid.rooms.5.color_r" },
+        "vacuum_r": { "kind": "checkpoint", "checkpoint": "kitchen_vacuum", "path": "harness_state.game.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["vacuum_r", "initial_r"], "as": "r_delta" }
+      ],
+      "assert": { "actual": "r_delta", "comparator": "lt", "expected": 0 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "initial_b": { "kind": "checkpoint", "checkpoint": "initial", "path": "harness_state.game.grid.rooms.5.color_b" },
+        "vacuum_b": { "kind": "checkpoint", "checkpoint": "kitchen_vacuum", "path": "harness_state.game.grid.rooms.5.color_b" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["vacuum_b", "initial_b"], "as": "b_delta" }
+      ],
+      "assert": { "actual": "b_delta", "comparator": "gt", "expected": 0 }
+    },
     { "op": "press_action", "action": "test_repressurize_kitchen" },
     { "op": "wait_frames", "frames": 10 },
     { "op": "release_action", "action": "test_repressurize_kitchen" },
