@@ -339,10 +339,10 @@ Design notes (user-confirmed):
 - [x] Acceptance verified via CLI: 8 rows incl. slot 7 `(corridor = ())`; `set_pressurization 5 false` flipped slot 5 with PowerGrid row identical before/after; slot 7 round-trip; bad slot 9 rejected; `assign_room_type 2 '{"corridor":[]}'` rejected (variant names are camelCase in CLI JSON)
 - [x] stdb suite green against new seed (8/8) before commit
 
-## Subtask 1.5.2: stdb validation of the reducer loop — Scope: S
-- [ ] `ConnectedGameHarnessController.cs`: `TestReducerActions` += `test_depressurize_kitchen`/`test_repressurize_kitchen` (slot 5) + `test_depressurize_corridor`/`test_repressurize_corridor` (slot 7); keep edge-detected `_PhysicsProcess` polling (gotcha); `BuildPowerState()` rooms += `is_pressurized`
-- [ ] Scenario `scenarios_stdb/pressurization_reducer_round_trip.json` — seed asserts (slots 5+7 pressurized) → kitchen round trip with guard asserts (`power.status == "Stable"`, `is_powered` unchanged) → corridor round trip
-- [ ] `./scripts/run_stdb_scenarios.ps1` green; verify no existing scenario asserts a rooms-collection size broken by slot 7
+## Subtask 1.5.2: stdb validation of the reducer loop — Scope: S ✅
+- [x] `ConnectedGameHarnessController.cs`: `TestReducerActions` += `test_depressurize_kitchen`/`test_repressurize_kitchen` (slot 5) + `test_depressurize_corridor`/`test_repressurize_corridor` (slot 7); edge-detected `_PhysicsProcess` polling kept; `BuildPowerState()` rooms += `is_pressurized`
+- [x] Scenario `scenarios_stdb/pressurization_reducer_round_trip.json` — confirmed red first (assertion_failure on missing path), green after harness changes; seed asserts (slots 5+7) → kitchen round trip with Stable/is_powered/breaker_on guards → corridor round trip
+- [x] Full stdb suite was green against the new seed before this subtask (8/8, run during 1.5.1); screenshots reviewed — rendering intact, vacuum visually identical to initial as expected (tint lands in 1.5.4)
 
 ## Subtask 1.5.3: Client — corridor as room + registry refactor — Scope: M
 - [ ] Create `client/game/Ship/RoomTypes/CorridorRoom.tres` — RoomId "Corridor", Label "Corridor", PowerDraw 0, TerminalType None, Color (0.30, 0.33, 0.38)

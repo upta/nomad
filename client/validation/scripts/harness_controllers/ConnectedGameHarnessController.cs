@@ -35,6 +35,10 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_reactor_output_high"] = conn => conn.Reducers.SetReactorOutput(10),
         ["test_short_grace"] = conn => conn.Reducers.SetBlackoutGrace(500),
         ["test_long_grace"] = conn => conn.Reducers.SetBlackoutGrace(3000),
+        ["test_depressurize_kitchen"] = conn => conn.Reducers.SetPressurization(5, false),
+        ["test_repressurize_kitchen"] = conn => conn.Reducers.SetPressurization(5, true),
+        ["test_depressurize_corridor"] = conn => conn.Reducers.SetPressurization(7, false),
+        ["test_repressurize_corridor"] = conn => conn.Reducers.SetPressurization(7, true),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -300,6 +304,7 @@ public partial class ConnectedGameHarnessController : Node2D
             {
                 ["breaker_on"] = ra.BreakerOn,
                 ["is_powered"] = ra.IsPowered,
+                ["is_pressurized"] = ra.IsPressurized,
             };
         }
         state["rooms"] = rooms;
