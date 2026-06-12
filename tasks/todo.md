@@ -492,3 +492,117 @@ Design notes (user-confirmed):
 - [x] Builds + csharpier both sides; plan/todo checked incl. **Checkpoint: Characters**; push
 
 **Checkpoint: Characters** ✅ — Characters have vitals (health, oxygen, hunger) rendered on a perimeter HUD, suffocate in vacuum and starve when unfed through one typed damage pipeline, equip spacesuits trading speed for tank capacity, die into ghost mode (float through walls, cloning-terminal-only interaction), and respawn at the Cloning Bay for biomass. Phase 2 complete.
+
+---
+
+# Phase 3: Inventory & Logistics 🔄 PLANNED
+
+Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. Implementation order: **3.2 → 3.1 → 3.3 → 3.4 → 3.5**. untrailed is the reference, deliberately improved (one Item row vs container indirection; explicit-slot reducers with server reach/alive checks vs client-trust holes; `InventoryConfig` table vs hardcoded capacities; `[Export]` registry vs switch statement; no stacking per GDD).
+
+Design notes (user-confirmed):
+- One `Item` table: `LocationKind` World/Hotbar/Stored + `Holder`/`SlotIndex`/`RoomSlotIndex` discriminator fields, `DbVector2 Position`. No Quantity. `InventoryConfig` (Id 0): HotbarSlots 4, PickupRadius 96, LoadRadius 160, CargoCapacity 12.
+- Holistic deposits: storage rooms (Cargo Bay) hold withdrawable items; machine intakes are tanks (Reactor+FuelCell→`ShipStores.Fuel`, CloningBay+Biomass→`Biomass`). One `LoadItem(hotbarSlot, roomSlot)` verb, branch on room type, server reach check vs `SlotCenter` — never trusts modal-open state.
+- Reactor burns fuel on a scheduled tick while generating; dry ⇒ output 0 ⇒ overload→blackout (1.4 flow). `FuelPerBurn = 0` disables — power-asserting stdb scenarios add one `test_disable_fuel_burn` precondition.
+- Death drops hotbar items at death position (`DamageRules.ApplyDamage` is the single IsDead-flip site); stored items unaffected; ghosts can't pick up.
+- Pickup = walk-up + E interact. Hotbar selection client-only; direct-select keys 1–4 + drop Q (repurpose leftover `HotbarDropItem.tres`, delete `HotbarCycleSlot.tres` — stale mappings would shadow new bindings).
+- Meals moved whole to 4.4. Phase 3 types: RawOre, FuelDeposit, Biomass, FuelCell, Scrap, Components.
+- Gotcha to honor: pickup/deposit are row UPDATEs — `InventoryService` must evict world entries on OnUpdate, not just OnDelete.
+
+# Task 3.2: Item types
+
+## Subtask 3.2.1: Server — item schema + world-spawn debug reducers — Scope: M
+- [ ] `ItemTypeId`/`ItemLocationKind` enums, `Item` table (full schema, one publish), `InventoryConfig`, `ItemRules` (config getter + `FindFreeHotbarSlot`), `TerminalType` += Storage
+- [ ] `SpawnWorldItem` + `ClearItems` reducers; Init seeds config
+- [ ] Format → build → publish `--delete-data=always` → generate → client build; CLI acceptance
+
+## Subtask 3.2.2: stdb validation — Scope: S
+- [ ] Harness `items` observed state + spawn/clear test actions; `world_items_spawn_and_render.json` red first
+
+## Subtask 3.2.3: Client — ItemType resources + WorldItem + ItemSpawner + InventoryService (world half) — Scope: M
+- [ ] `ItemType` resource + `ItemTypeRegistry` + 6 `.tres`; `WorldItem.tscn` (InteractTarget, "Pick up {Label}")
+- [ ] `InventoryService` world half (OnUpdate evicts non-World rows) + seeders; `ItemSpawner` node in `Main.tscn`
+- [ ] Main provides service, binds connection, hands registry to spawner
+
+## Subtask 3.2.4: Pure validation — Scope: S
+- [ ] `InventoryHarness` + controller; `item_types_load.json` (6 types) + `world_items_render.json` red first; screenshots
+
+## Subtask 3.2.5: DoD sweep — Scope: S
+- [ ] Both suites green, boot clean, builds + format, plan/todo, push
+
+# Task 3.1: Fixed-size hotbar
+
+## Subtask 3.1.1: Server — GiveItem debug reducer — Scope: S
+- [ ] `GiveItem(typeId, slotIndex)` — bounds/occupancy/alive checks; reducer-only publish
+
+## Subtask 3.1.2: stdb validation — Scope: S
+- [ ] `items.hotbar` + `items.config` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection
+
+## Subtask 3.1.3: Client — service hotbar half + HotbarHud + GUIDE actions — Scope: M
+- [ ] InventoryService `Slots`/`SelectedSlot` (client-only)/`SelectSlot`/`SetTestSlot`
+- [ ] `HotbarSlot1..4.tres`; rewire KBM (1–4, drop G→Q) + controller contexts; delete `HotbarCycleSlot.tres` + mappings; `EnsureInputActions` += hotbar actions
+- [ ] `ItemSlotPanel.tscn` shared slot visual; `HotbarHud.tscn` (4 panels, bottom-center) in `Main.tscn`
+
+## Subtask 3.1.4: Pure validation — Scope: M
+- [ ] `hotbar_renders_items.json` + `hotbar_inert_while_modal_open.json` red first; stdb scenario gains `game.hotbar` assert
+
+## Subtask 3.1.5: DoD sweep — Scope: S
+- [ ] Standard checklist
+
+# Task 3.3: Item pickup/drop
+
+## Subtask 3.3.1: Server — PickUpItem / DropItem + death-drop — Scope: M
+- [ ] `PickUpItem(itemId)` (alive + World + reach vs PickupRadius + free slot); `DropItem(slotIndex)` (drop at server-known entity position)
+- [ ] `DropAllHotbarItems` + hook in `DamageRules.ApplyDamage` alive→dead transition (guard missing rows); reducer-only publish
+
+## Subtask 3.3.2: stdb validation — Scope: M
+- [ ] `item_pickup_drop_round_trip.json`, `item_pickup_rejected_out_of_reach.json`, `item_pickup_rejected_when_full.json`, `death_drops_hotbar.json` — all red first
+
+## Subtask 3.3.3: Client — pickup/drop wiring — Scope: M
+- [ ] WorldItem→spawner→Main→`RequestPickUp`; HotbarHud drop→`RequestDrop(SelectedSlot, pos)`; test mirrors; verify node-cleanup chain
+
+## Subtask 3.3.4: Pure validation — Scope: M
+- [ ] `item_pickup_prompt_and_mirror.json` + `ghost_cannot_pickup.json` red first; screenshots
+
+## Subtask 3.3.5: DoD sweep — Scope: S
+- [ ] Standard checklist
+
+# Task 3.4: Load verb — tank deposits + reactor fuel burn
+
+## Subtask 3.4.1: Server — ShipStores.Fuel + LoadItem + FuelBurnTick — Scope: M
+- [ ] `ShipStores.Fuel` (seed 10); `PowerGrid.FuelBurnMillis` (120000) + `FuelPerBurn` (1; 0=off); `FuelBurnTimer` scheduled table
+- [ ] `LoadItem(hotbarSlot, roomSlot)` — tank branch (`AcceptsTankDeposit`), reach vs `SlotCenter` within LoadRadius, fuel deposits recompute grid
+- [ ] `FuelBurnTick` (burn while generating; crossing 0 recomputes); `RecomputePowerGrid` output gains `&& (Fuel > 0 || FuelPerBurn == 0)`; `SetFuel`/`SetFuelBurn` setters
+- [ ] Publish `--delete-data=always` → generate → builds; stdb suite green against new seed before commit
+
+## Subtask 3.4.2: stdb validation — Scope: M
+- [ ] `load_reducer_validation.json` (wrong-type + reach rejections, then success) + `reactor_fuel_burn_blackout_recovery.json` red first
+- [ ] Existing power-asserting scenarios gain `test_disable_fuel_burn` precondition
+
+## Subtask 3.4.3: Client — deposit UI + fuel readout — Scope: M
+- [ ] `RoomModalInfo` += `SlotIndex` (4 construction sites); shared `DepositRow.tscn`
+- [ ] InventoryService `CountOf`/`FirstSlotOf`/`RequestLoad`; CloningModal biomass row; PowerRouterModal fuel section (`PowerGridService` mirrors ShipStores)
+
+## Subtask 3.4.4: Pure validation — Scope: M
+- [ ] `cloning_modal_deposit_biomass.json` + `power_router_modal_deposit_fuel.json` red first; `load_biomass_modal_round_trip.json` (stdb)
+
+## Subtask 3.4.5: DoD sweep — Scope: S
+- [ ] Standard checklist
+
+# Task 3.5: Cargo Bay storage (store/withdraw)
+
+## Subtask 3.5.1: Server — storage branch + WithdrawItem — Scope: M
+- [ ] `AcceptsStorage` + `FindFreeStoreSlot` (CargoCapacity); `LoadItem` storage branch (any type, capacity-checked)
+- [ ] `WithdrawItem(itemId)` (Stored + reach + free hotbar slot); reducer-only publish; death-drop ignores Stored (why-comment)
+
+## Subtask 3.5.2: stdb validation — Scope: M
+- [ ] `cargo_store_withdraw_round_trip.json` + `cargo_store_rejections.json` (reach / non-storage room / full store / full hotbar) red first
+
+## Subtask 3.5.3: Client — StorageModal (untrailed dual-grid, improved) — Scope: M
+- [ ] `ItemSlotGrid.tscn` (focusable buttons wrapping `ItemSlotPanel`, in-place updates); `StorageModal.tscn` dual grid (hotbar press→deposit, cargo press→withdraw, focus-navigable)
+- [ ] `CargoBayRoom.tres` TerminalType → Storage; ModalHost Storage export slot; InventoryService `StoredIn`/`RequestWithdraw`/seeder
+
+## Subtask 3.5.4: Pure validation + multiplayer checkpoint — Scope: M
+- [ ] `storage_modal_store_withdraw.json` red first; `scenarios_stdb/items_multiplayer_visibility.json` (puppet sees drops/stores)
+
+## Subtask 3.5.5: DoD sweep + Phase 3 checkpoint — Scope: S
+- [ ] Full `validate_all.ps1`, boot clean, builds + format, plan/todo checked incl. **Checkpoint: Inventory**, push

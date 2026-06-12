@@ -189,13 +189,42 @@ SpacetimeDB Scaffold + Client Connection
 
 ### Phase 3: Inventory & Logistics
 
-- [ ] **Task 3.1: Fixed-size hotbar** — 4-slot hotbar (configurable), no hidden inventory (§6.1). Every item = 1 slot regardless of type. SpacetimeDB owns inventory state. Client renders hotbar UI and sends pickup/drop reducers. **Scope: M**
+Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. Implementation order: **3.2 → 3.1 → 3.3 → 3.4 → 3.5**. One `Item` table row per item with a `LocationKind` discriminator (World / Hotbar / Stored) — deliberately avoiding untrailed's 5-rows-per-dropped-item container indirection, its client-trust holes (reducers here take explicit slot indexes with server-side reach/alive/ownership checks; hotbar selection is pure client UI state), and its hardcoded capacities (`InventoryConfig` single-row table).
 
-- [ ] **Task 3.2: Item types** — Define the item-type system plus the types needed by Phases 3-4: raw ore, fuel deposits, biomass, fuel cells, meals, scrap, components. Items have visual representations for world rendering. Items are SpacetimeDB entities. Ammunition crates land with 5.5 and probes with 6.2 — each feature defines its own item types when it ships. **Scope: M**
+- [ ] **Task 3.2: Item types** — Define the item-type system plus the types needed by Phases 3-4: raw ore, fuel deposits, biomass, fuel cells, scrap, components (meals moved to 4.4 — see Resolved Design Decisions). Items have visual representations for world rendering. Items are SpacetimeDB entities. Ammunition crates land with 5.5 and probes with 6.2 — each feature defines its own item types when it ships. **Scope: M**
+    - [ ] 3.2.1: Server — `ItemTypeId`/`ItemLocationKind` enums, `Item` table (full schema incl. Hotbar + Stored fields, one publish), `InventoryConfig` single-row table, `ItemRules` helpers, `SpawnWorldItem`/`ClearItems` debug reducers, Init seeding; publish `--delete-data=always` + bindings. **Scope: M**
+    - [ ] 3.2.2: stdb validation — `items` observed state + spawn/clear test actions; `world_items_spawn_and_render.json`. **Scope: S**
+    - [ ] 3.2.3: Client — `ItemType` resource + `ItemTypeRegistry` + 6 `.tres`, `WorldItem` scene (InteractTarget), `ItemSpawner` node in Main, `InventoryService` world half (OnUpdate evicts rows leaving World). **Scope: M**
+    - [ ] 3.2.4: Pure validation — `InventoryHarness`, `item_types_load.json`, `world_items_render.json`. **Scope: S**
+    - [ ] 3.2.5: DoD sweep. **Scope: S**
 
-- [ ] **Task 3.3: Item pickup/drop** — Players can pick up items from the world into hotbar slots and drop items onto the ground. SpacetimeDB validates every pickup/drop. Items are physical entities on the grid. **Scope: M**
+- [ ] **Task 3.1: Fixed-size hotbar** — 4-slot hotbar (DB-configurable), no hidden inventory (§6.1). Every item = 1 slot regardless of type, no stacking. SpacetimeDB owns inventory state; hotbar selection is client-only UI state. Direct-select keys 1–4 + drop on Q (repurpose the leftover `HotbarDropItem.tres`, delete `HotbarCycleSlot.tres`). **Scope: M**
+    - [ ] 3.1.1: Server — `GiveItem` debug reducer (slot bounds + occupancy + alive checks). **Scope: S**
+    - [ ] 3.1.2: stdb validation — `items.hotbar` observed; `hotbar_state_round_trip.json` incl. occupied-slot rejection. **Scope: S**
+    - [ ] 3.1.3: Client — InventoryService hotbar half, `HotbarSlot1..4.tres` GUIDE actions + context rewiring, `ItemSlotPanel` shared slot visual, `HotbarHud` in Main. **Scope: M**
+    - [ ] 3.1.4: Pure validation — `hotbar_renders_items.json`, `hotbar_inert_while_modal_open.json` (exclusive-context proof). **Scope: M**
+    - [ ] 3.1.5: DoD sweep. **Scope: S**
 
-- [ ] **Task 3.4: Load verb** — Interact with ship system structures to deposit items directly from hotbar: fuel→reactor, biomass→cloning. Walk-up modal shows system status and accepts deposits (§5). SpacetimeDB reducer processes the deposit. Ammo→weapons is the same verb but lands with 5.5, when weapons exist to receive it. **Scope: M**
+- [ ] **Task 3.3: Item pickup/drop** — Walk-up + E interact picks an item into the first free hotbar slot; Q drops the selected item at the player's position. SpacetimeDB validates every pickup/drop: reach (server-side distance vs `PickupRadius`), alive, slot occupancy. Death drops all hotbar items at the death position (single hook in `DamageRules.ApplyDamage`). **Scope: M**
+    - [ ] 3.3.1: Server — `PickUpItem`/`DropItem` reducers + `DropAllHotbarItems` death hook. **Scope: M**
+    - [ ] 3.3.2: stdb validation — round trip, out-of-reach rejection, full-hotbar rejection, `death_drops_hotbar.json`. **Scope: M**
+    - [ ] 3.3.3: Client — interact→pickup and drop wiring through InventoryService; world-node cleanup chain. **Scope: M**
+    - [ ] 3.3.4: Pure validation — prompt/mirror round trip, `ghost_cannot_pickup.json`. **Scope: M**
+    - [ ] 3.3.5: DoD sweep. **Scope: S**
+
+- [ ] **Task 3.4: Load verb — tank deposits + reactor fuel burn** — Deposit items from hotbar into machine intakes via walk-up modals (§5): biomass→Cloning Bay (`ShipStores.Biomass++`), fuel cell→Reactor (`ShipStores.Fuel++`) — tank model: the machine consumes the item into a counter. The Reactor burns fuel on a scheduled tick while generating (`PowerGrid.FuelPerBurn`/`FuelBurnMillis`, DB-tunable, **0 = disabled** so scenarios opt out); dry tank ⇒ output 0 ⇒ overload→blackout via the 1.4 machinery — the keep-the-reactor-fed pressure loop lands whole here. Server-side reach check vs room slot center (`LoadRadius`); never trusts modal-open state. Ammo→weapons is the same verb but lands with 5.5. **Scope: L**
+    - [ ] 3.4.1: Server — `ShipStores.Fuel` + `PowerGrid` burn fields + `FuelBurnTimer`/`FuelBurnTick`, `LoadItem` reducer, `SetFuel`/`SetFuelBurn` setters; publish `--delete-data=always`. **Scope: M**
+    - [ ] 3.4.2: stdb validation — `load_reducer_validation.json` (type + reach rejections), `reactor_fuel_burn_blackout_recovery.json`; existing power scenarios gain a `test_disable_fuel_burn` precondition. **Scope: M**
+    - [ ] 3.4.3: Client — `RoomModalInfo.SlotIndex`, shared `DepositRow`, CloningModal biomass deposit, PowerRouterModal fuel section. **Scope: M**
+    - [ ] 3.4.4: Pure validation — modal deposit scenarios for both terminals. **Scope: M**
+    - [ ] 3.4.5: DoD sweep. **Scope: S**
+
+- [ ] **Task 3.5: Cargo Bay storage (store/withdraw)** — The Cargo Bay holds a capacity-limited generic store ("haul back to cargo bay storage", GDD §4): deposit any item from the hotbar, withdraw later. Same `LoadItem` deposit verb (storage branch) + `WithdrawItem`; `StorageModal` on the Cargo Bay terminal is an untrailed-`WagonInventoryUI`-inspired dual slot grid (hotbar ↔ cargo), improved: service-fed, scene-styled, in-place updates, focus-navigable. Stored items are the ship's — unaffected by death. **Scope: M**
+    - [ ] 3.5.1: Server — `AcceptsStorage` + `FindFreeStoreSlot`, `LoadItem` storage branch, `WithdrawItem` reducer (reducer-only publish). **Scope: M**
+    - [ ] 3.5.2: stdb validation — store/withdraw round trip + rejection matrix (reach, non-storage room, full store, full hotbar). **Scope: M**
+    - [ ] 3.5.3: Client — `ItemSlotGrid` + `StorageModal` dual grid, CargoBay terminal type → Storage, ModalHost slot. **Scope: M**
+    - [ ] 3.5.4: Pure validation + `scenarios_stdb/items_multiplayer_visibility.json` (puppet client sees drops/stores — checkpoint proof). **Scope: M**
+    - [ ] 3.5.5: DoD sweep + Phase 3 checkpoint. **Scope: S**
 
 **Checkpoint: Inventory** — Full pickup→carry→deposit loop works multiplayer.
 
@@ -207,7 +236,7 @@ SpacetimeDB Scaffold + Client Connection
 
 - [ ] **Task 4.3: Workshop bench + Refine/Craft verb** — Interact with workshop benches to combine raw materials into consumables (§5). Walk-up modal shows available recipes and queue. SpacetimeDB reducer processes crafting. **Scope: M**
 
-- [ ] **Task 4.4: Crafting recipes** — Start with 2 recipes: Fuel Cells (raw fuel + metal) and Meals (biomass). Recipes require specific resources and crafting time. The Ammo Crate recipe ships with 5.5 and the Probe recipe with 6.2, alongside their consumers. **Scope: S**
+- [ ] **Task 4.4: Crafting recipes** — Start with 2 recipes: Fuel Cells (raw fuel + metal) and Meals (biomass). Recipes require specific resources and crafting time. Owns the **meals feature whole**: Meal item type, recipe, and eat-from-hotbar (→ the 2.3 `RestoreHunger` entry point) land together here (moved from 3.2 per the feature-complete rule). The Ammo Crate recipe ships with 5.5 and the Probe recipe with 6.2, alongside their consumers. **Scope: M**
 
 **Checkpoint: Economy** — Harvest→Refine→Load→Consume loop works end-to-end in multiplayer.
 
@@ -279,4 +308,10 @@ SpacetimeDB Scaffold + Client Connection
 - **Feature-complete on implementation:** when a feature first ships, it ships whole — item types, recipes, consumers, and damage sources are bundled into the task that owns the feature rather than split across phases with deferral notes. (Decided 2026-06-11.)
 - **Room upgrades:** post-prototype, per GDD §2.1 ("not fully fleshed out for the initial prototype"). Trading (5.4) does not sell upgrades in the prototype.
 - **Corridors are rooms (Task 1.5):** corridors need pressure state, so the corridor network becomes a runtime room slot (slot index = `RoomSlots.Count`, Corvette: 7) with `RoomTypeId.Corridor` — power draw 0, not player-assignable, no terminal/breaker interactables, hidden from the PowerRouter modal. Hull geometry stays in `HullTemplate.Corridors`; only runtime state rides the `RoomAssignment` table. One pressure unit per corridor network. (Decided 2026-06-11.)
+- **Item model (Phase 3):** one `Item` table row per item with a `LocationKind` discriminator (World / Hotbar / Stored) — no container tables, no `Quantity` (GDD: 1 item = 1 slot, no stacking). Reducers take explicit slot indexes and validate sender/alive/reach server-side; hotbar selection is client-only UI state the server never trusts. Capacities and radii live in the `InventoryConfig` single-row table. (Decided 2026-06-12.)
+- **Holistic deposit model (Phase 3):** depositing into a room branches on the room — storage rooms (Cargo Bay, generic, capacity-limited, withdrawable) hold items; machine intakes (Reactor+fuel cell, Cloning Bay+biomass) are tanks that consume the item into a `ShipStores` counter. One `LoadItem` verb, two behaviors. (Decided 2026-06-12.)
+- **Reactor fuel burn (Task 3.4):** the Reactor consumes fuel on a scheduled tick while generating; dry tank ⇒ output 0 ⇒ overload→blackout via the 1.4 flow. `PowerGrid.FuelPerBurn = 0` disables burn entirely (validation scenarios opt out with one precondition). (Decided 2026-06-12.)
+- **Death drops hotbar items** at the death position (retrieval-run gameplay); stored items are the ship's and unaffected. Ghosts cannot pick up. (Decided 2026-06-12.)
+- **Pickup is walk-up + E interact** through the 1.3 framework — no auto-pickup on walk-over. (Decided 2026-06-12.)
+- **Meals moved to 4.4:** meal item type + recipe + eat-from-hotbar land together with the Kitchen recipe per the feature-complete rule (ammo-with-5.5 precedent), not split across 3.2/4.4. (Decided 2026-06-12.)
 - **Power model (Task 1.4):** varied draw per room type rather than flat 1/room — long-term, placeable stations inside rooms will drive power cost. Reactor draws 0 and generates `PowerGrid.ReactorOutput` (seed 10 vs total demand 8). Overload (demand > output) gives a flickering warning for a database-driven grace window (`PowerGrid.GraceMillis`, default 10s) before full blackout; shedding load during grace recovers. Reactor breaker off ⇒ output 0 (grid-wide overload). PowerRouter modal shows the grid overview **with remote breaker toggles** — physical sprinting to wall breakers stays, but reactor-room convenience is a deliberate ship-building trade-off. (Decided 2026-06-11.)
