@@ -9,9 +9,11 @@
 script = ExtResource("1")
 BreakerScene = ExtResource("4_breaker")
 TerminalScene = ExtResource("3_terminal")
+DepressurizedBlend = 0.55
 FlickerDimFactor = 0.6
 FlickerIntervalSeconds = 0.12
 UnpoweredDimFactor = 0.35
+VacuumTint = Color(0.35, 0.45, 0.6, 1)
 
 [node name="FloorLayer" type="TileMapLayer" parent="." unique_id=1256238249]
 unique_name_in_owner = true

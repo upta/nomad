@@ -88,6 +88,10 @@ public partial class PowerHarnessController
             ["test_grid_overload"] = () => _shipGrid.SetTestGridStatus("Overload"),
             ["test_grid_stable"] = () => _shipGrid.SetTestGridStatus("Stable"),
             ["test_assign_kitchen_reactor"] = () => AssignTestRoom(5, "Reactor"),
+            ["test_depressurize_kitchen"] = () => _shipGrid.SetTestPressurization(5, false),
+            ["test_repressurize_kitchen"] = () => _shipGrid.SetTestPressurization(5, true),
+            ["test_depressurize_corridor"] = () => _shipGrid.SetTestPressurization(7, false),
+            ["test_repressurize_corridor"] = () => _shipGrid.SetTestPressurization(7, true),
         };
         foreach (var action in _testActions.Keys.Concat(ActionKeyBridge.Keys))
         {
@@ -109,6 +113,7 @@ public partial class PowerHarnessController
         AssignTestRoom(4, "Workshop");
         AssignTestRoom(5, "Kitchen");
         AssignTestRoom(6, "CargoBay");
+        AssignTestRoom(7, "Corridor");
     }
 
     InteractionService IProvide<InteractionService>.Value() => _interactionService;
@@ -135,6 +140,7 @@ public partial class PowerHarnessController
             {
                 ["open"] = _modalHost.IsOpen,
                 ["title"] = _modalHost.CurrentTitle,
+                ["pressure_nominal"] = _modalHost.CurrentInfo?.IsPressurized ?? true,
             },
             ["grid"] = _shipGrid.GetObservedRoomState(),
         };

@@ -1,0 +1,73 @@
+{
+  "scenario_id": "pressure_depressurized_room_renders_vacuum_tint",
+  "version": 3,
+  "description": "Depressurizing the Kitchen (slot 5) lerps its room color toward the cold VacuumTint: red falls AND blue rises versus baseline, a fingerprint no Darkened() power-dim can produce. Repressurizing restores the exact baseline color. Fingerprint holds while VacuumTint.B exceeds the Kitchen color's B.",
+  "harness_scene": "res://validation/harnesses/PowerHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/PowerHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "baseline" },
+    { "op": "assert_value", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.is_pressurized", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "test_depressurize_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_depressurize_kitchen" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.is_pressurized", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "vacuum" },
+    { "op": "assert_value", "checkpoint": "vacuum", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": true },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_r": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_r" },
+        "vacuum_r": { "kind": "checkpoint", "checkpoint": "vacuum", "path": "harness_state.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["vacuum_r", "baseline_r"], "as": "r_delta" }
+      ],
+      "assert": { "actual": "r_delta", "comparator": "lt", "expected": 0 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_b": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_b" },
+        "vacuum_b": { "kind": "checkpoint", "checkpoint": "vacuum", "path": "harness_state.grid.rooms.5.color_b" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["vacuum_b", "baseline_b"], "as": "b_delta" }
+      ],
+      "assert": { "actual": "b_delta", "comparator": "gt", "expected": 0 }
+    },
+    { "op": "press_action", "action": "test_repressurize_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_repressurize_kitchen" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.is_pressurized", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "restored" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_r": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_r" },
+        "restored_r": { "kind": "checkpoint", "checkpoint": "restored", "path": "harness_state.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["restored_r", "baseline_r"], "as": "r_diff" },
+        { "op": "abs", "inputs": ["r_diff"], "as": "abs_r_diff" }
+      ],
+      "assert": { "actual": "abs_r_diff", "comparator": "lte", "expected": 0.001 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_b": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_b" },
+        "restored_b": { "kind": "checkpoint", "checkpoint": "restored", "path": "harness_state.grid.rooms.5.color_b" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["restored_b", "baseline_b"], "as": "b_diff" },
+        { "op": "abs", "inputs": ["b_diff"], "as": "abs_b_diff" }
+      ],
+      "assert": { "actual": "abs_b_diff", "comparator": "lte", "expected": 0.001 }
+    },
+    { "op": "quit" }
+  ]
+}

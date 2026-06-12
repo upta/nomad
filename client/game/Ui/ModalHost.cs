@@ -40,6 +40,8 @@ public partial class ModalHost : CanvasLayer
     [Export]
     public InputModeContext UiModeContext { get; set; } = null!;
 
+    public RoomModalInfo? CurrentInfo => _currentInfo;
+
     public string CurrentTitle => _currentInfo?.Label ?? "";
 
     public bool IsOpen => _current is not null;

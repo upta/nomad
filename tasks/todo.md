@@ -352,11 +352,13 @@ Design notes (user-confirmed):
 - [x] `room_types_load.json` updated 7→8 + Corridor asserts (confirmed red before implementing); `rooms_assigned_to_slots.json` uses per-index asserts only — unaffected
 - [x] Acceptance: builds clean; pure suite green 16/16; screenshot shows corridor with subtle neutral tint, rooms/terminals/breakers intact
 
-## Subtask 1.5.4: Client — vacuum-tint rendering + test surface — Scope: S
-- [ ] `ShipGrid.cs` — `VacuumTint`/`DepressurizedBlend` exports + `GetRoomColor` lerp before power branches; `SetTestAssignment` gains `bool isPressurized = true`; new `SetTestPressurization(slot, isPressurized)` (mutate row, `EnsureRoomNodes`, `QueueRedraw`); observed rooms += `is_pressurized`
-- [ ] `ShipGrid.tscn` — set `VacuumTint`/`DepressurizedBlend` values
-- [ ] `ModalHost.cs` — `public RoomModalInfo? CurrentInfo => _currentInfo;`
-- [ ] Acceptance: builds clean; existing pure scenarios still green (pressurized-true defaults)
+## Subtask 1.5.4: Client — vacuum-tint rendering + test surface — Scope: S ✅
+- [x] `ShipGrid.cs` — `VacuumTint`/`DepressurizedBlend` exports + `GetRoomColor` lerp before power branches; `SetTestAssignment` gains `bool isPressurized = true`; new `SetTestPressurization(slot, isPressurized)`; observed rooms + corridor entry += `is_pressurized`
+- [x] `ShipGrid.tscn` — `VacuumTint = Color(0.35, 0.45, 0.6, 1)`, `DepressurizedBlend = 0.55`
+- [x] `ModalHost.cs` — `public RoomModalInfo? CurrentInfo => _currentInfo;`
+- [x] PowerHarnessController — pressurization test actions (kitchen + corridor) + corridor seed + `modal.pressure_nominal` observed (pulled forward from 1.5.5 so the tint scenario could go red→green in one cycle)
+- [x] `pressure_depressurized_room_renders_vacuum_tint.json` — red first, green after; screenshots show warm Kitchen → cold desaturated vacuum, clearly distinct from power-dim
+- [x] Acceptance: builds clean; full pure suite green 17/17
 
 ## Subtask 1.5.5: Pure validation — PowerHarness scenarios — Scope: M
 - [ ] `PowerHarnessController.cs` — seed corridor (`SetTestAssignment(7, "Corridor")`); `_testActions` += depressurize/repressurize kitchen + depressurize corridor; `modal` dict += `pressure_nominal` (via `ModalHost.CurrentInfo`)

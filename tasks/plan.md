@@ -152,7 +152,7 @@ SpacetimeDB Scaffold + Client Connection
     - [x] 1.5.1: Server — `Corridor` RoomTypeId + slot-7 seed + `SetPressurization` reducer (no power recompute; `AssignRoomType` rejects Corridor); publish `--delete-data=always` + regenerate bindings. **Scope: M**
     - [x] 1.5.2: stdb validation — pressurization test reducer actions + `is_pressurized` in observed power state; `pressurization_reducer_round_trip.json` (kitchen + corridor round trips, power-grid-untouched guard asserts). **Scope: S**
     - [x] 1.5.3: Client corridor-as-room — `CorridorRoom.tres`, RoomTypeRegistry refactor to `[Export]` RoomType array (anti-pattern cleanup, wired in Main + 6 harness scenes), ShipGrid corridor tint rect + observed corridor entry, PowerGridService skips Corridor. **Scope: M**
-    - [ ] 1.5.4: Client vacuum-tint rendering — `VacuumTint`/`DepressurizedBlend` exports in ShipGrid.tscn, `GetRoomColor` lerp, `SetTestPressurization` + `SetTestAssignment` isPressurized param, `is_pressurized` observed, `ModalHost.CurrentInfo`. **Scope: S**
+    - [x] 1.5.4: Client vacuum-tint rendering — `VacuumTint`/`DepressurizedBlend` exports in ShipGrid.tscn, `GetRoomColor` lerp, `SetTestPressurization` + `SetTestAssignment` isPressurized param, `is_pressurized` observed, `ModalHost.CurrentInfo`. **Scope: S**
     - [ ] 1.5.5: Pure validation — PowerHarness pressurization test actions + corridor seed; scenarios: vacuum-tint color fingerprint (r↓ b↑), composes-with-unpowered, corridor depressurizes, RoomInfoModal shows "Pressure: Lost". **Scope: M**
     - [ ] 1.5.6: End-to-end render assert (`game.grid` in ConnectedGameHarness, fingerprint in connected client) + DoD sweep. **Scope: S**
 

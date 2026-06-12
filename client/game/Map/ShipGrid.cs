@@ -64,6 +64,9 @@ public partial class ShipGrid : Node2D
     public PackedScene? TerminalScene { get; set; }
 
     [Export(PropertyHint.Range, "0,1")]
+    public float DepressurizedBlend { get; set; } = 0.55f;
+
+    [Export(PropertyHint.Range, "0,1")]
     public float FlickerDimFactor { get; set; } = 0.6f;
 
     [Export]
@@ -71,6 +74,9 @@ public partial class ShipGrid : Node2D
 
     [Export(PropertyHint.Range, "0,1")]
     public float UnpoweredDimFactor { get; set; } = 0.35f;
+
+    [Export]
+    public Color VacuumTint { get; set; } = new(0.35f, 0.45f, 0.6f);
 
     public int BreakerCount => _breakers.Count;
 
@@ -202,6 +208,7 @@ public partial class ShipGrid : Node2D
                     ["label"] = GetRoomLabel(slot.SlotIndex),
                     ["is_powered"] = assigned && ra!.IsPowered,
                     ["breaker_on"] = assigned && ra!.BreakerOn,
+                    ["is_pressurized"] = assigned && ra!.IsPressurized,
                 };
                 roomList.Add(entry);
             }
@@ -217,6 +224,7 @@ public partial class ShipGrid : Node2D
                     ["label"] = GetRoomLabel(CorridorSlotIndex),
                     ["is_powered"] = corridorAssigned && cra!.IsPowered,
                     ["breaker_on"] = corridorAssigned && cra!.BreakerOn,
+                    ["is_pressurized"] = corridorAssigned && cra!.IsPressurized,
                 }
             );
         }
@@ -244,7 +252,8 @@ public partial class ShipGrid : Node2D
         int slotIndex,
         string roomTypeId,
         bool isPowered = true,
-        bool breakerOn = true
+        bool breakerOn = true,
+        bool isPressurized = true
     )
     {
         _assignments[slotIndex] = new StdbRa
@@ -252,7 +261,7 @@ public partial class ShipGrid : Node2D
             SlotIndex = slotIndex,
             RoomTypeId = Enum.Parse<StdbRt>(roomTypeId),
             IsPowered = isPowered,
-            IsPressurized = true,
+            IsPressurized = isPressurized,
             BreakerOn = breakerOn,
             Health = 100f,
         };
@@ -273,6 +282,16 @@ public partial class ShipGrid : Node2D
 
         ra.BreakerOn = breakerOn;
         ra.IsPowered = isPowered;
+        EnsureRoomNodes(slotIndex);
+        QueueRedraw();
+    }
+
+    public void SetTestPressurization(int slotIndex, bool isPressurized)
+    {
+        if (!_assignments.TryGetValue(slotIndex, out var ra))
+            return;
+
+        ra.IsPressurized = isPressurized;
         EnsureRoomNodes(slotIndex);
         QueueRedraw();
     }
@@ -414,6 +433,11 @@ public partial class ShipGrid : Node2D
         var color = RoomTypeRegistry?.Find(ra.RoomTypeId.ToString()) is { } rt
             ? rt.Color
             : DefaultRoomColor;
+
+        // Tint before dimming so depressurized + unpowered compose: a hue
+        // shift toward VacuumTint stays distinguishable from any Darkened().
+        if (!ra.IsPressurized)
+            color = color.Lerp(VacuumTint, DepressurizedBlend);
 
         if (!ra.IsPowered)
             return color.Darkened(UnpoweredDimFactor);
