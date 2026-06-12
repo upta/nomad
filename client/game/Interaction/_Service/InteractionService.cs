@@ -17,6 +17,10 @@ public class InteractionService
 
     public InteractionRegistration? Focused { get; private set; }
 
+    // While the probing player is a ghost, only ghost-accessible
+    // registrations can focus or trigger.
+    public bool IsGhost { get; set; }
+
     public IReadOnlyCollection<InteractionRegistration> Registrations => _registrations;
 
     public void NotifyTriggered(InteractionRegistration registration)
@@ -41,7 +45,7 @@ public class InteractionService
         while (_pending.Count > 0)
         {
             var registration = _pending.Dequeue();
-            if (_registrations.Contains(registration))
+            if (_registrations.Contains(registration) && IsSelectable(registration))
             {
                 candidates ??= [];
                 candidates.Add(registration);
@@ -76,7 +80,7 @@ public class InteractionService
         CurrentProbeData = probeData;
     }
 
-    private static InteractionRegistration? ResolveClosest(
+    private InteractionRegistration? ResolveClosest(
         IEnumerable<InteractionRegistration> candidates,
         ProbeData probeData
     )
@@ -86,6 +90,11 @@ public class InteractionService
 
         foreach (var candidate in candidates)
         {
+            if (!IsSelectable(candidate))
+            {
+                continue;
+            }
+
             var distSq = candidate.Position.DistanceSquaredTo(probeData.Position);
             if (distSq < closestDistSq)
             {
@@ -96,6 +105,9 @@ public class InteractionService
 
         return closest;
     }
+
+    private bool IsSelectable(InteractionRegistration registration) =>
+        !IsGhost || registration.GhostAccessible;
 
     private void UpdateFocus()
     {

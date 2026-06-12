@@ -1,0 +1,31 @@
+{
+  "scenario_id": "ghost_passes_through_walls",
+  "version": 3,
+  "description": "Ghost mode movement: alive, the corridor's top wall blocks the player; dead, the ghost floats straight through it (collision cleared, translucent tint) — and reviving restores solidity.",
+  "harness_scene": "res://validation/harnesses/GhostHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/GhostHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "press_action", "action": "move_up" },
+    { "op": "wait_frames", "frames": 60 },
+    { "op": "release_action", "action": "move_up" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "alive_blocked" },
+    { "op": "assert_value", "checkpoint": "alive_blocked", "path": "harness_state.player.y", "comparator": "gt", "expected": -50 },
+    { "op": "assert_value", "checkpoint": "alive_blocked", "path": "harness_state.player.is_ghost", "comparator": "eq", "expected": false },
+    { "op": "press_action", "action": "test_kill" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_kill" },
+    { "op": "wait_until", "path": "harness_state.player.is_ghost", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "press_action", "action": "move_up" },
+    { "op": "wait_until", "path": "harness_state.player.y", "comparator": "lt", "expected": -80, "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_up" },
+    { "op": "checkpoint", "name": "ghost_through_wall" },
+    { "op": "press_action", "action": "test_revive" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_revive" },
+    { "op": "wait_until", "path": "harness_state.player.is_ghost", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "revived" },
+    { "op": "quit" }
+  ]
+}

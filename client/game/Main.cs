@@ -101,6 +101,8 @@ public partial class Main
         conn.Db.Entities.OnInsert += OnEntityInserted;
         conn.Db.Entities.OnUpdate += OnEntityUpdated;
         conn.Db.Entities.OnDelete += OnEntityDeleted;
+        conn.Db.VitalsRows.OnInsert += OnRemoteVitalsRow;
+        conn.Db.VitalsRows.OnUpdate += OnRemoteVitalsUpdated;
 
         foreach (var entity in conn.Db.Entities.Iter())
         {
@@ -131,6 +133,12 @@ public partial class Main
             entities.OnUpdate -= OnEntityUpdated;
             entities.OnDelete -= OnEntityDeleted;
         }
+
+        if (_dbManager?.Connection?.Db?.VitalsRows is { } vitalsRows)
+        {
+            vitalsRows.OnInsert -= OnRemoteVitalsRow;
+            vitalsRows.OnUpdate -= OnRemoteVitalsUpdated;
+        }
     }
 
     private static int GetLocalEntityId(DbConnection conn)
@@ -153,6 +161,7 @@ public partial class Main
     private void OnVitalsChanged()
     {
         _localPlayer?.SetSuitEquipped(_vitalsService.SuitEquipped, _vitalsService.SuitSpeedFactor);
+        _localPlayer?.SetGhostMode(_vitalsService.IsDead);
         ShipGrid.SetSuitRackState(_vitalsService.SuitEquipped);
 
         // Position is normally client-authoritative; respawn is the one case
@@ -233,5 +242,38 @@ public partial class Main
         AddChild(node);
         node.Initialize(conn, entity);
         _remoteNodes[entity.EntityId] = node;
+
+        // A remote player may already be a ghost when their node spawns.
+        foreach (var player in conn.Db.Players.Iter())
+        {
+            if (
+                player.PlayerEntityId == entity.EntityId
+                && conn.Db.VitalsRows.Identity.Find(player.Identity) is { } vitals
+            )
+            {
+                node.SetGhost(vitals.IsDead);
+                break;
+            }
+        }
     }
+
+    // Remote ghosts render translucent: map the vitals row's identity to its
+    // player entity and tint the matching remote node.
+    private void OnRemoteVitalsRow(EventContext ctx, SpacetimeDB.Types.Vitals vitals)
+    {
+        if (_dbManager?.Connection is not { } conn)
+            return;
+
+        if (conn.Db.Players.Identity.Find(vitals.Identity) is not { } player)
+            return;
+
+        if (_remoteNodes.TryGetValue(player.PlayerEntityId, out var node))
+            node.SetGhost(vitals.IsDead);
+    }
+
+    private void OnRemoteVitalsUpdated(
+        EventContext ctx,
+        SpacetimeDB.Types.Vitals oldVitals,
+        SpacetimeDB.Types.Vitals newVitals
+    ) => OnRemoteVitalsRow(ctx, newVitals);
 }

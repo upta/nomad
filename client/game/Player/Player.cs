@@ -15,6 +15,8 @@ public partial class Player : CharacterBody2D
     private Color _baseSpriteColor;
     private float _currentRotation;
     private MovementNetworkSync? _networkSync;
+    private uint _solidCollisionLayer;
+    private uint _solidCollisionMask;
     private ProbeData? _probeData;
     private Nomad.Game.Ship.RoomLocator? _roomLocator;
     private float _speedModifier = 1.0f;
@@ -27,6 +29,9 @@ public partial class Player : CharacterBody2D
 
     [Node]
     public Chickensoft.GodotNodeInterfaces.IColorRect Sprite { get; set; } = default!;
+
+    [Export]
+    public Color GhostColor { get; set; } = new(0.65f, 0.85f, 1f, 0.45f);
 
     [Export]
     public Color SuitedColor { get; set; } = new(0.9f, 0.65f, 0.2f);
@@ -51,6 +56,8 @@ public partial class Player : CharacterBody2D
     public Nomad.Game.Ship.HullTemplate? Hull { get; set; }
 
     public int CurrentSlotIndex { get; private set; } = int.MinValue;
+
+    public bool IsGhostMode { get; private set; }
 
     public float SpeedModifier => _speedModifier;
 
@@ -129,15 +136,53 @@ public partial class Player : CharacterBody2D
         _ = newPlayer.IsConnected;
     }
 
+    private void UpdateSpriteColor()
+    {
+        if (Sprite is null)
+            return;
+
+        Sprite.Color =
+            IsGhostMode ? GhostColor
+            : SuitEquipped ? SuitedColor
+            : _baseSpriteColor;
+    }
+
+    // Ghosts float through walls (collision cleared) and can only use
+    // ghost-accessible interactables; the translucent tint reads as
+    // intangible on every client (GDD §6.4).
+    public void SetGhostMode(bool ghost)
+    {
+        if (IsGhostMode == ghost)
+            return;
+
+        IsGhostMode = ghost;
+
+        if (ghost)
+        {
+            _solidCollisionLayer = CollisionLayer;
+            _solidCollisionMask = CollisionMask;
+            CollisionLayer = 0;
+            CollisionMask = 0;
+        }
+        else
+        {
+            CollisionLayer = _solidCollisionLayer;
+            CollisionMask = _solidCollisionMask;
+        }
+
+        if (_probeData is not null)
+            Interaction.IsGhost = ghost;
+
+        UpdateSpriteColor();
+    }
+
     // The suit trades speed for tank capacity; the tint makes equipped state
     // readable on every client (single-piece sprite per GDD §7.1).
     public void SetSuitEquipped(bool equipped, float speedFactor)
     {
         SuitEquipped = equipped;
         _speedModifier = equipped ? speedFactor : 1.0f;
-
-        if (Sprite is not null)
-            Sprite.Color = equipped ? SuitedColor : _baseSpriteColor;
+        UpdateSpriteColor();
     }
 
     // Reports room transitions only — the reducer must not be spammed with

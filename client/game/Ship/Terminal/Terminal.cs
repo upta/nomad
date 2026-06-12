@@ -48,5 +48,9 @@ public partial class Terminal : Node2D
         TerminalType = terminalType;
         IsPowered = isPowered;
         IsPressurized = isPressurized;
+
+        // The Cloning terminal is the one interactable ghosts may use.
+        if (Target?.Registration is { } registration)
+            registration.GhostAccessible = terminalType == TerminalType.Cloning;
     }
 }
