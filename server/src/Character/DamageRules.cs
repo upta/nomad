@@ -44,6 +44,8 @@ public static partial class Module
             {
                 Identity = identity,
                 Health = new Meter { Current = DefaultMaxHealth, Max = DefaultMaxHealth },
+                Oxygen = new Meter { Current = DefaultMaxOxygen, Max = DefaultMaxOxygen },
+                SuitEquipped = false,
                 IsDead = false,
             }
         );

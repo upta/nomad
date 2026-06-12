@@ -1,0 +1,45 @@
+{
+  "scenario_id": "oxygen_empty_suffocates",
+  "version": 3,
+  "description": "An empty oxygen tank applies suffocation damage through the damage pipeline: with the corridor depressurized and oxygen forced low, the tank empties and health starts falling; repressurizing refills oxygen and the bleeding stops — health holds (no passive regen).",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_fast_vitals" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_fast_vitals" },
+    { "op": "press_action", "action": "test_depressurize_corridor" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_depressurize_corridor" },
+    { "op": "press_action", "action": "test_set_oxygen_low" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_oxygen_low" },
+    { "op": "wait_until", "path": "harness_state.vitals.oxygen", "comparator": "eq", "expected": 0, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.vitals.health", "comparator": "lt", "expected": 100, "timeout_frames": 600 },
+    { "op": "checkpoint", "name": "suffocating" },
+    { "op": "assert_value", "checkpoint": "suffocating", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": false },
+    { "op": "press_action", "action": "test_repressurize_corridor" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_repressurize_corridor" },
+    { "op": "wait_until", "path": "harness_state.vitals.oxygen", "comparator": "gt", "expected": 20, "timeout_frames": 600 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "recovered" },
+    { "op": "wait_frames", "frames": 90 },
+    { "op": "checkpoint", "name": "health_stable" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "health_at_recovery": { "kind": "checkpoint", "checkpoint": "recovered", "path": "harness_state.vitals.health" },
+        "health_later": { "kind": "checkpoint", "checkpoint": "health_stable", "path": "harness_state.vitals.health" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["health_later", "health_at_recovery"], "as": "health_delta" }
+      ],
+      "assert": { "actual": "health_delta", "comparator": "eq", "expected": 0 }
+    },
+    { "op": "quit" }
+  ]
+}

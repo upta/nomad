@@ -6,6 +6,8 @@ public static partial class Module
         [PrimaryKey]
         public Identity Identity;
         public Meter Health;
+        public Meter Oxygen;
+        public bool SuitEquipped;
         public bool IsDead;
     }
 }

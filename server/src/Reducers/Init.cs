@@ -18,6 +18,10 @@ public static partial class Module
 
         // Creates the PowerGrid row and settles initial powered state.
         RecomputePowerGrid(ctx);
+
+        // Creates the VitalsConfig row and starts the repeating vitals tick.
+        var vitalsConfig = GetVitalsConfig(ctx);
+        RescheduleVitalsTick(ctx, vitalsConfig.TickMillis);
     }
 
     private static void SeedRoom(ReducerContext ctx, int slotIndex, RoomTypeId roomTypeId)

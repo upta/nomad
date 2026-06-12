@@ -431,15 +431,15 @@ Design notes (user-confirmed):
 - [x] Observed `vitals.current_slot` (server Players row); scenario `scenarios_stdb/player_room_tracking.json` red first, green after — corridor 7 → Kitchen 5 → corridor 7. Gotcha confirmed: wait for `game.terminal_count` before pressing movement (GUIDE context must be active when the bridged key-press edge fires — held state never re-registers); diagonal wedge into the door per 1.4.4
 - [x] Full stdb suite green (11/11)
 
-## Subtask 2.2.3: Server oxygen model + VitalsTick — Scope: M
-- [ ] `Vitals` += `Meter Oxygen` (100/100), `bool SuitEquipped`
-- [ ] Create `VitalsConfig.cs` (single-row tunables) + `VitalsTickTimer.cs` (repeating scheduled) + `VitalsTick.cs` reducer
-- [ ] Create `SetSuitEquipped.cs`, `SetVitalsConfig.cs`, `SetOxygen.cs`; `Init.cs` seeds config + tick row
-- [ ] Publish + generate + builds; CLI acceptance (drain/refill/suffocation/suit capacity)
+## Subtask 2.2.3: Server oxygen model + VitalsTick — Scope: M ✅
+- [x] `Vitals` += `Meter Oxygen` (100/100), `bool SuitEquipped`
+- [x] Create `VitalsConfig.cs` (single-row tunables: 500ms tick, drain 0.85/tick ≈60s tank, refill 5/tick, suffocation 2/tick ≈25s, suit ×2 / speed 0.8, biomass cost 1) + `VitalsTickTimer.cs` (repeating `ScheduleAt.Interval`) + `VitalsTick.cs` (pressurized+powered refills, pressurized-unpowered holds, else depletes; empty → Suffocation via pipeline; dead/disconnected skipped)
+- [x] Create `SetSuitEquipped.cs` (mutates Oxygen.Max ×2 / restores + clamps), `SetVitalsConfig.cs` (re-schedules tick on interval change), `SetOxygen.cs`; `Init.cs` seeds config + tick row; `VitalsRules.cs` holds defaults + reschedule helper
+- [x] Publish + generate + builds; acceptance proven end-to-end by the two stdb scenarios
 
-## Subtask 2.2.4: stdb validation — oxygen loop — Scope: M
-- [ ] Harness: vitals += oxygen fields; test actions `test_fast_vitals`/`test_set_oxygen_low`/`test_equip_suit`/`test_unequip_suit`
-- [ ] Scenarios `oxygen_depletes_and_refills.json` + `oxygen_empty_suffocates.json` (red first); suite green
+## Subtask 2.2.4: stdb validation — oxygen loop — Scope: M ✅
+- [x] Harness: vitals += oxygen/max_oxygen/suit_equipped; test actions `test_fast_vitals` (250ms/5/25/5)/`test_set_oxygen_low`/`test_equip_suit`/`test_unequip_suit`
+- [x] `oxygen_depletes_and_refills.json` (walk to Kitchen → depressurize → drains → repressurize → refills, health guarded) + `oxygen_empty_suffocates.json` (corridor vacuum + low tank → health falls → repressurize → health holds, assert_pipeline delta 0) — red first, green after; suite green (13/13)
 
 ## Subtask 2.2.5: Client — oxygen HUD + suit rack — Scope: M
 - [ ] VitalsHud oxygen bar; VitalsService += oxygen/suit

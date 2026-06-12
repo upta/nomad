@@ -42,6 +42,13 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_damage_30"] = conn => conn.Reducers.ApplyDebugDamage(30),
         ["test_damage_kill"] = conn => conn.Reducers.ApplyDebugDamage(999),
         ["test_reset_vitals"] = conn => conn.Reducers.ResetVitals(),
+        // Fast vitals: 250ms tick, drain 5/tick (~5s tank), refill 25/tick,
+        // suffocation 5/tick — timing-sensitive scenarios stay short without
+        // racing the assertion windows.
+        ["test_fast_vitals"] = conn => conn.Reducers.SetVitalsConfig(250, 5, 25, 5, 0, 0),
+        ["test_set_oxygen_low"] = conn => conn.Reducers.SetOxygen(5),
+        ["test_equip_suit"] = conn => conn.Reducers.SetSuitEquipped(true),
+        ["test_unequip_suit"] = conn => conn.Reducers.SetSuitEquipped(false),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -334,6 +341,9 @@ public partial class ConnectedGameHarnessController : Node2D
 
         state["health"] = vitals.Health.Current;
         state["max_health"] = vitals.Health.Max;
+        state["oxygen"] = vitals.Oxygen.Current;
+        state["max_oxygen"] = vitals.Oxygen.Max;
+        state["suit_equipped"] = vitals.SuitEquipped;
         state["is_dead"] = vitals.IsDead;
         return state;
     }
