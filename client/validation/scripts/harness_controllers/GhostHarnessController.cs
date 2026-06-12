@@ -87,6 +87,10 @@ public partial class GhostHarnessController
         // Mirror Main's wiring: vitals drive ghost mode on the player.
         _vitalsService.Changed += OnVitalsChanged;
 
+        // Pure-mode LoadItem mirror: a biomass deposit bumps the shared
+        // biomass counter the way the reducer would.
+        _inventoryService.TestLoadRequested += OnTestLoadRequested;
+
         _testActions = new Dictionary<string, Action>
         {
             ["test_kill"] = () => _vitalsService.SetTestVitals(0, 100, true),
@@ -95,6 +99,11 @@ public partial class GhostHarnessController
             {
                 _vitalsService.SetTestBiomass(3);
                 _vitalsService.SeedTestCrewMember("Crew Alpha", isDead: true);
+            },
+            ["test_seed_biomass_item"] = () =>
+            {
+                _vitalsService.SetTestBiomass(3);
+                _inventoryService.SetTestSlot(1, "Biomass");
             },
         };
         foreach (var action in _testActions.Keys.Concat(ActionKeyBridge.Keys))
@@ -134,6 +143,10 @@ public partial class GhostHarnessController
                 ["is_ghost"] = _player.IsGhostMode,
             },
             ["vitals"] = new Godot.Collections.Dictionary { ["is_dead"] = _vitalsService.IsDead },
+            ["items"] = new Godot.Collections.Dictionary
+            {
+                ["biomass_held"] = _inventoryService.CountOf("Biomass"),
+            },
             ["interaction"] = new Godot.Collections.Dictionary
             {
                 ["focused_exists"] = _interactionService.Focused is not null,
@@ -156,6 +169,7 @@ public partial class GhostHarnessController
         {
             state["dead_rows"] = cloning.DeadRowCount;
             state["biomass"] = cloning.ShownBiomass;
+            state["deposit_enabled"] = cloning.BiomassDepositRow.DepositEnabled;
         }
 
         return state;
@@ -193,6 +207,12 @@ public partial class GhostHarnessController
                 terminal.SlotIndex
             )
         );
+
+    private void OnTestLoadRequested(string typeId, int roomSlotIndex)
+    {
+        if (typeId == "Biomass")
+            _vitalsService.SetTestBiomass(_vitalsService.Biomass + 1);
+    }
 
     private void OnVitalsChanged() => _player.SetGhostMode(_vitalsService.IsDead);
 }

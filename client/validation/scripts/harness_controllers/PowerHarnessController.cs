@@ -39,6 +39,7 @@ public partial class PowerHarnessController
         ["ui_cancel_modal"] = Key.Escape,
         ["modal_accept"] = Key.Enter,
         ["modal_down"] = Key.Down,
+        ["modal_up"] = Key.Up,
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -101,7 +102,13 @@ public partial class PowerHarnessController
             ["test_repressurize_kitchen"] = () => _shipGrid.SetTestPressurization(5, true),
             ["test_depressurize_corridor"] = () => _shipGrid.SetTestPressurization(7, false),
             ["test_repressurize_corridor"] = () => _shipGrid.SetTestPressurization(7, true),
+            ["test_seed_fuel_store"] = () => _powerGridService.SetTestFuel(5, 0),
+            ["test_seed_fuel_cell"] = () => _inventoryService.SetTestSlot(0, "FuelCell"),
         };
+
+        // Pure-mode LoadItem mirror: a fuel cell deposit bumps the fuel
+        // counter the way the reducer would.
+        _inventoryService.TestLoadRequested += OnTestLoadRequested;
         foreach (var action in _testActions.Keys.Concat(ActionKeyBridge.Keys))
         {
             if (!InputMap.HasAction(action))
@@ -150,14 +157,27 @@ public partial class PowerHarnessController
                 ["registration_count"] = _interactionService.Registrations.Count,
                 ["prompt_visible"] = _prompt.Visible,
             },
-            ["modal"] = new Godot.Collections.Dictionary
-            {
-                ["open"] = _modalHost.IsOpen,
-                ["title"] = _modalHost.CurrentTitle,
-                ["pressure_nominal"] = _modalHost.CurrentInfo?.IsPressurized ?? true,
-            },
+            ["modal"] = BuildModalState(),
             ["grid"] = _shipGrid.GetObservedRoomState(),
         };
+    }
+
+    private Godot.Collections.Dictionary BuildModalState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["open"] = _modalHost.IsOpen,
+            ["title"] = _modalHost.CurrentTitle,
+            ["pressure_nominal"] = _modalHost.CurrentInfo?.IsPressurized ?? true,
+        };
+
+        if (_modalHost.CurrentModal is PowerRouterModal router)
+        {
+            state["fuel"] = _powerGridService.Fuel;
+            state["fuel_deposit_enabled"] = router.FuelDepositRow.DepositEnabled;
+        }
+
+        return state;
     }
 
     // The validation runtime presses InputMap actions, but GUIDE only sees
@@ -200,6 +220,15 @@ public partial class PowerHarnessController
         _suitEquipped = !_suitEquipped;
         _player.SetSuitEquipped(_suitEquipped, 0.8f);
         _shipGrid.SetSuitRackState(_suitEquipped);
+    }
+
+    private void OnTestLoadRequested(string typeId, int roomSlotIndex)
+    {
+        if (typeId == "FuelCell")
+            _powerGridService.SetTestFuel(
+                _powerGridService.Fuel + 1,
+                _powerGridService.FuelPerBurn
+            );
     }
 
     private void SyncServiceToGrid()
