@@ -93,6 +93,20 @@ public partial class ConnectedGameHarnessController : Node2D
         // Well beyond PickupRadius (96) from anywhere on the hull.
         ["test_spawn_ore_far"] = conn =>
             conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.RawOre, 2000, 2000),
+        // Load-verb probes: CloningBay is hull slot 2, Reactor slot 0.
+        ["test_load_slot0_to_cloning"] = conn => conn.Reducers.LoadItem(0, 2),
+        ["test_load_slot0_to_reactor"] = conn => conn.Reducers.LoadItem(0, 0),
+        ["test_give_fuelcell_slot0"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.FuelCell, 0),
+        ["test_give_scrap_slot0"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Scrap, 0),
+        ["test_set_fuel_zero"] = conn => conn.Reducers.SetFuel(0),
+        ["test_set_fuel_two"] = conn => conn.Reducers.SetFuel(2),
+        ["test_set_fuel_full"] = conn => conn.Reducers.SetFuel(10),
+        // Interval 0 keeps the current burn interval (server-side rule).
+        ["test_disable_fuel_burn"] = conn => conn.Reducers.SetFuelBurn(0, 0),
+        ["test_fast_fuel_burn"] = conn => conn.Reducers.SetFuelBurn(1, 500),
+        ["test_slow_fuel_burn"] = conn => conn.Reducers.SetFuelBurn(1, 120000),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -378,6 +392,8 @@ public partial class ConnectedGameHarnessController : Node2D
             ["status"] = "",
             ["reactor_output"] = 0,
             ["grace_millis"] = 0,
+            ["fuel_per_burn"] = -1,
+            ["fuel_burn_millis"] = 0,
             ["rooms"] = new Godot.Collections.Dictionary(),
         };
 
@@ -389,6 +405,8 @@ public partial class ConnectedGameHarnessController : Node2D
             state["status"] = grid.Status.ToString();
             state["reactor_output"] = grid.ReactorOutput;
             state["grace_millis"] = grid.GraceMillis;
+            state["fuel_per_burn"] = grid.FuelPerBurn;
+            state["fuel_burn_millis"] = grid.FuelBurnMillis;
         }
 
         var rooms = new Godot.Collections.Dictionary();
@@ -511,7 +529,10 @@ public partial class ConnectedGameHarnessController : Node2D
             return state;
 
         if (conn.Db.ShipStoresRows.Id.Find(0) is { } stores)
+        {
             state["biomass"] = stores.Biomass;
+            state["fuel"] = stores.Fuel;
+        }
 
         return state;
     }
