@@ -1,0 +1,26 @@
+{
+  "scenario_id": "item_types_load",
+  "version": 3,
+  "description": "All 6 item types load with proper metadata (IDs, labels, distinct glyphs) — RawOre, FuelDeposit, Biomass, FuelCell, Scrap, Components.",
+  "harness_scene": "res://validation/harnesses/InventoryHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/InventoryHarness.tscn" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "loaded" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.type_count", "comparator": "eq", "expected": 6 },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.0.item_id", "comparator": "eq", "expected": "RawOre" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.0.label", "comparator": "eq", "expected": "Raw Ore" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.0.glyph", "comparator": "eq", "expected": "O" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.1.item_id", "comparator": "eq", "expected": "FuelDeposit" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.1.glyph", "comparator": "eq", "expected": "F" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.2.item_id", "comparator": "eq", "expected": "Biomass" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.2.glyph", "comparator": "eq", "expected": "B" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.3.item_id", "comparator": "eq", "expected": "FuelCell" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.3.glyph", "comparator": "eq", "expected": "E" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.4.item_id", "comparator": "eq", "expected": "Scrap" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.4.glyph", "comparator": "eq", "expected": "S" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.5.item_id", "comparator": "eq", "expected": "Components" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.item_types.5.glyph", "comparator": "eq", "expected": "C" },
+    { "op": "quit" }
+  ]
+}

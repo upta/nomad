@@ -523,8 +523,8 @@ Design notes (user-confirmed):
 - [x] `InventoryService` world half (OnUpdate evicts non-World rows — the untrailed gotcha) + test seeders; `ItemSpawner` node in `Main.tscn` ([Dependency] service, registry handed by Main)
 - [x] Main provides service, binds connection in InstantiatePlayer, hands registry to spawner; full stdb suite green 19/19; screenshots reviewed (FuelCell glyph tile in Kitchen, pickup prompt over ore, clear empties)
 
-## Subtask 3.1.4: Pure validation — Scope: S
-- [ ] `InventoryHarness` + controller; `item_types_load.json` (6 types) + `world_items_render.json` red first; screenshots
+## Subtask 3.1.4: Pure validation — Scope: S ✅
+- [x] `InventoryHarness` + controller (provides Interaction + Inventory services, seed/remove/clear test actions, observed item_types + world_items w/ color/glyph/position + focused_label); `item_types_load.json` (6 types, ids/labels/glyphs) + `world_items_render.json` (seed 2 → nodes at positions w/ color fingerprint → remove → freed) confirmed red first (missing harness); pure suite 29/29; screenshots reviewed
 
 ## Subtask 3.1.5: DoD sweep — Scope: S
 - [ ] Both suites green, boot clean, builds + format, plan/todo, push
