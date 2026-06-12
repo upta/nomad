@@ -1,7 +1,10 @@
+#nullable enable
+
 namespace Nomad.Game.Map;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Chickensoft.AutoInject;
 using Chickensoft.GodotNodeInterfaces;
 using Chickensoft.Introspection;
@@ -23,10 +26,13 @@ public partial class ShipGrid : Node2D
 
     private readonly Dictionary<int, StdbRa> _assignments = [];
     private readonly HashSet<Vector2I> _floorCells = [];
+    private readonly Dictionary<int, Ship.Terminal> _terminals = [];
     private readonly HashSet<Vector2I> _wallCells = [];
     private Font _font = null!;
 
     public override void _Notification(int what) => this.Notify(what);
+
+    public event Action<Ship.Terminal>? TerminalInteracted;
 
     [Node]
     public ITileMapLayer FloorLayer { get; set; } = default!;
@@ -42,6 +48,11 @@ public partial class ShipGrid : Node2D
 
     [Export]
     public RoomTypeRegistry? RoomTypeRegistry { get; set; }
+
+    [Export]
+    public PackedScene? TerminalScene { get; set; }
+
+    public int TerminalCount => _terminals.Count;
 
     private Vector2I GridOffset =>
         HullTemplate is null
@@ -133,6 +144,7 @@ public partial class ShipGrid : Node2D
                 ["floor_count"] = _floorCells.Count,
                 ["wall_count"] = _wallCells.Count,
                 ["door_count"] = HullTemplate?.Doors.Count ?? 0,
+                ["terminal_count"] = _terminals.Count,
             },
         };
     }
@@ -148,6 +160,7 @@ public partial class ShipGrid : Node2D
             BreakerOn = true,
             Health = 100f,
         };
+        EnsureTerminal(slotIndex);
         QueueRedraw();
     }
 
@@ -196,6 +209,45 @@ public partial class ShipGrid : Node2D
             WallLayer.SetCell(cell - offset, 0, WallTile);
     }
 
+    // Terminals are data-driven (one per assigned room slot), spawned at the
+    // slot's center cell and refreshed whenever the assignment changes.
+    private void EnsureTerminal(int slotIndex)
+    {
+        if (TerminalScene is null || HullTemplate is null)
+            return;
+
+        var slot = HullTemplate.RoomSlots.FirstOrDefault(s => s.SlotIndex == slotIndex);
+        if (slot is null)
+            return;
+
+        if (!_terminals.TryGetValue(slotIndex, out var terminal))
+        {
+            terminal = TerminalScene.Instantiate<Ship.Terminal>();
+            terminal.SlotIndex = slotIndex;
+
+            var offset = GridOffset;
+            terminal.Position = new Vector2(
+                (slot.PositionX - offset.X + slot.Width / 2f) * TileSize,
+                (slot.PositionY - offset.Y + slot.Height / 2f) * TileSize
+            );
+
+            terminal.Interacted += OnTerminalInteracted;
+            AddChild(terminal);
+            _terminals[slotIndex] = terminal;
+        }
+
+        if (
+            _assignments.TryGetValue(slotIndex, out var ra)
+            && RoomTypeRegistry?.Find(ra.RoomTypeId.ToString()) is { } rt
+        )
+        {
+            terminal.SetRoomState(rt.Label, rt.TerminalType, ra.IsPowered, ra.IsPressurized);
+        }
+    }
+
+    private void OnTerminalInteracted(Ship.Terminal terminal) =>
+        TerminalInteracted?.Invoke(terminal);
+
     private Color GetRoomColor(int slotIndex)
     {
         if (_assignments.TryGetValue(slotIndex, out var ra))
@@ -223,19 +275,24 @@ public partial class ShipGrid : Node2D
     private void OnAssignmentInserted(EventContext ctx, StdbRa ra)
     {
         _assignments[ra.SlotIndex] = ra;
+        EnsureTerminal(ra.SlotIndex);
         QueueRedraw();
     }
 
     private void OnAssignmentUpdated(EventContext ctx, StdbRa oldRa, StdbRa newRa)
     {
         _assignments[newRa.SlotIndex] = newRa;
+        EnsureTerminal(newRa.SlotIndex);
         QueueRedraw();
     }
 
     private void SubscribeToAssignments(DbConnection svr)
     {
         foreach (var ra in svr.Db.RoomAssignments.Iter())
+        {
             _assignments[ra.SlotIndex] = ra;
+            EnsureTerminal(ra.SlotIndex);
+        }
 
         svr.Db.RoomAssignments.OnInsert += OnAssignmentInserted;
         svr.Db.RoomAssignments.OnUpdate += OnAssignmentUpdated;

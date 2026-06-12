@@ -5,9 +5,9 @@ using Godot;
 
 public class CallbackInteractionRegistration(
     Func<Vector2> positionGetter,
-    string label,
+    Func<string> labelGetter,
     Action<ProbeData> onInteraction
-) : InteractionRegistration(positionGetter, label)
+) : InteractionRegistration(positionGetter, labelGetter)
 {
     public override void OnInteraction(ProbeData probeData) => onInteraction(probeData);
 }

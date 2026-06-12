@@ -2,9 +2,11 @@
 
 [ext_resource type="Script" uid="uid://bc2lq0v83oa4w" path="res://game/Map/ShipGrid.cs" id="1"]
 [ext_resource type="TileSet" uid="uid://fwuyvfk4o1q0" path="res://game/Map/ShipTileSet.tres" id="2"]
+[ext_resource type="PackedScene" path="res://game/Ship/Terminal/Terminal.tscn" id="3_terminal"]
 
 [node name="ShipGrid" type="Node2D" unique_id=284884670]
 script = ExtResource("1")
+TerminalScene = ExtResource("3_terminal")
 
 [node name="FloorLayer" type="TileMapLayer" parent="." unique_id=1256238249]
 unique_name_in_owner = true

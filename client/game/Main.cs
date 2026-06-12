@@ -6,6 +6,7 @@ using Entities;
 using Godot;
 using Interaction;
 using Map;
+using Ui;
 
 [Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>))]
 public partial class Main : Node2D, IProvide<InteractionService>
@@ -20,6 +21,9 @@ public partial class Main : Node2D, IProvide<InteractionService>
 
     [Node]
     public ICamera2D Camera { get; set; } = default!;
+
+    [Node]
+    public ModalHost ModalHost { get; set; } = default!;
 
     [Export]
     public PackedScene PlayerScene { get; set; } = null!;
@@ -42,6 +46,7 @@ public partial class Main : Node2D, IProvide<InteractionService>
         // Node exports don't survive the scene-instance boundary, so the
         // registry is handed to ShipGrid here instead of in Main.tscn.
         ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
+        ShipGrid.TerminalInteracted += OnTerminalInteracted;
 
         Camera.MakeCurrent();
 
@@ -87,6 +92,8 @@ public partial class Main : Node2D, IProvide<InteractionService>
 
     public override void _ExitTree()
     {
+        ShipGrid.TerminalInteracted -= OnTerminalInteracted;
+
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {
             entities.OnInsert -= OnEntityInserted;
@@ -105,6 +112,16 @@ public partial class Main : Node2D, IProvide<InteractionService>
         }
         return 0;
     }
+
+    private void OnTerminalInteracted(Ship.Terminal terminal) =>
+        ModalHost.Open(
+            new RoomModalInfo(
+                terminal.RoomLabel,
+                terminal.TerminalType,
+                terminal.IsPowered,
+                terminal.IsPressurized
+            )
+        );
 
     private void OnEntityDeleted(EventContext ctx, Entity entity)
     {

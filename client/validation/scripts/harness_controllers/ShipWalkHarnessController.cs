@@ -1,12 +1,20 @@
 namespace Nomad.Validation.HarnessControllers;
 
 using System.Collections.Generic;
+using Chickensoft.AutoInject;
+using Chickensoft.Introspection;
 using Godot;
+using Nomad.Game.Interaction;
 using Nomad.Game.Map;
 using Nomad.Game.Ship;
 
-public partial class ShipWalkHarnessController : Node2D
+[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>))]
+public partial class ShipWalkHarnessController : Node2D, IProvide<InteractionService>
 {
+    private readonly InteractionService _interactionService = new();
+
+    public override void _Notification(int what) => this.Notify(what);
+
     private static readonly Dictionary<string, Key> ActionKeyBridge = new()
     {
         ["move_up"] = Key.W,
@@ -40,7 +48,11 @@ public partial class ShipWalkHarnessController : Node2D
         _shipGrid.SetTestAssignment(4, "Workshop");
         _shipGrid.SetTestAssignment(5, "Kitchen");
         _shipGrid.SetTestAssignment(6, "CargoBay");
+
+        this.Provide();
     }
+
+    InteractionService IProvide<InteractionService>.Value() => _interactionService;
 
     public Godot.Collections.Dictionary get_observed_state()
     {
