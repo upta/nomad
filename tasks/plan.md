@@ -205,12 +205,12 @@ Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. One `Item`
     - [x] 3.2.4: Pure validation — `hotbar_renders_items.json`, `hotbar_inert_while_modal_open.json` (exclusive-context proof). **Scope: M**
     - [x] 3.2.5: DoD sweep. **Scope: S**
 
-- [ ] **Task 3.3: Item pickup/drop** — Walk-up + E interact picks an item into the first free hotbar slot; Q drops the selected item at the player's position. SpacetimeDB validates every pickup/drop: reach (server-side distance vs `PickupRadius`), alive, slot occupancy. Death drops all hotbar items at the death position (single hook in `DamageRules.ApplyDamage`). **Scope: M**
-    - [ ] 3.3.1: Server — `PickUpItem`/`DropItem` reducers + `DropAllHotbarItems` death hook. **Scope: M**
-    - [ ] 3.3.2: stdb validation — round trip, out-of-reach rejection, full-hotbar rejection, `death_drops_hotbar.json`. **Scope: M**
-    - [ ] 3.3.3: Client — interact→pickup and drop wiring through InventoryService; world-node cleanup chain. **Scope: M**
-    - [ ] 3.3.4: Pure validation — prompt/mirror round trip, `ghost_cannot_pickup.json`. **Scope: M**
-    - [ ] 3.3.5: DoD sweep. **Scope: S**
+- [x] **Task 3.3: Item pickup/drop** — Walk-up + E interact picks an item into the first free hotbar slot; Q drops the selected item at the player's position. SpacetimeDB validates every pickup/drop: reach (server-side distance vs `PickupRadius`), alive, slot occupancy. Death drops all hotbar items at the death position (single hook in `DamageRules.ApplyDamage`). **Scope: M**
+    - [x] 3.3.1: Server — `PickUpItem`/`DropItem` reducers + `DropAllHotbarItems` death hook. **Scope: M**
+    - [x] 3.3.2: stdb validation — round trip, out-of-reach rejection, full-hotbar rejection, `death_drops_hotbar.json`. **Scope: M**
+    - [x] 3.3.3: Client — interact→pickup and drop wiring through InventoryService; world-node cleanup chain. **Scope: M**
+    - [x] 3.3.4: Pure validation — prompt/mirror round trip, `ghost_cannot_pickup.json`. **Scope: M**
+    - [x] 3.3.5: DoD sweep. **Scope: S**
 
 - [ ] **Task 3.4: Load verb — tank deposits + reactor fuel burn** — Deposit items from hotbar into machine intakes via walk-up modals (§5): biomass→Cloning Bay (`ShipStores.Biomass++`), fuel cell→Reactor (`ShipStores.Fuel++`) — tank model: the machine consumes the item into a counter. The Reactor burns fuel on a scheduled tick while generating (`PowerGrid.FuelPerBurn`/`FuelBurnMillis`, DB-tunable, **0 = disabled** so scenarios opt out); dry tank ⇒ output 0 ⇒ overload→blackout via the 1.4 machinery — the keep-the-reactor-fed pressure loop lands whole here. Server-side reach check vs room slot center (`LoadRadius`); never trusts modal-open state. Ammo→weapons is the same verb but lands with 5.5. **Scope: L**
     - [ ] 3.4.1: Server — `ShipStores.Fuel` + `PowerGrid` burn fields + `FuelBurnTimer`/`FuelBurnTick`, `LoadItem` reducer, `SetFuel`/`SetFuelBurn` setters; publish `--delete-data=always`. **Scope: M**

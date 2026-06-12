@@ -551,23 +551,27 @@ Design notes (user-confirmed):
 ## Subtask 3.2.5: DoD sweep — Scope: S ✅
 - [x] `validate_all.ps1` both suites green; boot clean zero ERROR; builds + csharpier both sides; uids imported; plan/todo checked; push
 
-# Task 3.3: Item pickup/drop
+# Task 3.3: Item pickup/drop ✅ DONE
 
-## Subtask 3.3.1: Server — PickUpItem / DropItem + death-drop — Scope: M
-- [ ] `PickUpItem(itemId)` (alive + World + reach vs PickupRadius + free slot); `DropItem(slotIndex)` (drop at server-known entity position)
-- [ ] `DropAllHotbarItems` + hook in `DamageRules.ApplyDamage` alive→dead transition (guard missing rows); reducer-only publish
+## Subtask 3.3.1: Server — PickUpItem / DropItem + death-drop — Scope: M ✅
+- [x] `PickUpItem(itemId)` — known-player + alive + World-located + reach (distance² vs `PickupRadius`²) + `FindFreeHotbarSlot`; `DropItem(slotIndex)` — alive + held-at-slot, drop position read from the server's own Entities row (no client coordinates)
+- [x] `DropAllHotbarItems(ctx, holder, position)` with deterministic `slotIndex * 12px` X spread; hooked into `DamageRules.ApplyDamage` on the alive→dead transition, guarded so missing Player/Entity rows skip the drop but never the damage; reducer-only publish + generate + builds
 
-## Subtask 3.3.2: stdb validation — Scope: M
-- [ ] `item_pickup_drop_round_trip.json`, `item_pickup_rejected_out_of_reach.json`, `item_pickup_rejected_when_full.json`, `death_drops_hotbar.json` — all red first
+## Subtask 3.3.2: stdb validation — Scope: M ✅
+- [x] Harness: `test_pickup_nearest_world_item` (client-side nearest-row lookup → direct `PickUpItem`), `test_drop_slot0`, `test_fill_hotbar` (4× Scrap), `test_spawn_ore_far` (2000,2000); `hotbar_drop`→Q key bridge; `items.world` ItemId-ordered {type,x,y} array in observed state
+- [x] `item_pickup_drop_round_trip.json` red first (focused + E pressed, hotbar stayed 0 — exactly the missing 3.3.3 wiring), green after; covers prompt label, HUD glyph, world-node free, prompt clear, walk-away Q drop landing at the server entity position
+- [x] `item_pickup_rejected_out_of_reach.json` (direct probe vs far ore — the closed untrailed hole), `item_pickup_rejected_when_full.json` (direct probe with ore in reach + focused, isolating the full-slot rule), `death_drops_hotbar.json` (give 2 → walk to Kitchen → kill → 2 world rows at the body with the 24px slot-2 spread, ghost gets no focus, respawn at Cloning Bay leaves items in the Kitchen) — all green on the server slice alone, as expected for server-rule probes
 
-## Subtask 3.3.3: Client — pickup/drop wiring — Scope: M
-- [ ] WorldItem→spawner→Main→`RequestPickUp`; HotbarHud drop→`RequestDrop(SelectedSlot, pos)`; test mirrors; verify node-cleanup chain
+## Subtask 3.3.3: Client — pickup/drop wiring — Scope: M ✅
+- [x] `InventoryService.RequestPickUp(itemId)` / `RequestDrop(slotIndex, position)` — connected mode calls the reducers (drop position server-resolved; the position arg only feeds the test mirror), test mode mirrors world↔hotbar moves via `FindFreeTestSlot`
+- [x] Main wires `ItemSpawner.Interacted` → RequestPickUp and `HotbarHud.DropRequested` → RequestDrop(SelectedSlot, player pos), unhooked in `_ExitTree`; cleanup chain (row UPDATE → service evicts → spawner frees node → InteractTarget unregisters → prompt clears) proven in-scenario by the `focused_label == ""` wait
 
-## Subtask 3.3.4: Pure validation — Scope: M
-- [ ] `item_pickup_prompt_and_mirror.json` + `ghost_cannot_pickup.json` red first; screenshots
+## Subtask 3.3.4: Pure validation — Scope: M ✅
+- [x] InventoryHarness mirrors Main's pickup/drop wiring; `test_kill`/`test_revive` (direct `SetGhostMode`); `player.is_ghost` observed
+- [x] `item_pickup_prompt_and_mirror.json` (walk-up prompt → E → slot 0 glyph + node freed + prompt gone → walk right → Q → node at player position) + `ghost_cannot_pickup.json` (ghost over ore: no focus/prompt; revived at same spot: focuses) — both red first; screenshots reviewed
 
-## Subtask 3.3.5: DoD sweep — Scope: S
-- [ ] Standard checklist
+## Subtask 3.3.5: DoD sweep — Scope: S ✅
+- [x] `validate_all.ps1` both suites green (pure PASS + stdb 24/24); boot clean zero ERROR (connected + subscribed); builds + csharpier both sides; import pass (no new uids needed); plan/todo checked; push
 
 # Task 3.4: Load verb — tank deposits + reactor fuel burn
 
