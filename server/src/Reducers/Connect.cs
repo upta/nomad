@@ -4,6 +4,7 @@ public static partial class Module
     public static void ClientConnected(ReducerContext ctx)
     {
         EnsurePlayerConnected(ctx);
+        EnsureVitals(ctx, ctx.Sender);
         ActivateOrCreateOwnedEntities(ctx);
     }
 
