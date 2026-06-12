@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
+[ext_resource type="PackedScene" path="res://game/Ui/InteractPrompt.tscn" id="7_prompt"]
 [ext_resource type="PackedScene" path="res://game/Entities/RemoteEntity.tscn" id="2_remote"]
 [ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://game/Ship/RoomTypeRegistry.cs" id="4_registry"]
@@ -26,3 +27,5 @@ process_callback = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 5.0
 zoom = Vector2(2, 2)
+
+[node name="InteractPrompt" parent="." instance=ExtResource("7_prompt")]

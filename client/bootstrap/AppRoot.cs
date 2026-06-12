@@ -14,6 +14,8 @@ public partial class AppRoot : Node
         ["move_down"] = Key.S,
         ["move_left"] = Key.A,
         ["move_right"] = Key.D,
+        ["interact"] = Key.E,
+        ["ui_cancel_modal"] = Key.Escape,
     };
 
     private static readonly PackedScene TestScene = GD.Load<PackedScene>(
