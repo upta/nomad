@@ -262,26 +262,27 @@ Design notes (user-confirmed):
 - `RecomputePowerGrid(ctx)`: demand = Σ draws of assigned breaker-on rooms; output = reactor assigned && breaker on ? ReactorOutput : 0. demand ≤ output → Stable (cancel timers, every room IsPowered = BreakerOn — doubles as blackout recovery). demand > output from Stable → Overload, BlackoutAt = now + GraceMillis, insert scheduled `GridBlackoutTimer`. `GridBlackoutTick`: still overloaded → Blackout, all IsPowered = false. Rooms stay powered during grace; flicker is client-side rendering of Overload.
 - PowerRouter modal = overview + remote toggles (same `ToggleBreaker` reducer as wall breakers).
 
-## Subtask 1.4.1: Server power model + reducers — Scope: M
-- [ ] Create `server/src/Types/GridStatus.cs` — `[SpacetimeDB.Type]` enum Stable/Overload/Blackout
-- [ ] Create `server/src/Tables/PowerGrid.cs` — single-row public table per design notes
-- [ ] Create `server/src/Tables/GridBlackoutTimer.cs` — private scheduled table (`Scheduled = nameof(GridBlackoutTick)`, AutoInc ulong Id + ScheduleAt ScheduledAt)
-- [ ] Create `server/src/Power/PowerRules.cs` — partial Module: `PowerDrawFor(RoomTypeId)` switch + `RecomputePowerGrid(ctx)` (lazily insert PowerGrid row if missing)
-- [ ] Create `server/src/Reducers/ToggleBreaker.cs` — validate slot 0–6 + assignment exists + sender is known player; flip BreakerOn; recompute
-- [ ] Create `server/src/Reducers/SetReactorOutput.cs` — validate 0–100; update row; recompute
-- [ ] Create `server/src/Reducers/SetBlackoutGrace.cs` — validate > 0; update GraceMillis
-- [ ] Create `server/src/Reducers/GridBlackoutTick.cs` — scheduled; if still overloaded → Blackout, all rooms unpowered
-- [ ] Modify `server/src/Reducers/Init.cs` — seed PowerGrid row; `AssignRoomType.cs` — recompute at end
-- [ ] Modify `client/game/Ship/RoomTypes/ReactorRoom.tres` — PowerDraw = 0
-- [ ] Format → `spacetime build` → `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` → `spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src` → `dotnet build` (client)
-- [ ] Acceptance: `spacetime sql` shows PowerGrid (output 10, grace 10000); `ToggleBreaker '[5]'` flips Kitchen breaker+power; `SetBlackoutGrace '[1000]'` + `SetReactorOutput '[3]'` → Overload → Blackout ~1s later; logs clean
+## Subtask 1.4.1: Server power model + reducers — Scope: M ✅
+- [x] Create `server/src/Types/GridStatus.cs` — `[SpacetimeDB.Type]` enum Stable/Overload/Blackout
+- [x] Create `server/src/Tables/PowerGrid.cs` — single-row public table per design notes
+- [x] Create `server/src/Tables/GridBlackoutTimer.cs` — private scheduled table (`Scheduled = nameof(GridBlackoutTick)`, AutoInc ulong Id + ScheduleAt ScheduledAt)
+- [x] Create `server/src/Power/PowerRules.cs` — partial Module: `PowerDrawFor(RoomTypeId)` switch + `RecomputePowerGrid(ctx)` (lazily insert PowerGrid row if missing)
+- [x] Create `server/src/Reducers/ToggleBreaker.cs` — validate slot 0–6 + assignment exists + sender is known player; flip BreakerOn; recompute
+- [x] Create `server/src/Reducers/SetReactorOutput.cs` — validate 0–100; update row; recompute
+- [x] Create `server/src/Reducers/SetBlackoutGrace.cs` — validate > 0; update GraceMillis
+- [x] Create `server/src/Reducers/GridBlackoutTick.cs` — scheduled; if still overloaded → Blackout, all rooms unpowered
+- [x] Modify `server/src/Reducers/Init.cs` — seed PowerGrid row; `AssignRoomType.cs` — recompute at end
+- [x] Modify `client/game/Ship/RoomTypes/ReactorRoom.tres` — PowerDraw = 0
+- [x] Format → `spacetime build` → `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` → `spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src` → `dotnet build` (client)
+- [x] Acceptance: `spacetime sql` shows PowerGrid (output 10, grace 10000); `toggle_breaker 5` flips Kitchen breaker+power; `set_blackout_grace 1000` + `set_reactor_output 3` → Overload → Blackout ~1s later; logs clean (CLI reducer names are snake_case)
 
-## Subtask 1.4.2: stdb validation of the reducer loop — Scope: S
-- [ ] `ConnectedGameHarnessController.cs`: `power` section in `get_observed_state()` (per-slot breaker_on/is_powered, grid status/reactor_output/grace_millis); harness-registered InputMap test actions (`test_toggle_breaker_5`, `test_reactor_output_low`/`_high`, `test_short_grace`(500ms)/`test_long_grace`(3s)) firing reducers on IsActionJustPressed
-- [ ] Scenario `scenarios_stdb/power_breaker_reducer_round_trip.json` — toggle off → unpowered → toggle back → powered
-- [ ] Scenario `scenarios_stdb/power_overload_blackout.json` — short grace → low output → Overload (rooms still powered, BlackoutAt set) → Blackout (all unpowered) → high output → Stable + repowered
-- [ ] Scenario `scenarios_stdb/power_overload_grace_recovery.json` — 3s grace → overload → restore output within grace → wait past window → still Stable, never blacked out
-- [ ] `./scripts/run_stdb_scenarios.ps1` green; screenshots reviewed
+## Subtask 1.4.2: stdb validation of the reducer loop — Scope: S ✅
+- [x] `ConnectedGameHarnessController.cs`: `power` section in `get_observed_state()` (per-slot breaker_on/is_powered, grid status/reactor_output/grace_millis); harness-registered InputMap test actions (`test_toggle_breaker_5`, `test_reactor_output_low`/`_high`, `test_short_grace`(500ms)/`test_long_grace`(3s)) firing reducers on edge-detected polls
+- [x] Scenario `scenarios_stdb/power_breaker_reducer_round_trip.json` — toggle off → unpowered → toggle back → powered
+- [x] Scenario `scenarios_stdb/power_overload_blackout.json` — short grace → low output → Overload (rooms still powered, BlackoutAt set) → Blackout (all unpowered) → high output → Stable + repowered
+- [x] Scenario `scenarios_stdb/power_overload_grace_recovery.json` — 3s grace → overload → restore output within grace → wait past window → still Stable, never blacked out
+- [x] `./scripts/run_stdb_scenarios.ps1` green (7/7); screenshots reviewed
+- Gotcha discovered: poll driver-pressed test actions in `_PhysicsProcess` with manual edge detection — the driver's press/release window spans physics frames that can share one idle frame, so `_Process` + `IsActionJustPressed` both miss it. Hold presses ≥10 frames in scenarios.
 
 ## Subtask 1.4.3: Client rendering — dim + flicker — Scope: M
 - [ ] `ShipGrid.cs`: subscribe `PowerGrids` OnInsert/OnUpdate (+ fix `_ExitTree` to unsubscribe everything); `[Export]` `UnpoweredDimFactor` (~0.35), `FlickerIntervalSeconds` (~0.12), `FlickerDimFactor` set in scene; dim inside `GetRoomColor`; `_Process` flicker + `QueueRedraw` only while Overload; public `FlickerCycles`

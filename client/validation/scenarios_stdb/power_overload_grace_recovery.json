@@ -1,0 +1,30 @@
+{
+  "scenario_id": "power_overload_grace_recovery",
+  "version": 3,
+  "description": "Shedding load during the Overload grace window cancels the scheduled blackout: the grid returns to Stable and stays Stable after the original grace deadline passes.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.power.status", "comparator": "eq", "expected": "Stable", "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_long_grace" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_long_grace" },
+    { "op": "wait_until", "path": "harness_state.power.grace_millis", "comparator": "eq", "expected": 3000, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_reactor_output_low" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_reactor_output_low" },
+    { "op": "wait_until", "path": "harness_state.power.status", "comparator": "eq", "expected": "Overload", "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_reactor_output_high" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_reactor_output_high" },
+    { "op": "wait_until", "path": "harness_state.power.status", "comparator": "eq", "expected": "Stable", "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "recovered_within_grace" },
+    { "op": "assert_value", "checkpoint": "recovered_within_grace", "path": "harness_state.power.rooms.1.is_powered", "comparator": "eq", "expected": true },
+    { "op": "wait_frames", "frames": 240 },
+    { "op": "checkpoint", "name": "after_grace_deadline" },
+    { "op": "assert_value", "checkpoint": "after_grace_deadline", "path": "harness_state.power.status", "comparator": "eq", "expected": "Stable" },
+    { "op": "assert_value", "checkpoint": "after_grace_deadline", "path": "harness_state.power.rooms.1.is_powered", "comparator": "eq", "expected": true },
+    { "op": "quit" }
+  ]
+}

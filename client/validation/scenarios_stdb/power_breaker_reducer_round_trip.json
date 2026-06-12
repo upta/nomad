@@ -1,0 +1,28 @@
+{
+  "scenario_id": "power_breaker_reducer_round_trip",
+  "version": 3,
+  "description": "ToggleBreaker round-trips through the server: cutting the Kitchen breaker (slot 5) drops its power, toggling again restores it; grid stays Stable since demand never exceeds output.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.power.rooms.5.is_powered", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "initial" },
+    { "op": "assert_value", "checkpoint": "initial", "path": "harness_state.power.rooms.5.breaker_on", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "initial", "path": "harness_state.power.status", "comparator": "eq", "expected": "Stable" },
+    { "op": "press_action", "action": "test_toggle_breaker_5" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_toggle_breaker_5" },
+    { "op": "wait_until", "path": "harness_state.power.rooms.5.is_powered", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "breaker_off" },
+    { "op": "assert_value", "checkpoint": "breaker_off", "path": "harness_state.power.rooms.5.breaker_on", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "breaker_off", "path": "harness_state.power.status", "comparator": "eq", "expected": "Stable" },
+    { "op": "press_action", "action": "test_toggle_breaker_5" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_toggle_breaker_5" },
+    { "op": "wait_until", "path": "harness_state.power.rooms.5.is_powered", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "restored" },
+    { "op": "assert_value", "checkpoint": "restored", "path": "harness_state.power.rooms.5.breaker_on", "comparator": "eq", "expected": true },
+    { "op": "quit" }
+  ]
+}

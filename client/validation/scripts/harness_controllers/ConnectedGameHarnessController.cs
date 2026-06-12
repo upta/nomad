@@ -15,7 +15,23 @@ public partial class ConnectedGameHarnessController : Node2D
         ["move_right"] = Key.D,
     };
 
+    // Harness-only InputMap actions that let scenarios drive reducers the
+    // validation contract has no other way to reach (press_action only needs
+    // the action to exist in InputMap).
+    private static readonly Dictionary<
+        string,
+        System.Action<SpacetimeDB.Types.DbConnection>
+    > TestReducerActions = new()
+    {
+        ["test_toggle_breaker_5"] = conn => conn.Reducers.ToggleBreaker(5),
+        ["test_reactor_output_low"] = conn => conn.Reducers.SetReactorOutput(3),
+        ["test_reactor_output_high"] = conn => conn.Reducers.SetReactorOutput(10),
+        ["test_short_grace"] = conn => conn.Reducers.SetBlackoutGrace(500),
+        ["test_long_grace"] = conn => conn.Reducers.SetBlackoutGrace(3000),
+    };
+
     private readonly Dictionary<string, bool> _bridgeState = [];
+    private readonly Dictionary<string, bool> _testActionState = [];
     private bool _connectionFailed;
     private bool _dataReady;
     private DbManager _dbManager = null!;
@@ -40,6 +56,13 @@ public partial class ConnectedGameHarnessController : Node2D
         _dbManager.OnConnectionFailed -= OnServerConnectionFailed;
     }
 
+    public override void _PhysicsProcess(double delta)
+    {
+        // The driver presses/releases across physics frames that can share a
+        // single idle frame — _Process polling would miss the whole window.
+        ProcessTestReducerActions();
+    }
+
     public override void _Process(double delta)
     {
         BridgeInputActionsToKeys();
@@ -47,6 +70,12 @@ public partial class ConnectedGameHarnessController : Node2D
 
     public override void _Ready()
     {
+        foreach (var action in TestReducerActions.Keys)
+        {
+            if (!InputMap.HasAction(action))
+                InputMap.AddAction(action);
+        }
+
         _dbManager = new DbManager();
         _dbManager.OnDataReady += OnServerDataReady;
         _dbManager.OnConnectionFailed += OnServerConnectionFailed;
@@ -66,6 +95,7 @@ public partial class ConnectedGameHarnessController : Node2D
         {
             ["connection"] = BuildConnectionState(),
             ["game"] = BuildGameState(),
+            ["power"] = BuildPowerState(),
         };
 
         if (_puppet is { } puppet)
@@ -100,6 +130,28 @@ public partial class ConnectedGameHarnessController : Node2D
                     Pressed = pressed,
                 }
             );
+        }
+    }
+
+    // Edge-detected by hand (like BridgeInputActionsToKeys) — the driver can
+    // press the action after this node's _Process ran, so IsActionJustPressed
+    // would miss the press entirely.
+    private void ProcessTestReducerActions()
+    {
+        if (_dbManager?.Connection is not { } conn || !conn.IsActive)
+            return;
+
+        foreach (var (action, call) in TestReducerActions)
+        {
+            var pressed = Input.IsActionPressed(action);
+            var wasPressed = _testActionState.TryGetValue(action, out var prior) && prior;
+            _testActionState[action] = pressed;
+
+            if (pressed && !wasPressed)
+            {
+                GD.Print($"[Harness] Test action '{action}' fired — calling reducer.");
+                call(conn);
+            }
         }
     }
 
@@ -202,6 +254,40 @@ public partial class ConnectedGameHarnessController : Node2D
             }
             state["remote_node_recreations"] = _remoteNodeRecreations;
         }
+
+        return state;
+    }
+
+    private Godot.Collections.Dictionary BuildPowerState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["status"] = "",
+            ["reactor_output"] = 0,
+            ["grace_millis"] = 0,
+            ["rooms"] = new Godot.Collections.Dictionary(),
+        };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        if (conn.Db.PowerGrids.Id.Find(0) is { } grid)
+        {
+            state["status"] = grid.Status.ToString();
+            state["reactor_output"] = grid.ReactorOutput;
+            state["grace_millis"] = grid.GraceMillis;
+        }
+
+        var rooms = new Godot.Collections.Dictionary();
+        foreach (var ra in conn.Db.RoomAssignments.Iter())
+        {
+            rooms[ra.SlotIndex.ToString()] = new Godot.Collections.Dictionary
+            {
+                ["breaker_on"] = ra.BreakerOn,
+                ["is_powered"] = ra.IsPowered,
+            };
+        }
+        state["rooms"] = rooms;
 
         return state;
     }
