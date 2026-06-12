@@ -100,6 +100,26 @@ public partial class ConnectedGameHarnessController : Node2D
             conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.FuelCell, 0),
         ["test_give_scrap_slot0"] = conn =>
             conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Scrap, 0),
+        // Storage probes: CargoBay is hull slot 6, Kitchen slot 5 (a room
+        // that accepts neither storage nor ore as a tank deposit).
+        ["test_store_slot0_to_cargo"] = conn => conn.Reducers.LoadItem(0, 6),
+        ["test_load_slot0_to_kitchen"] = conn => conn.Reducers.LoadItem(0, 5),
+        ["test_withdraw_first_stored"] = conn =>
+        {
+            if (FindFirstStoredItemId(conn) is { } itemId)
+                conn.Reducers.WithdrawItem(itemId);
+        },
+        // Reducer calls are ordered per-connection, so give→store pairs fill
+        // the cargo store sequentially through hotbar slot 0.
+        ["test_fill_cargo"] = conn =>
+        {
+            var capacity = conn.Db.InventoryConfigs.Id.Find(0)?.CargoCapacity ?? 12;
+            for (var i = 0; i < capacity; i++)
+            {
+                conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Scrap, 0);
+                conn.Reducers.LoadItem(0, 6);
+            }
+        },
         ["test_set_fuel_zero"] = conn => conn.Reducers.SetFuel(0),
         ["test_set_fuel_two"] = conn => conn.Reducers.SetFuel(2),
         ["test_set_fuel_full"] = conn => conn.Reducers.SetFuel(10),
@@ -235,6 +255,21 @@ public partial class ConnectedGameHarnessController : Node2D
                 call(conn);
             }
         }
+    }
+
+    private static int? FindFirstStoredItemId(SpacetimeDB.Types.DbConnection conn)
+    {
+        int? first = null;
+        foreach (var item in conn.Db.Items.Iter())
+        {
+            if (item.LocationKind != SpacetimeDB.Types.ItemLocationKind.Stored)
+                continue;
+
+            if (first is null || item.ItemId < first)
+                first = item.ItemId;
+        }
+
+        return first;
     }
 
     private static int? FindNearestWorldItemId(SpacetimeDB.Types.DbConnection conn)
@@ -457,6 +492,8 @@ public partial class ConnectedGameHarnessController : Node2D
             ["hotbar_count"] = 0,
             ["hotbar"] = new Godot.Collections.Dictionary(),
             ["world"] = new Godot.Collections.Array(),
+            ["stored_count"] = 0,
+            ["stored"] = new Godot.Collections.Dictionary(),
             ["config"] = new Godot.Collections.Dictionary(),
         };
 
@@ -468,6 +505,7 @@ public partial class ConnectedGameHarnessController : Node2D
         var hotbarCount = 0;
         var hotbar = new Godot.Collections.Dictionary();
         var worldRows = new List<SpacetimeDB.Types.Item>();
+        var storedRows = new List<SpacetimeDB.Types.Item>();
         foreach (var item in conn.Db.Items.Iter())
         {
             if (item.LocationKind == SpacetimeDB.Types.ItemLocationKind.World)
@@ -476,6 +514,12 @@ public partial class ConnectedGameHarnessController : Node2D
                 worldRows.Add(item);
                 var key = item.ItemTypeId.ToString();
                 byType[key] = byType.TryGetValue(key, out var prior) ? prior.AsInt32() + 1 : 1;
+                continue;
+            }
+
+            if (item.LocationKind == SpacetimeDB.Types.ItemLocationKind.Stored)
+            {
+                storedRows.Add(item);
                 continue;
             }
 
@@ -510,11 +554,37 @@ public partial class ConnectedGameHarnessController : Node2D
         }
         state["world"] = world;
 
+        // Store-slot order so scenarios can address stored.<room>.0.type etc.
+        state["stored_count"] = storedRows.Count;
+        var stored = new Godot.Collections.Dictionary();
+        foreach (var item in storedRows.OrderBy(i => i.SlotIndex))
+        {
+            var roomKey = item.RoomSlotIndex.ToString();
+            if (!stored.TryGetValue(roomKey, out var existing))
+            {
+                existing = new Godot.Collections.Array();
+                stored[roomKey] = existing;
+            }
+
+            existing
+                .AsGodotArray()
+                .Add(
+                    new Godot.Collections.Dictionary
+                    {
+                        ["item_id"] = item.ItemId,
+                        ["type"] = item.ItemTypeId.ToString(),
+                        ["slot"] = item.SlotIndex,
+                    }
+                );
+        }
+        state["stored"] = stored;
+
         if (conn.Db.InventoryConfigs.Id.Find(0) is { } config)
         {
             state["config"] = new Godot.Collections.Dictionary
             {
                 ["hotbar_slots"] = config.HotbarSlots,
+                ["cargo_capacity"] = config.CargoCapacity,
             };
         }
 
