@@ -1,0 +1,33 @@
+{
+  "scenario_id": "vitals_health_bar_renders",
+  "version": 3,
+  "description": "The VitalsHud health bar renders the local player's health: full bar at spawn, fill ratio drops when health is seeded to 40%, dead presentation at zero, and full restore returns the bar to 100%.",
+  "harness_scene": "res://validation/harnesses/VitalsHudHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/VitalsHudHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "full" },
+    { "op": "assert_value", "checkpoint": "full", "path": "harness_state.hud.fill_ratio", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "full", "path": "harness_state.hud.shows_dead", "comparator": "eq", "expected": false },
+    { "op": "press_action", "action": "test_seed_health_40" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_health_40" },
+    { "op": "wait_until", "path": "harness_state.hud.fill_ratio", "comparator": "lt", "expected": 0.5, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "damaged" },
+    { "op": "assert_value", "checkpoint": "damaged", "path": "harness_state.hud.fill_ratio", "comparator": "gt", "expected": 0.3 },
+    { "op": "assert_value", "checkpoint": "damaged", "path": "harness_state.hud.shows_dead", "comparator": "eq", "expected": false },
+    { "op": "press_action", "action": "test_seed_health_zero" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_health_zero" },
+    { "op": "wait_until", "path": "harness_state.hud.shows_dead", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "dead" },
+    { "op": "assert_value", "checkpoint": "dead", "path": "harness_state.hud.fill_ratio", "comparator": "eq", "expected": 0 },
+    { "op": "press_action", "action": "test_seed_health_full" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_health_full" },
+    { "op": "wait_until", "path": "harness_state.hud.fill_ratio", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "restored" },
+    { "op": "assert_value", "checkpoint": "restored", "path": "harness_state.hud.shows_dead", "comparator": "eq", "expected": false },
+    { "op": "quit" }
+  ]
+}

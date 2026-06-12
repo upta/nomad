@@ -407,12 +407,12 @@ Design notes (user-confirmed):
 - [x] Scenario `scenarios_stdb/health_damage_pipeline_round_trip.json` — confirmed red first (path not found on `vitals.health` with connection healthy), green after publish + harness wiring
 - [x] Full stdb suite green (10/10); screenshots reviewed — ship rendering intact, no visual change expected pre-HUD
 
-## Subtask 2.1.3: Client — VitalsService + health bar HUD — Scope: M
-- [ ] Create `client/game/Character/_Service/VitalsService.cs` — plain C#: Changed event, BindConnection/Unbind, test seeders
-- [ ] Create `client/game/Ui/VitalsHud.tscn` + `.cs` — CanvasLayer, health bar (ColorRect fill/track), exports in scene
-- [ ] `Main.tscn`/`Main.cs`: declare VitalsHud, provide VitalsService, bind connection
-- [ ] Create `VitalsHudHarness.tscn` + controller; scenario `vitals_health_bar_renders.json` (red first)
-- [ ] Pure suite green; screenshot shows perimeter health bar
+## Subtask 2.1.3: Client — VitalsService + health bar HUD — Scope: M ✅
+- [x] Create `client/game/Character/_Service/VitalsService.cs` — plain C#: Changed event, BindConnection/Unbind (local-identity filter on VitalsRows), SetTestVitals seeder
+- [x] Create `client/game/Ui/VitalsHud.tscn` + `.cs` — CanvasLayer, bottom-left health bar (ColorRect fill/track + label, "DECEASED" dead presentation), color exports in scene
+- [x] `Main.tscn`/`Main.cs`: declare VitalsHud, provide VitalsService, bind connection in InstantiatePlayer, unbind in _ExitTree
+- [x] Create `VitalsHudHarness.tscn` + controller (provides seeded service, test_seed_health_full/40/zero actions); scenario `vitals_health_bar_renders.json` confirmed red first (missing harness), green after
+- [x] Pure suite green (21/21); screenshots reviewed — 40% red fill + "HP 40/100", dead state empty track + "DECEASED"
 
 ## Subtask 2.1.4: DoD sweep — Scope: S
 - [ ] `./scripts/validate_all.ps1` both suites green; boot clean ≥10s; builds + csharpier; plan/todo checked; push

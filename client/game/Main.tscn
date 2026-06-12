@@ -1,8 +1,9 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/InteractPrompt.tscn" id="7_prompt"]
 [ext_resource type="PackedScene" path="res://game/Ui/ModalHost.tscn" id="8_modal_host"]
+[ext_resource type="PackedScene" path="res://game/Ui/VitalsHud.tscn" id="9_vitals_hud"]
 [ext_resource type="PackedScene" path="res://game/Entities/RemoteEntity.tscn" id="2_remote"]
 [ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://game/Ship/RoomTypeRegistry.cs" id="4_registry"]
@@ -42,4 +43,7 @@ zoom = Vector2(2, 2)
 [node name="InteractPrompt" parent="." instance=ExtResource("7_prompt")]
 
 [node name="ModalHost" parent="." instance=ExtResource("8_modal_host")]
+unique_name_in_owner = true
+
+[node name="VitalsHud" parent="." instance=ExtResource("9_vitals_hud")]
 unique_name_in_owner = true

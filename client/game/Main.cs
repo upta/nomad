@@ -11,12 +11,18 @@ using Ui;
 [Meta(
     typeof(IAutoNode),
     typeof(IProvide<InteractionService>),
-    typeof(IProvide<Ship.PowerGridService>)
+    typeof(IProvide<Ship.PowerGridService>),
+    typeof(IProvide<Character.VitalsService>)
 )]
-public partial class Main : Node2D, IProvide<InteractionService>, IProvide<Ship.PowerGridService>
+public partial class Main
+    : Node2D,
+        IProvide<InteractionService>,
+        IProvide<Ship.PowerGridService>,
+        IProvide<Character.VitalsService>
 {
     private readonly InteractionService _interactionService = new();
     private readonly Ship.PowerGridService _powerGridService = new();
+    private readonly Character.VitalsService _vitalsService = new();
     private readonly Dictionary<int, RemoteEntity> _remoteNodes = [];
     private Db.DbManager? _dbManager;
     private Player.Player? _localPlayer;
@@ -67,12 +73,15 @@ public partial class Main : Node2D, IProvide<InteractionService>, IProvide<Ship.
 
     Ship.PowerGridService IProvide<Ship.PowerGridService>.Value() => _powerGridService;
 
+    Character.VitalsService IProvide<Character.VitalsService>.Value() => _vitalsService;
+
     public void InstantiatePlayer(Db.DbManager dbManager)
     {
         _dbManager = dbManager;
 
         ShipGrid.BindToServer(dbManager);
         _powerGridService.BindConnection(dbManager.Connection);
+        _vitalsService.BindConnection(dbManager.Connection);
 
         var conn = dbManager.Connection;
 
@@ -108,6 +117,7 @@ public partial class Main : Node2D, IProvide<InteractionService>, IProvide<Ship.
         ShipGrid.TerminalInteracted -= OnTerminalInteracted;
         ShipGrid.BreakerInteracted -= OnBreakerInteracted;
         _powerGridService.Unbind();
+        _vitalsService.Unbind();
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {
