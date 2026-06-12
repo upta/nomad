@@ -62,6 +62,13 @@ public partial class ConnectedGameHarnessController : Node2D
             if (conn.Identity is { } me)
                 conn.Reducers.RequestRespawn(me);
         },
+        ["test_clear_items"] = conn => conn.Reducers.ClearItems(),
+        ["test_spawn_ore_at_origin"] = conn =>
+            conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.RawOre, 0, 0),
+        // Kitchen (slot 5) center per HullGeometry — proves world items render
+        // away from the origin, inside a room.
+        ["test_spawn_fuelcell_in_kitchen"] = conn =>
+            conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.FuelCell, 16, 144),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -132,6 +139,7 @@ public partial class ConnectedGameHarnessController : Node2D
             ["power"] = BuildPowerState(),
             ["vitals"] = BuildVitalsState(),
             ["stores"] = BuildStoresState(),
+            ["items"] = BuildItemsState(),
         };
 
         if (_puppet is { } puppet)
@@ -268,6 +276,10 @@ public partial class ConnectedGameHarnessController : Node2D
 
         var shipGrid = _main?.GetNodeOrNull<Nomad.Game.Map.ShipGrid>("ShipGrid");
         state["terminal_count"] = shipGrid?.TerminalCount ?? 0;
+
+        // WorldItem instances are direct children of Main's ItemSpawner node
+        // (lands in 3.1.3 — this reads 0 until then).
+        state["world_item_nodes"] = _main?.GetNodeOrNull<Node>("ItemSpawner")?.GetChildCount() ?? 0;
         if (shipGrid is not null)
             state["grid"] = shipGrid.GetObservedRoomState();
 
@@ -361,6 +373,34 @@ public partial class ConnectedGameHarnessController : Node2D
         state["max_hunger"] = vitals.Hunger.Max;
         state["suit_equipped"] = vitals.SuitEquipped;
         state["is_dead"] = vitals.IsDead;
+        return state;
+    }
+
+    private Godot.Collections.Dictionary BuildItemsState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["world_count"] = 0,
+            ["by_type"] = new Godot.Collections.Dictionary(),
+        };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        var worldCount = 0;
+        var byType = new Godot.Collections.Dictionary();
+        foreach (var item in conn.Db.Items.Iter())
+        {
+            if (item.LocationKind != SpacetimeDB.Types.ItemLocationKind.World)
+                continue;
+
+            worldCount++;
+            var key = item.ItemTypeId.ToString();
+            byType[key] = byType.TryGetValue(key, out var prior) ? prior.AsInt32() + 1 : 1;
+        }
+
+        state["world_count"] = worldCount;
+        state["by_type"] = byType;
         return state;
     }
 

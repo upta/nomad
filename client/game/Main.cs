@@ -12,15 +12,18 @@ using Ui;
     typeof(IAutoNode),
     typeof(IProvide<InteractionService>),
     typeof(IProvide<Ship.PowerGridService>),
-    typeof(IProvide<Character.VitalsService>)
+    typeof(IProvide<Character.VitalsService>),
+    typeof(IProvide<Items.InventoryService>)
 )]
 public partial class Main
     : Node2D,
         IProvide<InteractionService>,
         IProvide<Ship.PowerGridService>,
-        IProvide<Character.VitalsService>
+        IProvide<Character.VitalsService>,
+        IProvide<Items.InventoryService>
 {
     private readonly InteractionService _interactionService = new();
+    private readonly Items.InventoryService _inventoryService = new();
     private readonly Ship.PowerGridService _powerGridService = new();
     private readonly Character.VitalsService _vitalsService = new();
     private readonly Dictionary<int, RemoteEntity> _remoteNodes = [];
@@ -33,6 +36,12 @@ public partial class Main
 
     [Node]
     public ICamera2D Camera { get; set; } = default!;
+
+    [Node]
+    public Items.ItemSpawner ItemSpawner { get; set; } = default!;
+
+    [Node]
+    public Items.ItemTypeRegistry ItemTypeRegistry { get; set; } = default!;
 
     [Node]
     public ModalHost ModalHost { get; set; } = default!;
@@ -58,8 +67,9 @@ public partial class Main
     public void OnReady()
     {
         // Node exports don't survive the scene-instance boundary, so the
-        // registry is handed to ShipGrid here instead of in Main.tscn.
+        // registries are handed over here instead of in Main.tscn.
         ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
+        ItemSpawner.Registry = ItemTypeRegistry;
         ShipGrid.TerminalInteracted += OnTerminalInteracted;
         ShipGrid.BreakerInteracted += OnBreakerInteracted;
         ShipGrid.SuitRackInteracted += OnSuitRackInteracted;
@@ -78,6 +88,8 @@ public partial class Main
 
     Character.VitalsService IProvide<Character.VitalsService>.Value() => _vitalsService;
 
+    Items.InventoryService IProvide<Items.InventoryService>.Value() => _inventoryService;
+
     public void InstantiatePlayer(Db.DbManager dbManager)
     {
         _dbManager = dbManager;
@@ -85,6 +97,7 @@ public partial class Main
         ShipGrid.BindToServer(dbManager);
         _powerGridService.BindConnection(dbManager.Connection);
         _vitalsService.BindConnection(dbManager.Connection);
+        _inventoryService.BindConnection(dbManager.Connection);
 
         var conn = dbManager.Connection;
 
@@ -126,6 +139,7 @@ public partial class Main
         _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
         _vitalsService.Unbind();
+        _inventoryService.Unbind();
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {

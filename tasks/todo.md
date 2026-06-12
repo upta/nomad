@@ -515,13 +515,13 @@ Design notes (user-confirmed):
 - [x] `SpawnWorldItem` + `ClearItems` reducers; Init seeds config
 - [x] Format → build → publish `--delete-data=always` → generate → client build; CLI acceptance: config row (4/96/160/12) visible, `spawn_world_item rawOre` inserts, `none` rejected, `clear_items` empties
 
-## Subtask 3.1.2: stdb validation — Scope: S
-- [ ] Harness `items` observed state + spawn/clear test actions; `world_items_spawn_and_render.json` red first
+## Subtask 3.1.2: stdb validation — Scope: S ✅
+- [x] Harness `items` observed state (world_count + by_type) + `game.world_item_nodes` (ItemSpawner child count) + spawn/clear test actions; `world_items_spawn_and_render.json` confirmed red first (timeout on world_item_nodes, server half already green), green after 3.1.3
 
-## Subtask 3.1.3: Client — ItemType resources + WorldItem + ItemSpawner + InventoryService (world half) — Scope: M
-- [ ] `ItemType` resource + `ItemTypeRegistry` + 6 `.tres`; `WorldItem.tscn` (InteractTarget, "Pick up {Label}")
-- [ ] `InventoryService` world half (OnUpdate evicts non-World rows) + seeders; `ItemSpawner` node in `Main.tscn`
-- [ ] Main provides service, binds connection, hands registry to spawner
+## Subtask 3.1.3: Client — ItemType resources + WorldItem + ItemSpawner + InventoryService (world half) — Scope: M ✅
+- [x] `ItemType` resource + `ItemTypeRegistry` + 6 `.tres`; `WorldItem.tscn` (InteractTarget, "Pick up {Label}", GhostAccessible false)
+- [x] `InventoryService` world half (OnUpdate evicts non-World rows — the untrailed gotcha) + test seeders; `ItemSpawner` node in `Main.tscn` ([Dependency] service, registry handed by Main)
+- [x] Main provides service, binds connection in InstantiatePlayer, hands registry to spawner; full stdb suite green 19/19; screenshots reviewed (FuelCell glyph tile in Kitchen, pickup prompt over ore, clear empties)
 
 ## Subtask 3.1.4: Pure validation — Scope: S
 - [ ] `InventoryHarness` + controller; `item_types_load.json` (6 types) + `world_items_render.json` red first; screenshots

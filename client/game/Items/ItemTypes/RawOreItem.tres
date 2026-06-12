@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/Items/ItemType.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+ItemId = "RawOre"
+Label = "Raw Ore"
+Color = Color(0.62, 0.51, 0.38, 1)
+Glyph = "O"

@@ -1,6 +1,16 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
+[ext_resource type="Script" path="res://game/Items/ItemTypeRegistry.cs" id="it_registry"]
+[ext_resource type="Script" path="res://game/Items/ItemType.cs" id="it_script"]
+[ext_resource type="Script" path="res://game/Items/ItemSpawner.cs" id="it_spawner"]
+[ext_resource type="PackedScene" path="res://game/Items/WorldItem.tscn" id="it_world_item"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/RawOreItem.tres" id="it0"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/FuelDepositItem.tres" id="it1"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/BiomassItem.tres" id="it2"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/FuelCellItem.tres" id="it3"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/ScrapItem.tres" id="it4"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/ComponentsItem.tres" id="it5"]
 [ext_resource type="PackedScene" path="res://game/Ui/InteractPrompt.tscn" id="7_prompt"]
 [ext_resource type="PackedScene" path="res://game/Ui/ModalHost.tscn" id="8_modal_host"]
 [ext_resource type="PackedScene" path="res://game/Ui/VitalsHud.tscn" id="9_vitals_hud"]
@@ -29,9 +39,19 @@ unique_name_in_owner = true
 script = ExtResource("4_registry")
 RoomTypes = Array[ExtResource("rt_script")]([ExtResource("rt0"), ExtResource("rt1"), ExtResource("rt2"), ExtResource("rt3"), ExtResource("rt4"), ExtResource("rt5"), ExtResource("rt6"), ExtResource("rt7")])
 
+[node name="ItemTypeRegistry" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("it_registry")
+ItemTypes = Array[ExtResource("it_script")]([ExtResource("it0"), ExtResource("it1"), ExtResource("it2"), ExtResource("it3"), ExtResource("it4"), ExtResource("it5")])
+
 [node name="ShipGrid" parent="." instance=ExtResource("5_shipgrid")]
 unique_name_in_owner = true
 HullTemplate = ExtResource("6_hull")
+
+[node name="ItemSpawner" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("it_spawner")
+WorldItemScene = ExtResource("it_world_item")
 
 [node name="Camera" type="Camera2D" parent="."]
 unique_name_in_owner = true
