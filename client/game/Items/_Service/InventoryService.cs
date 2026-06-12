@@ -73,6 +73,47 @@ public class InventoryService
             Changed?.Invoke();
     }
 
+    public void RequestDrop(int slotIndex, Vector2 position)
+    {
+        if (_conn is { } conn)
+        {
+            // The server reads the drop position from its own Entities row;
+            // the position argument only feeds the test-mode mirror.
+            conn.Reducers.DropItem(slotIndex);
+            return;
+        }
+
+        foreach (var (itemId, entry) in _hotbarItems)
+        {
+            if (entry.SlotIndex == slotIndex)
+            {
+                _hotbarItems.Remove(itemId);
+                _worldItems[itemId] = new WorldItemEntry(itemId, entry.TypeId, position);
+                Changed?.Invoke();
+                return;
+            }
+        }
+    }
+
+    public void RequestPickUp(int itemId)
+    {
+        if (_conn is { } conn)
+        {
+            conn.Reducers.PickUpItem(itemId);
+            return;
+        }
+
+        if (!_worldItems.TryGetValue(itemId, out var entry))
+            return;
+
+        if (FindFreeTestSlot() is not { } slot)
+            return;
+
+        _worldItems.Remove(itemId);
+        _hotbarItems[itemId] = new HotbarItemEntry(itemId, entry.TypeId, slot);
+        Changed?.Invoke();
+    }
+
     public int SeedTestWorldItem(string typeId, Vector2 position)
     {
         var itemId = _nextTestItemId++;
@@ -155,6 +196,21 @@ public class InventoryService
         {
             _hotbarItems.Remove(item.ItemId);
         }
+    }
+
+    private int? FindFreeTestSlot()
+    {
+        var occupied = new HashSet<int>();
+        foreach (var entry in _hotbarItems.Values)
+            occupied.Add(entry.SlotIndex);
+
+        for (var slot = 0; slot < _hotbarSlotCount; slot++)
+        {
+            if (!occupied.Contains(slot))
+                return slot;
+        }
+
+        return null;
     }
 
     private void OnItemDeleted(EventContext ctx, Item item)

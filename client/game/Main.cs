@@ -77,6 +77,8 @@ public partial class Main
         ShipGrid.TerminalInteracted += OnTerminalInteracted;
         ShipGrid.BreakerInteracted += OnBreakerInteracted;
         ShipGrid.SuitRackInteracted += OnSuitRackInteracted;
+        ItemSpawner.Interacted += OnWorldItemInteracted;
+        HotbarHud.DropRequested += OnHotbarDropRequested;
         _vitalsService.Changed += OnVitalsChanged;
 
         _powerGridService.SetRoomCatalog(RoomTypeRegistry.All);
@@ -140,6 +142,8 @@ public partial class Main
         ShipGrid.TerminalInteracted -= OnTerminalInteracted;
         ShipGrid.BreakerInteracted -= OnBreakerInteracted;
         ShipGrid.SuitRackInteracted -= OnSuitRackInteracted;
+        ItemSpawner.Interacted -= OnWorldItemInteracted;
+        HotbarHud.DropRequested -= OnHotbarDropRequested;
         _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
         _vitalsService.Unbind();
@@ -172,6 +176,14 @@ public partial class Main
 
     private void OnBreakerInteracted(Ship.Breaker breaker) =>
         _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
+
+    private void OnHotbarDropRequested() =>
+        _inventoryService.RequestDrop(
+            _inventoryService.SelectedSlot,
+            _localPlayer?.GlobalPosition ?? Vector2.Zero
+        );
+
+    private void OnWorldItemInteracted(int itemId) => _inventoryService.RequestPickUp(itemId);
 
     private void OnSuitRackInteracted(Ship.SuitRack rack) =>
         _dbManager?.Connection?.Reducers.SetSuitEquipped(!_vitalsService.SuitEquipped);
