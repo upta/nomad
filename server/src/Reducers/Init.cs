@@ -37,6 +37,7 @@ public static partial class Module
         // spawn point, off every validation scenario's walk path.
         SeedWorldItem(ctx, ItemTypeId.RawOre, -96f, 0f);
         SeedWorldItem(ctx, ItemTypeId.FuelCell, -160f, 0f);
+        SeedWorldItem(ctx, ItemTypeId.Biomass, -224f, 0f);
     }
 
     private static void SeedWorldItem(ReducerContext ctx, ItemTypeId itemTypeId, float x, float y)
