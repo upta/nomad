@@ -19,6 +19,11 @@ public partial class AppRoot : Node, IProvide<GuideService>
         ["move_right"] = Key.D,
         ["interact"] = Key.E,
         ["ui_cancel_modal"] = Key.Escape,
+        ["hotbar_slot_1"] = Key.Key1,
+        ["hotbar_slot_2"] = Key.Key2,
+        ["hotbar_slot_3"] = Key.Key3,
+        ["hotbar_slot_4"] = Key.Key4,
+        ["hotbar_drop"] = Key.Q,
     };
 
     private static readonly PackedScene TestScene = GD.Load<PackedScene>(

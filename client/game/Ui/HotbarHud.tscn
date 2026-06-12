@@ -1,0 +1,70 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://game/Ui/HotbarHud.cs" id="1"]
+[ext_resource type="Script" path="res://game/Guide/GuideActionBinding.cs" id="2_binding"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot1.tres" id="3_slot1"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot2.tres" id="4_slot2"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot3.tres" id="5_slot3"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot4.tres" id="6_slot4"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarDropItem.tres" id="7_drop"]
+[ext_resource type="PackedScene" path="res://game/Ui/ItemSlotPanel.tscn" id="8_panel"]
+
+[sub_resource type="Resource" id="slot1_bound"]
+script = ExtResource("2_binding")
+Action = ExtResource("3_slot1")
+
+[sub_resource type="Resource" id="slot2_bound"]
+script = ExtResource("2_binding")
+Action = ExtResource("4_slot2")
+
+[sub_resource type="Resource" id="slot3_bound"]
+script = ExtResource("2_binding")
+Action = ExtResource("5_slot3")
+
+[sub_resource type="Resource" id="slot4_bound"]
+script = ExtResource("2_binding")
+Action = ExtResource("6_slot4")
+
+[sub_resource type="Resource" id="drop_bound"]
+script = ExtResource("2_binding")
+Action = ExtResource("7_drop")
+
+[node name="HotbarHud" type="CanvasLayer"]
+script = ExtResource("1")
+Slot1Action = SubResource("slot1_bound")
+Slot2Action = SubResource("slot2_bound")
+Slot3Action = SubResource("slot3_bound")
+Slot4Action = SubResource("slot4_bound")
+DropAction = SubResource("drop_bound")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Slots" type="HBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -102.0
+offset_top = -64.0
+offset_right = 102.0
+offset_bottom = -16.0
+theme_override_constants/separation = 4
+
+[node name="Slot0" parent="Root/Slots" instance=ExtResource("8_panel")]
+unique_name_in_owner = true
+
+[node name="Slot1" parent="Root/Slots" instance=ExtResource("8_panel")]
+unique_name_in_owner = true
+
+[node name="Slot2" parent="Root/Slots" instance=ExtResource("8_panel")]
+unique_name_in_owner = true
+
+[node name="Slot3" parent="Root/Slots" instance=ExtResource("8_panel")]
+unique_name_in_owner = true

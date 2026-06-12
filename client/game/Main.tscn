@@ -1,6 +1,7 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
+[ext_resource type="PackedScene" path="res://game/Ui/HotbarHud.tscn" id="10_hotbar_hud"]
 [ext_resource type="Script" path="res://game/Items/ItemTypeRegistry.cs" id="it_registry"]
 [ext_resource type="Script" path="res://game/Items/ItemType.cs" id="it_script"]
 [ext_resource type="Script" path="res://game/Items/ItemSpawner.cs" id="it_spawner"]
@@ -66,4 +67,7 @@ zoom = Vector2(2, 2)
 unique_name_in_owner = true
 
 [node name="VitalsHud" parent="." instance=ExtResource("9_vitals_hud")]
+unique_name_in_owner = true
+
+[node name="HotbarHud" parent="." instance=ExtResource("10_hotbar_hud")]
 unique_name_in_owner = true

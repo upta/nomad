@@ -10,10 +10,12 @@
 [ext_resource type="Script" uid="uid://b4elwochdmo5p" path="res://addons/guide/triggers/guide_trigger.gd" id="7_lnrlo"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/Interact.tres" id="8_interact"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarDropItem.tres" id="10_drop"]
-[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarCycleSlot.tres" id="10_h04xt"]
 [ext_resource type="Script" uid="uid://csep3him3o7bq" path="res://addons/guide/triggers/guide_trigger_pressed.gd" id="10_y3k2f"]
-[ext_resource type="Script" uid="uid://ja2ypq3ulvxc" path="res://addons/guide/inputs/guide_input_joy_axis_1d.gd" id="11_af52p"]
 [ext_resource type="Script" uid="uid://bcubm07s0x235" path="res://addons/guide/inputs/guide_input_joy_button.gd" id="11_joybtn"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot1.tres" id="12_slot1"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot2.tres" id="13_slot2"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot3.tres" id="14_slot3"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot4.tres" id="15_slot4"]
 
 [sub_resource type="Resource" id="Resource_joy_axis"]
 script = ExtResource("5_joy2d")
@@ -47,19 +49,57 @@ script = ExtResource("1_mapping")
 action = ExtResource("8_interact")
 input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_interact_input")])
 
-[sub_resource type="Resource" id="Resource_y3k2f"]
-script = ExtResource("11_af52p")
-axis = 5
+[sub_resource type="Resource" id="Resource_slot1_btn"]
+script = ExtResource("11_joybtn")
+button = 11
 
-[sub_resource type="Resource" id="Resource_cycle_input"]
+[sub_resource type="Resource" id="Resource_slot1_input"]
 script = ExtResource("4_input")
-input = SubResource("Resource_y3k2f")
+input = SubResource("Resource_slot1_btn")
 
-[sub_resource type="Resource" id="Resource_cycle_action"]
+[sub_resource type="Resource" id="Resource_slot1_action"]
 script = ExtResource("1_mapping")
-action = ExtResource("10_h04xt")
-input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_cycle_input")])
-metadata/_guide_input_mappings_collapsed = false
+action = ExtResource("12_slot1")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_slot1_input")])
+
+[sub_resource type="Resource" id="Resource_slot2_btn"]
+script = ExtResource("11_joybtn")
+button = 14
+
+[sub_resource type="Resource" id="Resource_slot2_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_slot2_btn")
+
+[sub_resource type="Resource" id="Resource_slot2_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("13_slot2")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_slot2_input")])
+
+[sub_resource type="Resource" id="Resource_slot3_btn"]
+script = ExtResource("11_joybtn")
+button = 12
+
+[sub_resource type="Resource" id="Resource_slot3_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_slot3_btn")
+
+[sub_resource type="Resource" id="Resource_slot3_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("14_slot3")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_slot3_input")])
+
+[sub_resource type="Resource" id="Resource_slot4_btn"]
+script = ExtResource("11_joybtn")
+button = 13
+
+[sub_resource type="Resource" id="Resource_slot4_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_slot4_btn")
+
+[sub_resource type="Resource" id="Resource_slot4_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("15_slot4")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_slot4_input")])
 
 [sub_resource type="Resource" id="Resource_xbfr2"]
 script = ExtResource("11_joybtn")
@@ -76,4 +116,4 @@ input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_drop_input
 
 [resource]
 script = ExtResource("2_ctx")
-mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_interact_action"), SubResource("Resource_cycle_action"), SubResource("Resource_drop_action")])
+mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_interact_action"), SubResource("Resource_slot1_action"), SubResource("Resource_slot2_action"), SubResource("Resource_slot3_action"), SubResource("Resource_slot4_action"), SubResource("Resource_drop_action")])

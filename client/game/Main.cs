@@ -44,6 +44,9 @@ public partial class Main
     public Items.ItemTypeRegistry ItemTypeRegistry { get; set; } = default!;
 
     [Node]
+    public HotbarHud HotbarHud { get; set; } = default!;
+
+    [Node]
     public ModalHost ModalHost { get; set; } = default!;
 
     [Export]
@@ -70,6 +73,7 @@ public partial class Main
         // registries are handed over here instead of in Main.tscn.
         ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
         ItemSpawner.Registry = ItemTypeRegistry;
+        HotbarHud.Registry = ItemTypeRegistry;
         ShipGrid.TerminalInteracted += OnTerminalInteracted;
         ShipGrid.BreakerInteracted += OnBreakerInteracted;
         ShipGrid.SuitRackInteracted += OnSuitRackInteracted;

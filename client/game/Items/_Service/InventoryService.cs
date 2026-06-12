@@ -12,17 +12,43 @@ using SpacetimeDB.Types;
 // directly so pure harnesses can drive the same consumers.
 public class InventoryService
 {
+    private const int DefaultHotbarSlots = 4;
+
+    private readonly Dictionary<int, HotbarItemEntry> _hotbarItems = [];
     private readonly SortedDictionary<int, WorldItemEntry> _worldItems = [];
     private DbConnection? _conn;
+    private int _hotbarSlotCount = DefaultHotbarSlots;
     private int _nextTestItemId = 1;
 
     public event Action? Changed;
+
+    public int HotbarSlotCount => _hotbarSlotCount;
+
+    // Pure client UI state — the server never reads or trusts the selection.
+    public int SelectedSlot { get; private set; }
+
+    public IReadOnlyList<string?> Slots
+    {
+        get
+        {
+            var slots = new string?[_hotbarSlotCount];
+            foreach (var entry in _hotbarItems.Values)
+            {
+                if (entry.SlotIndex >= 0 && entry.SlotIndex < slots.Length)
+                    slots[entry.SlotIndex] = entry.TypeId;
+            }
+            return slots;
+        }
+    }
 
     public IReadOnlyList<WorldItemEntry> WorldItems => [.. _worldItems.Values];
 
     public void BindConnection(DbConnection conn)
     {
         _conn = conn;
+
+        if (conn.Db.InventoryConfigs.Id.Find(0) is { } config)
+            _hotbarSlotCount = config.HotbarSlots;
 
         foreach (var item in conn.Db.Items.Iter())
             Apply(item);
@@ -37,6 +63,7 @@ public class InventoryService
     public void ClearTestItems()
     {
         _worldItems.Clear();
+        _hotbarItems.Clear();
         Changed?.Invoke();
     }
 
@@ -54,6 +81,36 @@ public class InventoryService
         return itemId;
     }
 
+    public void SelectSlot(int index)
+    {
+        var clamped = Math.Clamp(index, 0, _hotbarSlotCount - 1);
+        if (clamped == SelectedSlot)
+            return;
+
+        SelectedSlot = clamped;
+        Changed?.Invoke();
+    }
+
+    public void SetTestSlot(int slotIndex, string? typeId)
+    {
+        foreach (var (itemId, entry) in _hotbarItems)
+        {
+            if (entry.SlotIndex == slotIndex)
+            {
+                _hotbarItems.Remove(itemId);
+                break;
+            }
+        }
+
+        if (typeId is not null)
+        {
+            var itemId = _nextTestItemId++;
+            _hotbarItems[itemId] = new HotbarItemEntry(itemId, typeId, slotIndex);
+        }
+
+        Changed?.Invoke();
+    }
+
     public void Unbind()
     {
         if (_conn is null)
@@ -69,22 +126,41 @@ public class InventoryService
     {
         // Pickup is a row UPDATE (World → Hotbar), not a delete — rows that
         // leave World must be evicted here, not just in OnDelete.
-        if (item.LocationKind != ItemLocationKind.World)
+        if (item.LocationKind == ItemLocationKind.World)
         {
-            _worldItems.Remove(item.ItemId);
+            _hotbarItems.Remove(item.ItemId);
+            _worldItems[item.ItemId] = new WorldItemEntry(
+                item.ItemId,
+                item.ItemTypeId.ToString(),
+                new Vector2(item.Position.X, item.Position.Y)
+            );
             return;
         }
 
-        _worldItems[item.ItemId] = new WorldItemEntry(
-            item.ItemId,
-            item.ItemTypeId.ToString(),
-            new Vector2(item.Position.X, item.Position.Y)
-        );
+        _worldItems.Remove(item.ItemId);
+
+        if (
+            item.LocationKind == ItemLocationKind.Hotbar
+            && _conn?.Identity is { } me
+            && item.Holder == me
+        )
+        {
+            _hotbarItems[item.ItemId] = new HotbarItemEntry(
+                item.ItemId,
+                item.ItemTypeId.ToString(),
+                item.SlotIndex
+            );
+        }
+        else
+        {
+            _hotbarItems.Remove(item.ItemId);
+        }
     }
 
     private void OnItemDeleted(EventContext ctx, Item item)
     {
         _worldItems.Remove(item.ItemId);
+        _hotbarItems.Remove(item.ItemId);
         Changed?.Invoke();
     }
 
@@ -100,5 +176,7 @@ public class InventoryService
         Changed?.Invoke();
     }
 }
+
+public record HotbarItemEntry(int ItemId, string TypeId, int SlotIndex);
 
 public record WorldItemEntry(int ItemId, string TypeId, Vector2 Position);
