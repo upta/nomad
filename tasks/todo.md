@@ -252,7 +252,7 @@ Design notes:
 
 ---
 
-# Task 1.4: Power Grid + Breaker Switches 🔄 IN PROGRESS
+# Task 1.4: Power Grid + Breaker Switches ✅ DONE
 
 Full plan: `C:\Users\upta\.claude\plans\parsed-sniffing-quill.md`. Scheduled-table syntax reference: untrailed `server/src/Tables/TravelTimer.cs`.
 
@@ -310,8 +310,8 @@ Design notes (user-confirmed):
 - [x] Both suites green (16 pure + 8 stdb); screenshots show modal layout + focus ring + live status line
 
 ## Subtask 1.4.6 / Definition of Done (Task 1.4)
-- [ ] All new scenarios pass; screenshots reviewed
-- [ ] `./scripts/validate_all.ps1` — both suites green, no regressions
-- [ ] Game boots clean ≥10s, zero `ERROR:` lines (`run-game` skill)
-- [ ] `dotnet build` + `dotnet csharpier format .` (client), `spacetime build` + format (server)
-- [ ] `tasks/plan.md` + `tasks/todo.md` updated; `git push origin`
+- [x] All new scenarios pass; screenshots reviewed (dim, flicker, breakers, modal focus ring, live status line)
+- [x] `./scripts/validate_all.ps1` — both suites green (16 pure + 8 stdb), no regressions
+- [x] Game boots clean 13s, zero `ERROR:` lines, SpacetimeDB connected + subscription applied (`run-game` skill)
+- [x] `dotnet build` + `dotnet csharpier format .` (client), `spacetime build` + format (server)
+- [x] `tasks/plan.md` + `tasks/todo.md` updated; `git push origin`
