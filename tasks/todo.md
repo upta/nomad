@@ -315,3 +315,59 @@ Design notes (user-confirmed):
 - [x] Game boots clean 13s, zero `ERROR:` lines, SpacetimeDB connected + subscription applied (`run-game` skill)
 - [x] `dotnet build` + `dotnet csharpier format .` (client), `spacetime build` + format (server)
 - [x] `tasks/plan.md` + `tasks/todo.md` updated; `git push origin`
+
+---
+
+# Task 1.5: Room Pressurization (+ corridors become pressurizable rooms) 🔄 PLANNED
+
+Full plan: `C:\Users\upta\.claude\plans\buzzing-nibbling-meteor.md`.
+
+Design notes (user-confirmed):
+- Corridor = room slot 7 (`RoomTypeId.Corridor`), one pressure unit for the whole corridor network. Draw 0, not player-assignable, no terminal/breaker (ShipGrid's slot lookup already no-ops for non-RoomSlot indices), hidden from PowerRouter modal. Hull geometry stays in `HullTemplate.Corridors`.
+- Depressurized visual = `color.Lerp(VacuumTint, DepressurizedBlend)` **before** power dimming — `VacuumTint ≈ (0.35, 0.45, 0.6)`, `DepressurizedBlend ≈ 0.55`, set in `ShipGrid.tscn`. For Kitchen (0.9, 0.8, 0.2): red falls AND blue rises — no `Darkened()` can do that, so asserts distinguish tint from dim. Composes with unpowered (tint then darken); Overload flickers the tinted color.
+- `SetPressurization(slotIndex, isPressurized)` reducer must NOT call `RecomputePowerGrid` (pressurization is orthogonal to power; why-comment required since neighbors all recompute).
+- RoomTypeRegistry refactor approved: `[Export] Array<RoomType>` wired in scenes replaces the `GD.Load` path list (CLAUDE.md anti-pattern cleanup).
+- Modal is snapshot-at-open — an open RoomInfoModal won't live-update pressure; pre-existing, accept.
+
+## Subtask 1.5.1: Server — corridor slot + SetPressurization reducer — Scope: M
+- [ ] `server/src/Types/RoomTypeId.cs` — append `Corridor`
+- [ ] `server/src/Power/PowerRules.cs` — `PowerDrawFor` gains `Corridor => 0`
+- [ ] `server/src/Reducers/Init.cs` — `SeedRoom(ctx, 7, RoomTypeId.Corridor)`
+- [ ] `server/src/Reducers/AssignRoomType.cs` — reject `RoomTypeId.Corridor` (alongside `None`)
+- [ ] Create `server/src/Reducers/SetPressurization.cs` — sender auth + slot lookup (`is not { } room` → throw) + `Update(room with { IsPressurized = ... })`; no power recompute
+- [ ] Format → `spacetime build` → `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` (Init changed — plain publish keeps old data, no slot-7 row) → `spacetime generate` → `dotnet build` (client); commit `client/Db` wholesale
+- [ ] Acceptance: `spacetime sql` shows 8 rows incl. slot 7 Corridor; `set_pressurization 5 false` flips slot 5, PowerGrid row untouched; `assign_room_type` rejects Corridor
+
+## Subtask 1.5.2: stdb validation of the reducer loop — Scope: S
+- [ ] `ConnectedGameHarnessController.cs`: `TestReducerActions` += `test_depressurize_kitchen`/`test_repressurize_kitchen` (slot 5) + `test_depressurize_corridor`/`test_repressurize_corridor` (slot 7); keep edge-detected `_PhysicsProcess` polling (gotcha); `BuildPowerState()` rooms += `is_pressurized`
+- [ ] Scenario `scenarios_stdb/pressurization_reducer_round_trip.json` — seed asserts (slots 5+7 pressurized) → kitchen round trip with guard asserts (`power.status == "Stable"`, `is_powered` unchanged) → corridor round trip
+- [ ] `./scripts/run_stdb_scenarios.ps1` green; verify no existing scenario asserts a rooms-collection size broken by slot 7
+
+## Subtask 1.5.3: Client — corridor as room + registry refactor — Scope: M
+- [ ] Create `client/game/Ship/RoomTypes/CorridorRoom.tres` — RoomId "Corridor", Label "Corridor", PowerDraw 0, TerminalType None, Color (0.30, 0.33, 0.38)
+- [ ] `RoomTypeRegistry.cs` — `[Export] Godot.Collections.Array<RoomType> RoomTypes` replaces `GD.Load` paths; wire all 8 `.tres` in `Main.tscn` + `{CornerSlide,ShipWalk,Interaction,RoomRender,Power}Harness.tscn`; `RoomTypeHarness.tscn` gains scene-declared registry node, controller switches `new` → `GetNode`
+- [ ] `ShipGrid.cs` — `CorridorSlotIndex => HullTemplate?.RoomSlots.Count ?? -1`; `_Draw()` tints corridor GridRects via `GetRoomColor(CorridorSlotIndex)` (no label); observed state appends corridor entry
+- [ ] `PowerGridService.cs` — `ApplyAssignment` + `SeedTestRoom` skip Corridor (modal rows stay 7)
+- [ ] Update `room_types_load.json` (7→8) + check `rooms_assigned_to_slots.json` for size asserts
+- [ ] Acceptance: builds + pure suite green; corridor renders subtle tint; PowerRouter modal shows exactly 7 rows
+
+## Subtask 1.5.4: Client — vacuum-tint rendering + test surface — Scope: S
+- [ ] `ShipGrid.cs` — `VacuumTint`/`DepressurizedBlend` exports + `GetRoomColor` lerp before power branches; `SetTestAssignment` gains `bool isPressurized = true`; new `SetTestPressurization(slot, isPressurized)` (mutate row, `EnsureRoomNodes`, `QueueRedraw`); observed rooms += `is_pressurized`
+- [ ] `ShipGrid.tscn` — set `VacuumTint`/`DepressurizedBlend` values
+- [ ] `ModalHost.cs` — `public RoomModalInfo? CurrentInfo => _currentInfo;`
+- [ ] Acceptance: builds clean; existing pure scenarios still green (pressurized-true defaults)
+
+## Subtask 1.5.5: Pure validation — PowerHarness scenarios — Scope: M
+- [ ] `PowerHarnessController.cs` — seed corridor (`SetTestAssignment(7, "Corridor")`); `_testActions` += depressurize/repressurize kitchen + depressurize corridor; `modal` dict += `pressure_nominal` (via `ModalHost.CurrentInfo`)
+- [ ] Scenario `pressure_depressurized_room_renders_vacuum_tint.json` — fingerprint `r_delta < 0` AND `b_delta > 0` vs baseline; repressurize round trip `abs(delta) ≤ 0.001`
+- [ ] Scenario `pressure_composes_with_unpowered.json` — depressurize → cut power → `vacuum_dark_r < vacuum_r` AND `vacuum_dark_b > baseline_b` → restore
+- [ ] Scenario `pressure_corridor_depressurizes.json` — corridor fingerprint `b_delta > 0` AND `(b_delta − r_delta) > 0` (hue-shift assert; corridor base is near the tint hue)
+- [ ] Scenario `pressure_modal_shows_lost.json` — depressurize before walking; walk-up Kitchen terminal (wall-clamp/corner-wedge gotchas) → `modal.pressure_nominal == false` + screenshot
+- [ ] `./tools/run_all_scenarios.ps1` green; visually review screenshots (tint vs dim vs composed must read distinctly)
+
+## Subtask 1.5.6: End-to-end render assert + DoD sweep — Scope: S
+- [ ] `ConnectedGameHarnessController.cs` — surface real Main ShipGrid observed state as `game.grid`; stdb assert of the kitchen r↓/b↑ fingerprint in the connected client
+- [ ] `./scripts/validate_all.ps1` — both suites green, no regressions; screenshot review of every new checkpoint
+- [ ] Game boots clean ≥10s, zero `ERROR:` lines (`run-game` skill — local dev DB needs one `--delete-data=always` publish for slot 7)
+- [ ] `dotnet build` + `dotnet csharpier format .` (client), `spacetime build` + format (server)
+- [ ] `tasks/plan.md` + `tasks/todo.md` checked off; `git push origin`
