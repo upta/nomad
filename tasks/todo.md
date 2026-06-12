@@ -374,3 +374,111 @@ Design notes (user-confirmed):
 - [x] Game boots clean 13s, zero `ERROR:` lines, DbManager connected + subscription applied, registry loaded 8 types (local dev DB was wiped during 1.5.1's `--delete-data=always` publish)
 - [x] `dotnet build` + csharpier (client), `spacetime build` + format (server); stale RoomTypeRegistry anti-pattern note in `client/CLAUDE.md` updated to reflect the refactor
 - [x] `tasks/plan.md` + `tasks/todo.md` checked off; `git push origin`
+
+---
+
+# Phase 2: Character Systems 🔄 PLANNED
+
+Full plan: `C:\Users\upta\.claude\plans\elegant-weaving-tarjan.md`.
+
+Design notes (user-confirmed):
+- `Meter` shared SpacetimeDB type (`Current`/`Max` floats, fields-only — DbVector2 precedent) for Health/Oxygen/Hunger. Nested `with` updates accepted; no indexing on nested fields needed.
+- Room tracking: client computes slot from position + HullTemplate via `RoomLocator`, calls `SetPlayerRoom(slotIndex)` on transitions only; stored as `Player.CurrentSlotIndex` (−1 = none).
+- Suit rack lives in the CargoBay-assigned slot (Terminal/Breaker spawn pattern). Suit equip mutates `Oxygen.Max` directly (×2 default); speed factor 0.8 applied client-side via existing `_speedModifier`.
+- `VitalsConfig` single-row table holds all tick tunables (DB-driven for fast validation, SetBlackoutGrace precedent). `VitalsTick` = repeating scheduled reducer (500ms default).
+- Oxygen: refills in pressurized+powered rooms, holds in pressurized-unpowered, depletes otherwise; empty → Suffocation damage. Hunger depletes everywhere; empty → Starvation damage. Dead/disconnected players skipped.
+- Ghost exception: ghosts can interact with the Cloning Bay terminal ONLY (avoids all-dead softlock, enables solo validation). Living players can clone dead crew via the CloningModal (`RequestRespawn(Identity target)`).
+- `ShipStores.Biomass` seed 3; deposits land with Phase 3.4 (Load verb). Respawn needs CloningBay assigned + powered + biomass ≥ cost; resets vitals, teleports entity to bay center (client snaps on IsDead true→false).
+
+# Task 2.1: Character health + damage pipeline 🔄 IN PROGRESS
+
+## Subtask 2.1.1: Server — Vitals table + damage pipeline — Scope: M ✅
+- [x] Create `server/src/Types/DamageType.cs` — `[SpacetimeDB.Type]` enum Debug/Suffocation/Starvation/Fire/Creature
+- [x] Create `server/src/Types/Meter.cs` — `[SpacetimeDB.Type] partial struct Meter { float Current; float Max; }` (fields-only, object initializers — matches DbVector2; no ctor to keep codegen risk zero)
+- [x] Create `server/src/Tables/Vitals.cs` — Accessor "VitalsRows", public; Identity PK, `Meter Health`, `bool IsDead`
+- [x] Create `server/src/Character/DamageRules.cs` — `ApplyDamage(ctx, identity, amount, type)`: skip dead, clamp at 0, set IsDead; `EnsureVitals` seeding helper
+- [x] Modify `server/src/Reducers/Connect.cs` — seed Vitals (100/100) if missing
+- [x] Create `server/src/Reducers/ApplyDebugDamage.cs` + `ResetVitals.cs` — sender-auth debug/test paths
+- [x] Format → build → publish `--delete-data=always` → generate → client build
+- [x] Acceptance proven end-to-end by the stdb scenario (stronger than CLI): damage 30 → 70; kill → 0 + IsDead, further damage no-ops; reset restores
+
+## Subtask 2.1.2: stdb validation — pipeline round trip — Scope: S ✅
+- [x] `ConnectedGameHarnessController.cs`: `vitals` observed state (health/max_health/is_dead, Meter flattened) + test actions `test_damage_30`/`test_damage_kill`/`test_reset_vitals`
+- [x] Scenario `scenarios_stdb/health_damage_pipeline_round_trip.json` — confirmed red first (path not found on `vitals.health` with connection healthy), green after publish + harness wiring
+- [x] Full stdb suite green (10/10); screenshots reviewed — ship rendering intact, no visual change expected pre-HUD
+
+## Subtask 2.1.3: Client — VitalsService + health bar HUD — Scope: M
+- [ ] Create `client/game/Character/_Service/VitalsService.cs` — plain C#: Changed event, BindConnection/Unbind, test seeders
+- [ ] Create `client/game/Ui/VitalsHud.tscn` + `.cs` — CanvasLayer, health bar (ColorRect fill/track), exports in scene
+- [ ] `Main.tscn`/`Main.cs`: declare VitalsHud, provide VitalsService, bind connection
+- [ ] Create `VitalsHudHarness.tscn` + controller; scenario `vitals_health_bar_renders.json` (red first)
+- [ ] Pure suite green; screenshot shows perimeter health bar
+
+## Subtask 2.1.4: DoD sweep — Scope: S
+- [ ] `./scripts/validate_all.ps1` both suites green; boot clean ≥10s; builds + csharpier; plan/todo checked; push
+
+# Task 2.2: Oxygen tether + spacesuits 🔄 PLANNED
+
+## Subtask 2.2.1: Server room tracking — Scope: S
+- [ ] `Player` table += `int CurrentSlotIndex` (seed −1); `SetPlayerRoom.cs` reducer (validate −1 or existing slot)
+- [ ] Publish + generate + builds; CLI acceptance
+
+## Subtask 2.2.2: Client RoomLocator + stdb proof — Scope: M
+- [ ] Create `client/game/Ship/_Service/RoomLocator.cs` — position → slot (RoomSlot rects, corridor cells, else −1)
+- [ ] `Player.cs`: track slot per physics frame, call `SetPlayerRoom` on change only
+- [ ] Observed `vitals.current_slot`; scenario `scenarios_stdb/player_room_tracking.json` (Kitchen walk, red first)
+
+## Subtask 2.2.3: Server oxygen model + VitalsTick — Scope: M
+- [ ] `Vitals` += `Meter Oxygen` (100/100), `bool SuitEquipped`
+- [ ] Create `VitalsConfig.cs` (single-row tunables) + `VitalsTickTimer.cs` (repeating scheduled) + `VitalsTick.cs` reducer
+- [ ] Create `SetSuitEquipped.cs`, `SetVitalsConfig.cs`, `SetOxygen.cs`; `Init.cs` seeds config + tick row
+- [ ] Publish + generate + builds; CLI acceptance (drain/refill/suffocation/suit capacity)
+
+## Subtask 2.2.4: stdb validation — oxygen loop — Scope: M
+- [ ] Harness: vitals += oxygen fields; test actions `test_fast_vitals`/`test_set_oxygen_low`/`test_equip_suit`/`test_unequip_suit`
+- [ ] Scenarios `oxygen_depletes_and_refills.json` + `oxygen_empty_suffocates.json` (red first); suite green
+
+## Subtask 2.2.5: Client — oxygen HUD + suit rack — Scope: M
+- [ ] VitalsHud oxygen bar; VitalsService += oxygen/suit
+- [ ] Create `client/game/Ship/SuitRack/SuitRack.tscn` + `.cs` (Breaker pattern); ShipGrid spawns in CargoBay slot; `SuitRackInteracted` event
+- [ ] `Main.cs` → `SetSuitEquipped`; `Player.cs` suit speed modifier + tint
+- [ ] Pure scenarios `vitals_oxygen_bar_renders.json` + `suit_rack_equip_toggles.json`; suite green
+
+## Subtask 2.2.6: stdb suit round trip + DoD sweep — Scope: S
+- [ ] Scenario `scenarios_stdb/suit_equip_round_trip.json`; full DoD sweep + push
+
+# Task 2.3: Food/hunger meter 🔄 PLANNED
+
+## Subtask 2.3.1: Server — hunger on the tick — Scope: S
+- [ ] `Vitals` += `Meter Hunger` (100/100); VitalsTick depletes everywhere, 0 → Starvation damage; real default rates (~5min)
+- [ ] Create `RestoreHunger.cs` (Phase 3 meal entry point + validation path); publish + generate + builds; CLI acceptance
+
+## Subtask 2.3.2: Validation + HUD + mini-sweep — Scope: S
+- [ ] VitalsHud hunger bar; pure scenario `vitals_hunger_bar_renders.json`
+- [ ] Harness hunger observed + test actions; `scenarios_stdb/hunger_starvation_round_trip.json` (red first)
+- [ ] DoD sweep + push
+
+# Task 2.4: Death, ghost state, cloning bay 🔄 PLANNED
+
+## Subtask 2.4.1: Server — ShipStores + respawn — Scope: M
+- [ ] Create `server/src/Tables/ShipStores.cs` — Id PK 0, `int Biomass` (seed 3 in Init)
+- [ ] Create `server/src/Reducers/RequestRespawn.cs` — `(Identity target)` form; validate dead + CloningBay powered + biomass; deduct, reset vitals, entity → bay center
+- [ ] Create `server/src/Ship/HullGeometry.cs` — Corvette slot centers (why-comment → CorvetteHull.tres)
+- [ ] Create `SetBiomass.cs` debug setter; publish + generate + builds; CLI acceptance (all rejection paths + happy path)
+
+## Subtask 2.4.2: stdb validation — respawn rules — Scope: S
+- [ ] Harness: `stores.biomass` + test actions (`test_request_respawn`, `test_set_biomass_zero`, CloningBay breaker toggle)
+- [ ] Scenarios `cloning_respawn_round_trip.json` + `cloning_respawn_requires_power_and_biomass.json` (red first); suite green
+
+## Subtask 2.4.3: Client ghost mode — Scope: M
+- [ ] `Player.cs`: IsDead → collision cleared + ghost tint + interaction filtered (`InteractTarget.GhostAccessible`, true only on Cloning terminal); revive → restore + snap to server position
+- [ ] `RemoteEntity` ghost tint (Vitals → Players.PlayerEntityId → entity); VitalsHud dead presentation
+- [ ] `GhostHarness` + scenarios `ghost_passes_through_walls.json` + `ghost_cannot_interact.json`; pure suite green
+
+## Subtask 2.4.4: Client — CloningModal — Scope: M
+- [ ] Create `client/game/Ui/Modals/CloningModal.tscn` + `.cs` (PowerRouterModal pattern): biomass line + dead-crew rows with Clone buttons
+- [ ] `ModalHost.tscn`: Cloning slot → CloningModal
+- [ ] Pure `cloning_modal_lists_dead.json` + stdb `cloning_modal_respawn.json` (die → float to bay → interact → respawn); green
+
+## Subtask 2.4.5: DoD sweep + Phase 2 checkpoint — Scope: S
+- [ ] `./scripts/validate_all.ps1` both suites green; boot clean; builds + format; plan/todo checked incl. **Checkpoint: Characters**; push

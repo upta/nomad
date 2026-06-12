@@ -161,12 +161,29 @@ SpacetimeDB Scaffold + Client Connection
 ### Phase 2: Character Systems
 
 - [ ] **Task 2.1: Character health + damage pipeline** — Characters have a health meter. SpacetimeDB owns health state and a generic damage pipeline (typed damage sources, death at zero). Client renders health bar. Each damage *source* ships complete with its owning feature: suffocation with 2.2, starvation with 2.3, fire with 5.1, hostile creatures with 5.2/5.3 (§6.4). This task includes a debug/validation damage reducer so the pipeline is provable before those sources exist. **Scope: M**
+    - [ ] 2.1.1: Server — `Meter` + `DamageType` types, `Vitals` table, `DamageRules.ApplyDamage`, `ApplyDebugDamage`/`ResetVitals` reducers, Connect seeding; publish + bindings. **Scope: M**
+    - [ ] 2.1.2: stdb validation — `vitals` observed state + damage/kill/reset test actions; `health_damage_pipeline_round_trip.json`. **Scope: S**
+    - [ ] 2.1.3: Client — `VitalsService` (plain C#) + `VitalsHud` health bar in Main; `VitalsHudHarness` + `vitals_health_bar_renders.json`. **Scope: M**
+    - [ ] 2.1.4: DoD sweep. **Scope: S**
 
-- [ ] **Task 2.2: Oxygen tether + spacesuits** — Personal oxygen tank depletes in vacuum/unpressurized areas, refills in pressurized powered rooms; empty tank applies suffocation damage via the 2.1 pipeline (§6.2). SpacetimeDB owns oxygen state. Includes spacesuits: equipped at a suit rack interactable (Task 1.3 framework), expanding tank capacity at the cost of movement speed — the full oxygen feature lands here. **Scope: L**
+- [ ] **Task 2.2: Oxygen tether + spacesuits** — Personal oxygen tank depletes in vacuum/unpressurized areas, refills in pressurized powered rooms; empty tank applies suffocation damage via the 2.1 pipeline (§6.2). SpacetimeDB owns oxygen state. Includes spacesuits: equipped at a suit rack interactable (Task 1.3 framework) in the Cargo Bay, expanding tank capacity at the cost of movement speed — the full oxygen feature lands here. Room presence tracked via client-computed `SetPlayerRoom` reducer calls on transitions. **Scope: L**
+    - [ ] 2.2.1: Server room tracking — `Player.CurrentSlotIndex` + `SetPlayerRoom` reducer. **Scope: S**
+    - [ ] 2.2.2: Client `RoomLocator` service + Player transition calls; `player_room_tracking.json` (stdb). **Scope: M**
+    - [ ] 2.2.3: Server oxygen — `Meter Oxygen`/`SuitEquipped` on Vitals, `VitalsConfig` table, repeating `VitalsTick` scheduled reducer, `SetSuitEquipped` + config/debug reducers. **Scope: M**
+    - [ ] 2.2.4: stdb validation — `oxygen_depletes_and_refills.json`, `oxygen_empty_suffocates.json`. **Scope: M**
+    - [ ] 2.2.5: Client — oxygen HUD bar, `SuitRack` interactable in CargoBay slot, suit speed modifier + tint; pure scenarios. **Scope: M**
+    - [ ] 2.2.6: stdb suit round trip + DoD sweep. **Scope: S**
 
-- [ ] **Task 2.3: Food/hunger meter** — Secondary metabolic meter that depletes slowly; at zero, starvation damage via the 2.1 pipeline. Replenished by consuming meals or emergency rations (§6.2). Server-authoritative. **Scope: S**
+- [ ] **Task 2.3: Food/hunger meter** — Secondary metabolic meter that depletes slowly; at zero, starvation damage via the 2.1 pipeline. Replenished via `RestoreHunger` (the entry point Phase 3 meals will call) (§6.2). Server-authoritative. **Scope: S**
+    - [ ] 2.3.1: Server — `Meter Hunger` on Vitals + tick depletion + starvation damage + `RestoreHunger`. **Scope: S**
+    - [ ] 2.3.2: Hunger HUD bar + pure/stdb scenarios + DoD sweep. **Scope: S**
 
-- [ ] **Task 2.4: Death, ghost state, cloning bay** — Death is non-terminal. Deceased players enter Ghost Mode (visible to all players, can float anywhere, cannot interact with physical objects). Cloning Bay respawns at Biomass cost. If no power or biomass, stay ghosted (§6.4). SpacetimeDB manages ghost/clone state. **Scope: L**
+- [ ] **Task 2.4: Death, ghost state, cloning bay** — Death is non-terminal. Deceased players enter Ghost Mode (visible to all players, can float anywhere, cannot interact with physical objects — exception: the Cloning Bay terminal, their anchor back to life). Cloning Bay respawns at Biomass cost (`ShipStores.Biomass`, seed 3). If no power or biomass, stay ghosted (§6.4). SpacetimeDB manages ghost/clone state. **Scope: L**
+    - [ ] 2.4.1: Server — `ShipStores` table, `RequestRespawn(target)` reducer (dead + CloningBay powered + biomass), `HullGeometry` slot centers, `SetBiomass` debug setter. **Scope: M**
+    - [ ] 2.4.2: stdb validation — respawn round trip + power/biomass rejection scenarios. **Scope: S**
+    - [ ] 2.4.3: Client ghost mode — collision off, ghost tint, cloning-only interaction (`InteractTarget.GhostAccessible`), respawn snap; remote ghost tint; `GhostHarness` + pure scenarios. **Scope: M**
+    - [ ] 2.4.4: `CloningModal` (biomass + dead-crew rows with Clone buttons) wired into ModalHost; pure + stdb scenarios. **Scope: M**
+    - [ ] 2.4.5: DoD sweep + Phase 2 checkpoint. **Scope: S**
 
 **Checkpoint: Characters** — Characters have vitals (health, oxygen, hunger), can die, ghost, and respawn.
 
