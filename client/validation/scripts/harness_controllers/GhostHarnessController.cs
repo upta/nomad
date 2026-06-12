@@ -28,6 +28,8 @@ public partial class GhostHarnessController
         ["move_right"] = Key.D,
         ["interact"] = Key.E,
         ["ui_cancel_modal"] = Key.Escape,
+        ["modal_accept"] = Key.Enter,
+        ["modal_down"] = Key.Down,
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -82,6 +84,11 @@ public partial class GhostHarnessController
         {
             ["test_kill"] = () => _vitalsService.SetTestVitals(0, 100, true),
             ["test_revive"] = () => _vitalsService.SetTestVitals(100, 100, false),
+            ["test_seed_dead_crew"] = () =>
+            {
+                _vitalsService.SetTestBiomass(3);
+                _vitalsService.SeedTestCrewMember("Crew Alpha", isDead: true);
+            },
         };
         foreach (var action in _testActions.Keys.Concat(ActionKeyBridge.Keys))
         {
@@ -123,12 +130,25 @@ public partial class GhostHarnessController
                 ["focused_label"] = _interactionService.Focused?.Label ?? "",
                 ["prompt_visible"] = _prompt.Visible,
             },
-            ["modal"] = new Godot.Collections.Dictionary
-            {
-                ["open"] = _modalHost.IsOpen,
-                ["title"] = _modalHost.CurrentTitle,
-            },
+            ["modal"] = BuildModalState(),
         };
+    }
+
+    private Godot.Collections.Dictionary BuildModalState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["open"] = _modalHost.IsOpen,
+            ["title"] = _modalHost.CurrentTitle,
+        };
+
+        if (_modalHost.CurrentModal is CloningModal cloning)
+        {
+            state["dead_rows"] = cloning.DeadRowCount;
+            state["biomass"] = cloning.ShownBiomass;
+        }
+
+        return state;
     }
 
     // The validation runtime presses InputMap actions, but GUIDE only sees

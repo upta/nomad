@@ -178,14 +178,14 @@ SpacetimeDB Scaffold + Client Connection
     - [x] 2.3.1: Server — `Meter Hunger` on Vitals + tick depletion + starvation damage + `RestoreHunger`. **Scope: S**
     - [x] 2.3.2: Hunger HUD bar + pure/stdb scenarios + DoD sweep. **Scope: S**
 
-- [ ] **Task 2.4: Death, ghost state, cloning bay** — Death is non-terminal. Deceased players enter Ghost Mode (visible to all players, can float anywhere, cannot interact with physical objects — exception: the Cloning Bay terminal, their anchor back to life). Cloning Bay respawns at Biomass cost (`ShipStores.Biomass`, seed 3). If no power or biomass, stay ghosted (§6.4). SpacetimeDB manages ghost/clone state. **Scope: L**
-    - [ ] 2.4.1: Server — `ShipStores` table, `RequestRespawn(target)` reducer (dead + CloningBay powered + biomass), `HullGeometry` slot centers, `SetBiomass` debug setter. **Scope: M**
-    - [ ] 2.4.2: stdb validation — respawn round trip + power/biomass rejection scenarios. **Scope: S**
-    - [ ] 2.4.3: Client ghost mode — collision off, ghost tint, cloning-only interaction (`InteractTarget.GhostAccessible`), respawn snap; remote ghost tint; `GhostHarness` + pure scenarios. **Scope: M**
-    - [ ] 2.4.4: `CloningModal` (biomass + dead-crew rows with Clone buttons) wired into ModalHost; pure + stdb scenarios. **Scope: M**
-    - [ ] 2.4.5: DoD sweep + Phase 2 checkpoint. **Scope: S**
+- [x] **Task 2.4: Death, ghost state, cloning bay** — Death is non-terminal. Deceased players enter Ghost Mode (visible to all players, can float anywhere, cannot interact with physical objects — exception: the Cloning Bay terminal, their anchor back to life). Cloning Bay respawns at Biomass cost (`ShipStores.Biomass`, seed 3). If no power or biomass, stay ghosted (§6.4). SpacetimeDB manages ghost/clone state. **Scope: L**
+    - [x] 2.4.1: Server — `ShipStores` table, `RequestRespawn(target)` reducer (dead + CloningBay powered + biomass), `HullGeometry` slot centers, `SetBiomass` debug setter. **Scope: M**
+    - [x] 2.4.2: stdb validation — respawn round trip + power/biomass rejection scenarios. **Scope: S**
+    - [x] 2.4.3: Client ghost mode — collision off, ghost tint, cloning-only interaction (registration `GhostAccessible` + service `IsGhost` filter), respawn snap; remote ghost tint; `GhostHarness` + pure scenarios. **Scope: M**
+    - [x] 2.4.4: `CloningModal` (biomass + dead-crew rows with Clone buttons) wired into ModalHost; pure + stdb scenarios. **Scope: M**
+    - [x] 2.4.5: DoD sweep + Phase 2 checkpoint. **Scope: S**
 
-**Checkpoint: Characters** — Characters have vitals (health, oxygen, hunger), can die, ghost, and respawn.
+**Checkpoint: Characters** ✅ — Characters have vitals (health, oxygen, hunger), can die, ghost, and respawn. Phase 2 complete (27 pure + 18 stdb scenarios green).
 
 ### Phase 3: Inventory & Logistics
 

@@ -464,27 +464,31 @@ Design notes (user-confirmed):
 - [x] **Suite-isolation gotcha found + fixed:** stdb scenarios share one ephemeral DB and one client identity, so config changes and vitals damage LEAK between scenarios (fast-hunger config starved the oxygen scenario's health guard). Every timing-sensitive vitals scenario now sets its own config and fires `test_reset_vitals` up front — preconditions are the scenario's own job
 - [x] DoD sweep: both suites green (24 pure + 15 stdb), boot clean 13s zero ERROR, builds + format, push
 
-# Task 2.4: Death, ghost state, cloning bay 🔄 PLANNED
+# Task 2.4: Death, ghost state, cloning bay ✅ DONE
 
-## Subtask 2.4.1: Server — ShipStores + respawn — Scope: M
-- [ ] Create `server/src/Tables/ShipStores.cs` — Id PK 0, `int Biomass` (seed 3 in Init)
-- [ ] Create `server/src/Reducers/RequestRespawn.cs` — `(Identity target)` form; validate dead + CloningBay powered + biomass; deduct, reset vitals, entity → bay center
-- [ ] Create `server/src/Ship/HullGeometry.cs` — Corvette slot centers (why-comment → CorvetteHull.tres)
-- [ ] Create `SetBiomass.cs` debug setter; publish + generate + builds; CLI acceptance (all rejection paths + happy path)
+## Subtask 2.4.1: Server — ShipStores + respawn — Scope: M ✅
+- [x] Create `server/src/Tables/ShipStores.cs` — Id PK 0, `int Biomass` (seed 3 in Init via `GetShipStores`)
+- [x] Create `server/src/Reducers/RequestRespawn.cs` — `(Identity target)` form (living crew clone others; dead sender may self-respawn — the ghost exception); validates target dead + CloningBay assigned/powered + biomass ≥ cost with distinct messages; deducts, resets all meters, entity → bay slot center, velocity zeroed
+- [x] Create `server/src/Ship/HullGeometry.cs` — Corvette slot-center constants (why-comment → CorvetteHull.tres)
+- [x] Create `SetBiomass.cs` debug setter; publish + generate + builds; `Main` snaps local player to server entity on IsDead true→false (`ResetPhysicsInterpolation` for clean teleport)
 
-## Subtask 2.4.2: stdb validation — respawn rules — Scope: S
-- [ ] Harness: `stores.biomass` + test actions (`test_request_respawn`, `test_set_biomass_zero`, CloningBay breaker toggle)
-- [ ] Scenarios `cloning_respawn_round_trip.json` + `cloning_respawn_requires_power_and_biomass.json` (red first); suite green
+## Subtask 2.4.2: stdb validation — respawn rules — Scope: S ✅
+- [x] Harness: `stores.biomass` observed + test actions (`test_request_respawn` self-target, `test_set_biomass_zero`/`_full`, `test_toggle_breaker_2`)
+- [x] `cloning_respawn_round_trip.json` (red first) — kill → respawn → biomass 3→2, vitals full, player node snapped to exactly (144,−144) bay center; `cloning_respawn_requires_power_and_biomass.json` — unpowered rejected, biomass-0 rejected, both restored → succeeds. Defensive preconditions (reset + biomass seed) per the suite-isolation convention
 
-## Subtask 2.4.3: Client ghost mode — Scope: M
-- [ ] `Player.cs`: IsDead → collision cleared + ghost tint + interaction filtered (`InteractTarget.GhostAccessible`, true only on Cloning terminal); revive → restore + snap to server position
-- [ ] `RemoteEntity` ghost tint (Vitals → Players.PlayerEntityId → entity); VitalsHud dead presentation
-- [ ] `GhostHarness` + scenarios `ghost_passes_through_walls.json` + `ghost_cannot_interact.json`; pure suite green
+## Subtask 2.4.3: Client ghost mode — Scope: M ✅
+- [x] `Player.SetGhostMode` — collision layer/mask cleared/restored, translucent `GhostColor` tint (composes with suit via `UpdateSpriteColor`); `InteractionRegistration.GhostAccessible` + `InteractionService.IsGhost` filtering (focus + trigger); Cloning terminal opts in via `Terminal.SetRoomState`
+- [x] `RemoteEntity.SetGhost` tint; `Main` maps VitalsRows → Players.PlayerEntityId → remote node (incl. already-dead on node spawn); VitalsHud "DECEASED" landed in 2.1
+- [x] `GhostHarness` (provides VitalsService, mirrors Main's vitals→ghost wiring) + `ghost_passes_through_walls.json` (alive blocked at wall, ghost floats into Bridge — screenshot shows translucent ghost inside the room) + `ghost_cannot_interact.json` (Kitchen terminal: no focus/prompt/modal; Cloning terminal focuses + opens). Navigation lesson: wait on `focused_label` during the final approach leg instead of position waits (release overshoot at 400px/s is ~40-90px)
 
-## Subtask 2.4.4: Client — CloningModal — Scope: M
-- [ ] Create `client/game/Ui/Modals/CloningModal.tscn` + `.cs` (PowerRouterModal pattern): biomass line + dead-crew rows with Clone buttons
-- [ ] `ModalHost.tscn`: Cloning slot → CloningModal
-- [ ] Pure `cloning_modal_lists_dead.json` + stdb `cloning_modal_respawn.json` (die → float to bay → interact → respawn); green
+## Subtask 2.4.4: Client — CloningModal — Scope: M ✅
+- [x] `VitalsService` grew the crew roster (all VitalsRows; "You"/"Crew xxxxxx" labels) + `Biomass` (ShipStoresRows) + `RequestRespawn(key)` (reducer connected / local mirror in test mode)
+- [x] `CloningModal.tscn` + `.cs` (PowerRouterModal pattern; rows rebuild on roster change, first Clone button grabs focus, "No deceased crew" empty state) + `CloningRow`; `ModalHost.tscn` Cloning slot repointed; `ModalHost.CurrentModal` exposed for observation
+- [x] Pure `cloning_modal_lists_dead.json` — walk to bay terminal alive → modal lists seeded dead crew + Biomass: 3 → Clone → row gone, biomass 2 → Esc closes; stdb `cloning_modal_respawn.json` — die → ghost floats through walls to bay → interact (ghost exception) → modal → accept → server respawn, biomass deducted; screenshot shows DECEASED HUD + modal with You/Clone row
 
-## Subtask 2.4.5: DoD sweep + Phase 2 checkpoint — Scope: S
-- [ ] `./scripts/validate_all.ps1` both suites green; boot clean; builds + format; plan/todo checked incl. **Checkpoint: Characters**; push
+## Subtask 2.4.5: DoD sweep + Phase 2 checkpoint — Scope: S ✅
+- [x] `./scripts/validate_all.ps1` both suites green (27 pure + 18 stdb), no regressions; new checkpoints visually reviewed
+- [x] Game boots clean 13s, zero ERROR lines, DbManager connected + subscription applied
+- [x] Builds + csharpier both sides; plan/todo checked incl. **Checkpoint: Characters**; push
+
+**Checkpoint: Characters** ✅ — Characters have vitals (health, oxygen, hunger) rendered on a perimeter HUD, suffocate in vacuum and starve when unfed through one typed damage pipeline, equip spacesuits trading speed for tank capacity, die into ghost mode (float through walls, cloning-terminal-only interaction), and respawn at the Cloning Bay for biomass. Phase 2 complete.
