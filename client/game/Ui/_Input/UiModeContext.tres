@@ -1,9 +1,9 @@
-[gd_resource type="Resource" format=3]
+[gd_resource type="Resource" format=3 uid="uid://dot12ry4uonmo"]
 
-[ext_resource type="Resource" path="res://game/Ui/_Input/Contexts/UiContextKbm.tres" id="1_kbm"]
-[ext_resource type="Resource" path="res://game/Ui/_Input/Contexts/UiContextController.tres" id="2_controller"]
-[ext_resource type="Script" path="res://game/Guide/GuideMappingContextBinding.cs" id="3_binding"]
-[ext_resource type="Script" path="res://game/Guide/InputModeContext.cs" id="4_mode"]
+[ext_resource type="Resource" uid="uid://b56nafmqm26df" path="res://game/Ui/_Input/Contexts/UiContextKbm.tres" id="1_kbm"]
+[ext_resource type="Resource" uid="uid://cewdyepppsdhd" path="res://game/Ui/_Input/Contexts/UiContextController.tres" id="2_controller"]
+[ext_resource type="Script" uid="uid://ceqd1dvxwwqas" path="res://game/Guide/GuideMappingContextBinding.cs" id="3_binding"]
+[ext_resource type="Script" uid="uid://dmy2ip2fboutl" path="res://game/Guide/InputModeContext.cs" id="4_mode"]
 
 [sub_resource type="Resource" id="kbm_binding"]
 script = ExtResource("3_binding")

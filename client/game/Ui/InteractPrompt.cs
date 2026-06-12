@@ -13,7 +13,7 @@ using Nomad.Game.Interaction;
 public partial class InteractPrompt : Node2D
 {
     private InteractionRegistration? _current;
-    private GodotObject? _formatter;
+    private GuideInputFormatter? _formatter;
 
     public override void _Notification(int what) => this.Notify(what);
 
@@ -47,14 +47,13 @@ public partial class InteractPrompt : Node2D
 
     public void OnResolved()
     {
-        _formatter = FormatterScript.Call("for_active_contexts", 32).AsGodotObject();
+        _formatter = GuideInputFormatter.ForActiveContexts(FormatterScript);
 
         Interaction.FocusChanged += OnFocusChanged;
         OnFocusChanged(Interaction.Focused);
     }
 
-    private string InteractKeyText() =>
-        _formatter?.Call("action_as_text", InteractAction.Action).AsString() ?? "";
+    private string InteractKeyText() => _formatter?.ActionAsText(InteractAction) ?? "";
 
     private void OnFocusChanged(InteractionRegistration? registration)
     {

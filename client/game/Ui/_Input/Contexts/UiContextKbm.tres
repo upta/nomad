@@ -1,10 +1,12 @@
-[gd_resource type="Resource" script_class="GUIDEMappingContext" format=3]
+[gd_resource type="Resource" script_class="GUIDEMappingContext" format=3 uid="uid://b56nafmqm26df"]
 
-[ext_resource type="Script" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
-[ext_resource type="Script" path="res://addons/guide/guide_mapping_context.gd" id="2_ctx"]
-[ext_resource type="Script" path="res://addons/guide/guide_input_mapping.gd" id="3_input"]
-[ext_resource type="Script" path="res://addons/guide/inputs/guide_input_key.gd" id="4_key"]
+[ext_resource type="Script" uid="uid://mevt8l4svrd6" path="res://addons/guide/guide_action_mapping.gd" id="1_mapping"]
+[ext_resource type="Script" uid="uid://l4fayoe0gchc" path="res://addons/guide/guide_mapping_context.gd" id="2_ctx"]
+[ext_resource type="Script" uid="uid://bnrqk2d5hdkce" path="res://addons/guide/guide_input_mapping.gd" id="3_input"]
+[ext_resource type="Script" uid="uid://cxtfakmx43grs" path="res://addons/guide/inputs/guide_input_key.gd" id="4_key"]
 [ext_resource type="Resource" path="res://game/Ui/_Input/Actions/UiCancel.tres" id="5_cancel"]
+[ext_resource type="Script" uid="uid://bxbb3tkiaqxwo" path="res://addons/guide/modifiers/guide_modifier.gd" id="5_rh0mm"]
+[ext_resource type="Script" uid="uid://b4elwochdmo5p" path="res://addons/guide/triggers/guide_trigger.gd" id="6_rdwue"]
 
 [sub_resource type="Resource" id="esc_key"]
 script = ExtResource("4_key")
