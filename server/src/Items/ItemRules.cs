@@ -1,7 +1,11 @@
 public static partial class Module
 {
+    // Generic storage: the room holds the item in a capacity-limited store
+    // (any item type). Future rooms opt in here.
+    private static bool AcceptsStorage(RoomTypeId roomTypeId) => roomTypeId == RoomTypeId.CargoBay;
+
     // Tank deposits: the machine consumes the item into a ship-stores
-    // counter. Ammo joins in 5.5; the storage branch joins in 3.5.
+    // counter. Ammo joins in 5.5.
     private static bool AcceptsTankDeposit(RoomTypeId roomTypeId, ItemTypeId itemTypeId) =>
         (roomTypeId, itemTypeId) switch
         {
@@ -38,6 +42,29 @@ public static partial class Module
         }
 
         for (var slot = 0; slot < config.HotbarSlots; slot++)
+        {
+            if (!occupied.Contains(slot))
+            {
+                return slot;
+            }
+        }
+
+        return null;
+    }
+
+    private static int? FindFreeStoreSlot(ReducerContext ctx, int roomSlot)
+    {
+        var config = GetInventoryConfig(ctx);
+        var occupied = new System.Collections.Generic.HashSet<int>();
+        foreach (var item in ctx.Db.Items.Iter())
+        {
+            if (item.LocationKind == ItemLocationKind.Stored && item.RoomSlotIndex == roomSlot)
+            {
+                occupied.Add(item.SlotIndex);
+            }
+        }
+
+        for (var slot = 0; slot < config.CargoCapacity; slot++)
         {
             if (!occupied.Contains(slot))
             {

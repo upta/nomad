@@ -33,7 +33,8 @@ public static partial class Module
             throw new System.InvalidOperationException("No room at that slot.");
         }
 
-        if (!AcceptsTankDeposit(room.RoomTypeId, loaded.ItemTypeId))
+        var storesItem = AcceptsStorage(room.RoomTypeId);
+        if (!storesItem && !AcceptsTankDeposit(room.RoomTypeId, loaded.ItemTypeId))
         {
             throw new System.InvalidOperationException("That room does not accept this item.");
         }
@@ -52,6 +53,28 @@ public static partial class Module
         if (dx * dx + dy * dy > config.LoadRadius * config.LoadRadius)
         {
             throw new System.InvalidOperationException("Machine intake is out of reach.");
+        }
+
+        // Storage rooms hold the item (withdrawable later); machine tanks
+        // consume it into a counter. One deposit verb, two behaviors.
+        if (storesItem)
+        {
+            if (FindFreeStoreSlot(ctx, roomSlotIndex) is not { } storeSlot)
+            {
+                throw new System.InvalidOperationException("Storage is full.");
+            }
+
+            ctx.Db.Items.ItemId.Update(
+                loaded with
+                {
+                    LocationKind = ItemLocationKind.Stored,
+                    Position = new DbVector2 { X = 0, Y = 0 },
+                    Holder = default,
+                    SlotIndex = storeSlot,
+                    RoomSlotIndex = roomSlotIndex,
+                }
+            );
+            return;
         }
 
         ctx.Db.Items.ItemId.Delete(loaded.ItemId);
