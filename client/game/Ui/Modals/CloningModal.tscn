@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/Ui/Modals/CloningModal.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/Modals/CloningRow.tscn" id="2_row"]
+[ext_resource type="PackedScene" path="res://game/Ui/Modals/DepositRow.tscn" id="3_deposit"]
 
 [node name="CloningModal" type="PanelContainer"]
 anchors_preset = 8
@@ -39,6 +40,10 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="BiomassDepositRow" parent="Margin/Content" instance=ExtResource("3_deposit")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="Separator" type="HSeparator" parent="Margin/Content"]
 layout_mode = 2

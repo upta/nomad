@@ -12,12 +12,27 @@ using Nomad.Game.Ship;
 [Meta(typeof(IAutoNode))]
 public partial class PowerRouterModal : PanelContainer, IRoomModal
 {
+    private const string FuelCellTypeId = "FuelCell";
+
+    private static readonly Color FuelDryColor = new(1f, 0.45f, 0.4f);
+    private static readonly Color FuelNominalColor = new(1f, 1f, 1f);
+
     private readonly List<PowerRouterRow> _rows = [];
+    private int _roomSlotIndex = -1;
 
     public override void _Notification(int what) => this.Notify(what);
 
     [Dependency]
+    private Items.InventoryService Inventory => this.DependOn<Items.InventoryService>();
+
+    [Dependency]
     private PowerGridService Power => this.DependOn<PowerGridService>();
+
+    [Node]
+    public DepositRow FuelDepositRow { get; set; } = default!;
+
+    [Node]
+    public ILabel FuelLabel { get; set; } = default!;
 
     [Node]
     public IVBoxContainer RowContainer { get; set; } = default!;
@@ -34,16 +49,21 @@ public partial class PowerRouterModal : PanelContainer, IRoomModal
     public override void _ExitTree()
     {
         Power.Changed -= OnPowerChanged;
+        Inventory.Changed -= OnInventoryChanged;
     }
 
     public void Initialize(RoomModalInfo info)
     {
         TitleLabel.Text = info.Label;
+        _roomSlotIndex = info.SlotIndex;
     }
 
     public void OnResolved()
     {
         Power.Changed += OnPowerChanged;
+        Inventory.Changed += OnInventoryChanged;
+        FuelDepositRow.Bind(() => Inventory.RequestLoad(FuelCellTypeId, _roomSlotIndex));
+        UpdateDepositRow();
         BuildRows();
         if (_rows.Count > 0)
             Callable.From(_rows[0].FocusToggle).CallDeferred();
@@ -84,7 +104,19 @@ public partial class PowerRouterModal : PanelContainer, IRoomModal
         UpdateStatus();
     }
 
-    private void UpdateStatus() =>
+    private void OnInventoryChanged() => UpdateDepositRow();
+
+    private void UpdateDepositRow()
+    {
+        var held = Inventory.CountOf(FuelCellTypeId);
+        FuelDepositRow.Update($"Fuel Cell ({held} held)", held > 0);
+    }
+
+    private void UpdateStatus()
+    {
         StatusLabel.Text =
             $"Output {Power.ReactorOutput} / Demand {Power.TotalDemand} — {Power.Status}";
+        FuelLabel.Text = Power.IsBurningDry ? $"Fuel: {Power.Fuel} — DRY" : $"Fuel: {Power.Fuel}";
+        FuelLabel.Modulate = Power.IsBurningDry ? FuelDryColor : FuelNominalColor;
+    }
 }

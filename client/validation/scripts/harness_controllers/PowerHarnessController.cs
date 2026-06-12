@@ -13,11 +13,17 @@ using Nomad.Game.Map;
 using Nomad.Game.Ship;
 using Nomad.Game.Ui;
 
-[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>), typeof(IProvide<PowerGridService>))]
+[Meta(
+    typeof(IAutoNode),
+    typeof(IProvide<InteractionService>),
+    typeof(IProvide<PowerGridService>),
+    typeof(IProvide<Nomad.Game.Items.InventoryService>)
+)]
 public partial class PowerHarnessController
     : Node2D,
         IProvide<InteractionService>,
-        IProvide<PowerGridService>
+        IProvide<PowerGridService>,
+        IProvide<Nomad.Game.Items.InventoryService>
 {
     // modal_accept/modal_down are harness-registered aliases bridged to real
     // Enter/Down key events so scenarios can drive Control focus navigation —
@@ -37,6 +43,7 @@ public partial class PowerHarnessController
 
     private readonly Dictionary<string, bool> _bridgeState = [];
     private readonly InteractionService _interactionService = new();
+    private readonly Nomad.Game.Items.InventoryService _inventoryService = new();
     private readonly PowerGridService _powerGridService = new();
     private readonly Dictionary<string, bool> _testActionState = [];
     private ModalHost _modalHost = null!;
@@ -122,6 +129,9 @@ public partial class PowerHarnessController
 
     PowerGridService IProvide<PowerGridService>.Value() => _powerGridService;
 
+    Nomad.Game.Items.InventoryService IProvide<Nomad.Game.Items.InventoryService>.Value() =>
+        _inventoryService;
+
     public Godot.Collections.Dictionary get_observed_state()
     {
         return new Godot.Collections.Dictionary
@@ -204,7 +214,8 @@ public partial class PowerHarnessController
                 terminal.RoomLabel,
                 terminal.TerminalType,
                 terminal.IsPowered,
-                terminal.IsPressurized
+                terminal.IsPressurized,
+                terminal.SlotIndex
             )
         );
 }

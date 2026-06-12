@@ -110,7 +110,7 @@ public partial class InventoryHarnessController
             // push) without depending on navigation — the walk-up→modal flow
             // is already covered by terminal_interact_opens_modal.
             ["test_open_kitchen_modal"] = () =>
-                _modalHost.Open(new RoomModalInfo("Kitchen", TerminalType.Info, true, true)),
+                _modalHost.Open(new RoomModalInfo("Kitchen", TerminalType.Info, true, true, 5)),
             ["test_kill"] = () => _player.SetGhostMode(true),
             ["test_revive"] = () => _player.SetGhostMode(false),
         };
@@ -208,7 +208,8 @@ public partial class InventoryHarnessController
                 terminal.RoomLabel,
                 terminal.TerminalType,
                 terminal.IsPowered,
-                terminal.IsPressurized
+                terminal.IsPressurized,
+                terminal.SlotIndex
             )
         );
 

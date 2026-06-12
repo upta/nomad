@@ -117,7 +117,8 @@ public partial class InteractionHarnessController : Node2D, IProvide<Interaction
                 terminal.RoomLabel,
                 terminal.TerminalType,
                 terminal.IsPowered,
-                terminal.IsPressurized
+                terminal.IsPressurized,
+                terminal.SlotIndex
             )
         );
 }

@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/Ui/Modals/PowerRouterModal.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/Modals/PowerRouterRow.tscn" id="2_row"]
+[ext_resource type="PackedScene" path="res://game/Ui/Modals/DepositRow.tscn" id="3_deposit"]
 
 [node name="PowerRouterModal" type="PanelContainer"]
 anchors_preset = 8
@@ -10,9 +11,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -190.0
-offset_top = -150.0
+offset_top = -170.0
 offset_right = 190.0
-offset_bottom = 150.0
+offset_bottom = 170.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
@@ -39,6 +40,15 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="FuelLabel" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="FuelDepositRow" parent="Margin/Content" instance=ExtResource("3_deposit")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="Separator" type="HSeparator" parent="Margin/Content"]
 layout_mode = 2

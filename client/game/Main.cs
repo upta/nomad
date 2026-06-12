@@ -224,7 +224,8 @@ public partial class Main
                 terminal.RoomLabel,
                 terminal.TerminalType,
                 terminal.IsPowered,
-                terminal.IsPressurized
+                terminal.IsPressurized,
+                terminal.SlotIndex
             )
         );
 

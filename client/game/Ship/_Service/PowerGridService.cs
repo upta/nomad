@@ -19,6 +19,14 @@ public class PowerGridService
 
     public event Action? Changed;
 
+    // Fuel mirrors ShipStores here (rather than VitalsService) so the power
+    // modal has a single service dependency for its readouts.
+    public int Fuel { get; private set; }
+
+    public int FuelPerBurn { get; private set; }
+
+    public bool IsBurningDry => Fuel == 0 && FuelPerBurn > 0;
+
     public int ReactorOutput { get; private set; }
 
     public IReadOnlyList<PowerRoomEntry> Rooms => [.. _rooms.Values];
@@ -37,10 +45,15 @@ public class PowerGridService
         if (conn.Db.PowerGrids.Id.Find(0) is { } grid)
             ApplyGrid(grid);
 
+        if (conn.Db.ShipStoresRows.Id.Find(0) is { } stores)
+            Fuel = stores.Fuel;
+
         conn.Db.RoomAssignments.OnInsert += OnAssignmentInserted;
         conn.Db.RoomAssignments.OnUpdate += OnAssignmentUpdated;
         conn.Db.PowerGrids.OnInsert += OnGridInserted;
         conn.Db.PowerGrids.OnUpdate += OnGridUpdated;
+        conn.Db.ShipStoresRows.OnInsert += OnStoresInserted;
+        conn.Db.ShipStoresRows.OnUpdate += OnStoresUpdated;
 
         Changed?.Invoke();
     }
@@ -83,6 +96,13 @@ public class PowerGridService
             _catalog[rt.RoomId] = (rt.Label, rt.PowerDraw);
     }
 
+    public void SetTestFuel(int fuel, int fuelPerBurn)
+    {
+        Fuel = fuel;
+        FuelPerBurn = fuelPerBurn;
+        Changed?.Invoke();
+    }
+
     public void SetTestGrid(int reactorOutput, string status)
     {
         ReactorOutput = reactorOutput;
@@ -99,6 +119,8 @@ public class PowerGridService
         _conn.Db.RoomAssignments.OnUpdate -= OnAssignmentUpdated;
         _conn.Db.PowerGrids.OnInsert -= OnGridInserted;
         _conn.Db.PowerGrids.OnUpdate -= OnGridUpdated;
+        _conn.Db.ShipStoresRows.OnInsert -= OnStoresInserted;
+        _conn.Db.ShipStoresRows.OnUpdate -= OnStoresUpdated;
         _conn = null;
     }
 
@@ -127,6 +149,7 @@ public class PowerGridService
     {
         ReactorOutput = grid.ReactorOutput;
         Status = grid.Status.ToString();
+        FuelPerBurn = grid.FuelPerBurn;
     }
 
     private void OnAssignmentInserted(EventContext ctx, RoomAssignment ra)
@@ -150,6 +173,18 @@ public class PowerGridService
     private void OnGridUpdated(EventContext ctx, PowerGrid oldGrid, PowerGrid newGrid)
     {
         ApplyGrid(newGrid);
+        Changed?.Invoke();
+    }
+
+    private void OnStoresInserted(EventContext ctx, ShipStores stores)
+    {
+        Fuel = stores.Fuel;
+        Changed?.Invoke();
+    }
+
+    private void OnStoresUpdated(EventContext ctx, ShipStores oldStores, ShipStores newStores)
+    {
+        Fuel = newStores.Fuel;
         Changed?.Invoke();
     }
 }

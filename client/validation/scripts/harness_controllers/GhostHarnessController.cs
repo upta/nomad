@@ -14,11 +14,17 @@ using Nomad.Game.Map;
 using Nomad.Game.Ship;
 using Nomad.Game.Ui;
 
-[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>), typeof(IProvide<VitalsService>))]
+[Meta(
+    typeof(IAutoNode),
+    typeof(IProvide<InteractionService>),
+    typeof(IProvide<VitalsService>),
+    typeof(IProvide<Nomad.Game.Items.InventoryService>)
+)]
 public partial class GhostHarnessController
     : Node2D,
         IProvide<InteractionService>,
-        IProvide<VitalsService>
+        IProvide<VitalsService>,
+        IProvide<Nomad.Game.Items.InventoryService>
 {
     private static readonly Dictionary<string, Key> ActionKeyBridge = new()
     {
@@ -34,6 +40,7 @@ public partial class GhostHarnessController
 
     private readonly Dictionary<string, bool> _bridgeState = [];
     private readonly InteractionService _interactionService = new();
+    private readonly Nomad.Game.Items.InventoryService _inventoryService = new();
     private readonly Dictionary<string, bool> _testActionState = [];
     private readonly VitalsService _vitalsService = new();
     private ModalHost _modalHost = null!;
@@ -113,6 +120,9 @@ public partial class GhostHarnessController
 
     VitalsService IProvide<VitalsService>.Value() => _vitalsService;
 
+    Nomad.Game.Items.InventoryService IProvide<Nomad.Game.Items.InventoryService>.Value() =>
+        _inventoryService;
+
     public Godot.Collections.Dictionary get_observed_state()
     {
         return new Godot.Collections.Dictionary
@@ -179,7 +189,8 @@ public partial class GhostHarnessController
                 terminal.RoomLabel,
                 terminal.TerminalType,
                 terminal.IsPowered,
-                terminal.IsPressurized
+                terminal.IsPressurized,
+                terminal.SlotIndex
             )
         );
 

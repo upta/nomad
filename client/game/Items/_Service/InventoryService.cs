@@ -22,6 +22,10 @@ public class InventoryService
 
     public event Action? Changed;
 
+    // Test-mode mirror of the LoadItem reducer — pure harnesses bump their
+    // own counters (biomass/fuel) when a deposit request fires.
+    public event Action<string, int>? TestLoadRequested;
+
     public int HotbarSlotCount => _hotbarSlotCount;
 
     // Pure client UI state — the server never reads or trusts the selection.
@@ -60,6 +64,28 @@ public class InventoryService
         Changed?.Invoke();
     }
 
+    public int CountOf(string typeId)
+    {
+        var count = 0;
+        foreach (var entry in _hotbarItems.Values)
+        {
+            if (entry.TypeId == typeId)
+                count++;
+        }
+        return count;
+    }
+
+    public int? FirstSlotOf(string typeId)
+    {
+        int? first = null;
+        foreach (var entry in _hotbarItems.Values)
+        {
+            if (entry.TypeId == typeId && (first is null || entry.SlotIndex < first))
+                first = entry.SlotIndex;
+        }
+        return first;
+    }
+
     public void ClearTestItems()
     {
         _worldItems.Clear();
@@ -93,6 +119,21 @@ public class InventoryService
                 return;
             }
         }
+    }
+
+    public void RequestLoad(string typeId, int roomSlotIndex)
+    {
+        if (FirstSlotOf(typeId) is not { } slot)
+            return;
+
+        if (_conn is { } conn)
+        {
+            conn.Reducers.LoadItem(slot, roomSlotIndex);
+            return;
+        }
+
+        SetTestSlot(slot, null);
+        TestLoadRequested?.Invoke(typeId, roomSlotIndex);
     }
 
     public void RequestPickUp(int itemId)
