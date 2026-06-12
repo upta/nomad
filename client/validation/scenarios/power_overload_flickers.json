@@ -1,0 +1,49 @@
+{
+  "scenario_id": "power_overload_flickers",
+  "version": 3,
+  "description": "While the grid status is Overload the room lighting flickers (flicker cycle counter climbs); returning to Stable stops the flicker.",
+  "harness_scene": "res://validation/harnesses/PowerHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/PowerHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "wait_until", "path": "harness_state.grid.power.status", "comparator": "eq", "expected": "Stable", "timeout_frames": 60 },
+    { "op": "press_action", "action": "test_grid_overload" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_grid_overload" },
+    { "op": "wait_until", "path": "harness_state.grid.power.status", "comparator": "eq", "expected": "Overload", "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "flicker_start" },
+    { "op": "wait_frames", "frames": 60 },
+    { "op": "checkpoint", "name": "flicker_later" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "cycles_start": { "kind": "checkpoint", "checkpoint": "flicker_start", "path": "harness_state.grid.power.flicker_cycles" },
+        "cycles_later": { "kind": "checkpoint", "checkpoint": "flicker_later", "path": "harness_state.grid.power.flicker_cycles" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["cycles_later", "cycles_start"], "as": "cycles_gained" }
+      ],
+      "assert": { "actual": "cycles_gained", "comparator": "gte", "expected": 2 }
+    },
+    { "op": "press_action", "action": "test_grid_stable" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_grid_stable" },
+    { "op": "wait_until", "path": "harness_state.grid.power.status", "comparator": "eq", "expected": "Stable", "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "stable_again" },
+    { "op": "wait_frames", "frames": 60 },
+    { "op": "checkpoint", "name": "stable_later" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "cycles_stable": { "kind": "checkpoint", "checkpoint": "stable_again", "path": "harness_state.grid.power.flicker_cycles" },
+        "cycles_stable_later": { "kind": "checkpoint", "checkpoint": "stable_later", "path": "harness_state.grid.power.flicker_cycles" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["cycles_stable_later", "cycles_stable"], "as": "cycles_after_stable" }
+      ],
+      "assert": { "actual": "cycles_after_stable", "comparator": "eq", "expected": 0 }
+    },
+    { "op": "quit" }
+  ]
+}

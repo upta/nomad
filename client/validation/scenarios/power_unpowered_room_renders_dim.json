@@ -1,0 +1,59 @@
+{
+  "scenario_id": "power_unpowered_room_renders_dim",
+  "version": 3,
+  "description": "Cutting power to the Kitchen (slot 5) dims its rendered room color; restoring power returns the color to the powered baseline.",
+  "harness_scene": "res://validation/harnesses/PowerHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/PowerHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "baseline" },
+    { "op": "assert_value", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "test_cut_power_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_cut_power_kitchen" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "dimmed" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_r": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_r" },
+        "dimmed_r": { "kind": "checkpoint", "checkpoint": "dimmed", "path": "harness_state.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["dimmed_r", "baseline_r"], "as": "r_delta" }
+      ],
+      "assert": { "actual": "r_delta", "comparator": "lt", "expected": 0 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_g": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_g" },
+        "dimmed_g": { "kind": "checkpoint", "checkpoint": "dimmed", "path": "harness_state.grid.rooms.5.color_g" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["dimmed_g", "baseline_g"], "as": "g_delta" }
+      ],
+      "assert": { "actual": "g_delta", "comparator": "lt", "expected": 0 }
+    },
+    { "op": "press_action", "action": "test_restore_power_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_restore_power_kitchen" },
+    { "op": "wait_until", "path": "harness_state.grid.rooms.5.is_powered", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "restored" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "baseline_r": { "kind": "checkpoint", "checkpoint": "baseline", "path": "harness_state.grid.rooms.5.color_r" },
+        "restored_r": { "kind": "checkpoint", "checkpoint": "restored", "path": "harness_state.grid.rooms.5.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["restored_r", "baseline_r"], "as": "r_diff" },
+        { "op": "abs", "inputs": ["r_diff"], "as": "abs_r_diff" }
+      ],
+      "assert": { "actual": "abs_r_diff", "comparator": "lte", "expected": 0.001 }
+    },
+    { "op": "quit" }
+  ]
+}

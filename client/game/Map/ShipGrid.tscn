@@ -7,6 +7,9 @@
 [node name="ShipGrid" type="Node2D" unique_id=284884670]
 script = ExtResource("1")
 TerminalScene = ExtResource("3_terminal")
+FlickerDimFactor = 0.6
+FlickerIntervalSeconds = 0.12
+UnpoweredDimFactor = 0.35
 
 [node name="FloorLayer" type="TileMapLayer" parent="." unique_id=1256238249]
 unique_name_in_owner = true

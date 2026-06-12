@@ -42,7 +42,7 @@
       "checkpoint": "loaded",
       "path": "harness_state.room_types.0.power_draw",
       "comparator": "eq",
-      "expected": 3
+      "expected": 0
     },
     {
       "op": "assert_value",
