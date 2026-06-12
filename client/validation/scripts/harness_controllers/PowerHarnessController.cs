@@ -68,6 +68,7 @@ public partial class PowerHarnessController : Node2D, IProvide<InteractionServic
         _prompt = GetNode<InteractPrompt>("InteractPrompt");
         _shipGrid.RoomTypeRegistry = GetNode<RoomTypeRegistry>("RoomTypeRegistry");
         _shipGrid.TerminalInteracted += OnTerminalInteracted;
+        _shipGrid.BreakerInteracted += OnBreakerInteracted;
 
         _testActions = new Dictionary<string, Action>
         {
@@ -142,6 +143,12 @@ public partial class PowerHarnessController : Node2D, IProvide<InteractionServic
             );
         }
     }
+
+    // Pure harness has no server: a breaker toggle flips local test state the
+    // way the ToggleBreaker reducer would (binary model, demand never exceeds
+    // output here, so powered == breaker).
+    private void OnBreakerInteracted(Breaker breaker) =>
+        _shipGrid.SetTestPower(breaker.SlotIndex, !breaker.BreakerOn, !breaker.BreakerOn);
 
     private void OnTerminalInteracted(Terminal terminal) =>
         _modalHost.Open(
