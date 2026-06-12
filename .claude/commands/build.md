@@ -6,6 +6,7 @@ Invoke the agent-skills:incremental-implementation skill. In this project the pr
 
 Pick the next pending task from tasks/plan.md. For each task:
 
+0. **Close the Godot editor first** — `Get-Process godot* -ErrorAction SilentlyContinue | Stop-Process -Force`. Running `dotnet build` while the editor is open triggers .NET hot-reload, which silently strips C# scripts from any `.tres` it re-saves during that window (see memory: godot-editor-strips-csharp-tres). Ask Brian to save any open scenes before stopping the process.
 1. Read the task's acceptance criteria and the GDD sections it cites
 2. Load relevant context: existing scenes/resources/code, server tables and reducers, untrailed patterns where the task references them
 3. Author validation scenario(s) describing the intended behavior — confirm they FAIL before implementing
@@ -13,6 +14,7 @@ Pick the next pending task from tasks/plan.md. For each task:
 5. Run the new scenarios until green, then **visually review the checkpoint screenshots** in the run artifacts — numeric assertions can pass while rendering is broken
 6. Run both suites (`./scripts/validate_all.ps1`) to catch regressions; networked behavior needs coverage in `client/validation/scenarios_stdb/`
 7. Verify the rest of the Definition of Done: `dotnet build` + `spacetime build` clean, `dotnet csharpier format .` in client/ and server/, and for startup-path changes the game boots clean (run-game skill)
-8. Commit with a conventional message; mark the task complete in tasks/plan.md and tasks/todo.md
+8. **Generate uids before committing** — run `godot --headless --path client --import` so Godot assigns uids to any `.tres`/`.cs` files created outside the editor. Stage the resulting `*.uid` sidecars and any uid-attribute additions to `.tres` files so they land in the same commit as the code that needs them.
+9. Commit with a conventional message; mark the task complete in tasks/plan.md and tasks/todo.md
 
 If any step fails, follow the agent-skills:debugging-and-error-recovery skill. Never delete or weaken a failing scenario to get the suite green.
