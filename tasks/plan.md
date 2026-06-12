@@ -160,11 +160,11 @@ SpacetimeDB Scaffold + Client Connection
 
 ### Phase 2: Character Systems
 
-- [ ] **Task 2.1: Character health + damage pipeline** — Characters have a health meter. SpacetimeDB owns health state and a generic damage pipeline (typed damage sources, death at zero). Client renders health bar. Each damage *source* ships complete with its owning feature: suffocation with 2.2, starvation with 2.3, fire with 5.1, hostile creatures with 5.2/5.3 (§6.4). This task includes a debug/validation damage reducer so the pipeline is provable before those sources exist. **Scope: M**
-    - [ ] 2.1.1: Server — `Meter` + `DamageType` types, `Vitals` table, `DamageRules.ApplyDamage`, `ApplyDebugDamage`/`ResetVitals` reducers, Connect seeding; publish + bindings. **Scope: M**
-    - [ ] 2.1.2: stdb validation — `vitals` observed state + damage/kill/reset test actions; `health_damage_pipeline_round_trip.json`. **Scope: S**
-    - [ ] 2.1.3: Client — `VitalsService` (plain C#) + `VitalsHud` health bar in Main; `VitalsHudHarness` + `vitals_health_bar_renders.json`. **Scope: M**
-    - [ ] 2.1.4: DoD sweep. **Scope: S**
+- [x] **Task 2.1: Character health + damage pipeline** — Characters have a health meter. SpacetimeDB owns health state and a generic damage pipeline (typed damage sources, death at zero). Client renders health bar. Each damage *source* ships complete with its owning feature: suffocation with 2.2, starvation with 2.3, fire with 5.1, hostile creatures with 5.2/5.3 (§6.4). This task includes a debug/validation damage reducer so the pipeline is provable before those sources exist. **Scope: M**
+    - [x] 2.1.1: Server — `Meter` + `DamageType` types, `Vitals` table, `DamageRules.ApplyDamage`, `ApplyDebugDamage`/`ResetVitals` reducers, Connect seeding; publish + bindings. **Scope: M**
+    - [x] 2.1.2: stdb validation — `vitals` observed state + damage/kill/reset test actions; `health_damage_pipeline_round_trip.json`. **Scope: S**
+    - [x] 2.1.3: Client — `VitalsService` (plain C#) + `VitalsHud` health bar in Main; `VitalsHudHarness` + `vitals_health_bar_renders.json`. **Scope: M**
+    - [x] 2.1.4: DoD sweep. **Scope: S**
 
 - [ ] **Task 2.2: Oxygen tether + spacesuits** — Personal oxygen tank depletes in vacuum/unpressurized areas, refills in pressurized powered rooms; empty tank applies suffocation damage via the 2.1 pipeline (§6.2). SpacetimeDB owns oxygen state. Includes spacesuits: equipped at a suit rack interactable (Task 1.3 framework) in the Cargo Bay, expanding tank capacity at the cost of movement speed — the full oxygen feature lands here. Room presence tracked via client-computed `SetPlayerRoom` reducer calls on transitions. **Scope: L**
     - [ ] 2.2.1: Server room tracking — `Player.CurrentSlotIndex` + `SetPlayerRoom` reducer. **Scope: S**

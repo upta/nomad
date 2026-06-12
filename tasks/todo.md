@@ -390,7 +390,7 @@ Design notes (user-confirmed):
 - Ghost exception: ghosts can interact with the Cloning Bay terminal ONLY (avoids all-dead softlock, enables solo validation). Living players can clone dead crew via the CloningModal (`RequestRespawn(Identity target)`).
 - `ShipStores.Biomass` seed 3; deposits land with Phase 3.4 (Load verb). Respawn needs CloningBay assigned + powered + biomass ≥ cost; resets vitals, teleports entity to bay center (client snaps on IsDead true→false).
 
-# Task 2.1: Character health + damage pipeline 🔄 IN PROGRESS
+# Task 2.1: Character health + damage pipeline ✅ DONE
 
 ## Subtask 2.1.1: Server — Vitals table + damage pipeline — Scope: M ✅
 - [x] Create `server/src/Types/DamageType.cs` — `[SpacetimeDB.Type]` enum Debug/Suffocation/Starvation/Fire/Creature
@@ -414,8 +414,10 @@ Design notes (user-confirmed):
 - [x] Create `VitalsHudHarness.tscn` + controller (provides seeded service, test_seed_health_full/40/zero actions); scenario `vitals_health_bar_renders.json` confirmed red first (missing harness), green after
 - [x] Pure suite green (21/21); screenshots reviewed — 40% red fill + "HP 40/100", dead state empty track + "DECEASED"
 
-## Subtask 2.1.4: DoD sweep — Scope: S
-- [ ] `./scripts/validate_all.ps1` both suites green; boot clean ≥10s; builds + csharpier; plan/todo checked; push
+## Subtask 2.1.4: DoD sweep — Scope: S ✅
+- [x] `./scripts/validate_all.ps1` both suites green (21 pure + 10 stdb); connected-client screenshot shows HP 70/100 bar in real Main after reducer damage
+- [x] Game boots clean 13s headless, zero ERROR lines, DbManager connected + subscription applied
+- [x] Builds + csharpier both sides; plan/todo checked; push
 
 # Task 2.2: Oxygen tether + spacesuits 🔄 PLANNED
 
