@@ -207,6 +207,8 @@ public partial class ConnectedGameHarnessController : Node2D
                 ["data_ready"] = puppet.DataReady,
                 ["entity_id"] = puppet.EntityId,
                 ["displacement_from_initial"] = puppet.DisplacementFromInitial,
+                ["world_item_count"] = puppet.WorldItemCount,
+                ["stored_item_count"] = puppet.StoredItemCount,
             };
         }
 

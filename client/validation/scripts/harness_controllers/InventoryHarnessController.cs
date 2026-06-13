@@ -14,11 +14,17 @@ using Nomad.Game.Map;
 using Nomad.Game.Ship;
 using Nomad.Game.Ui;
 
-[Meta(typeof(IAutoNode), typeof(IProvide<InteractionService>), typeof(IProvide<InventoryService>))]
+[Meta(
+    typeof(IAutoNode),
+    typeof(IProvide<InteractionService>),
+    typeof(IProvide<InventoryService>),
+    typeof(IProvide<ItemTypeRegistry>)
+)]
 public partial class InventoryHarnessController
     : Node2D,
         IProvide<InteractionService>,
-        IProvide<InventoryService>
+        IProvide<InventoryService>,
+        IProvide<ItemTypeRegistry>
 {
     private static readonly Dictionary<string, Key> ActionKeyBridge = new()
     {
@@ -28,6 +34,8 @@ public partial class InventoryHarnessController
         ["move_right"] = Key.D,
         ["interact"] = Key.E,
         ["ui_cancel_modal"] = Key.Escape,
+        ["modal_accept"] = Key.Enter,
+        ["modal_down"] = Key.Down,
         ["hotbar_slot_1"] = Key.Key1,
         ["hotbar_slot_2"] = Key.Key2,
         ["hotbar_slot_3"] = Key.Key3,
@@ -137,6 +145,8 @@ public partial class InventoryHarnessController
 
     InventoryService IProvide<InventoryService>.Value() => _inventoryService;
 
+    ItemTypeRegistry IProvide<ItemTypeRegistry>.Value() => _itemTypeRegistry;
+
     public Godot.Collections.Dictionary get_observed_state()
     {
         var itemTypes = new Godot.Collections.Array();
@@ -194,12 +204,31 @@ public partial class InventoryHarnessController
                 ["prompt_visible"] = _prompt.Visible,
             },
             ["hotbar"] = _hotbarHud.GetObservedState(),
-            ["modal"] = new Godot.Collections.Dictionary
+            ["storage"] = new Godot.Collections.Dictionary
             {
-                ["open"] = _modalHost.IsOpen,
-                ["title"] = _modalHost.CurrentTitle,
+                ["stored_in_cargo"] = _inventoryService.StoredIn(6).Count,
             },
+            ["modal"] = BuildModalState(),
         };
+    }
+
+    private Godot.Collections.Dictionary BuildModalState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["open"] = _modalHost.IsOpen,
+            ["title"] = _modalHost.CurrentTitle,
+        };
+
+        if (_modalHost.CurrentModal is StorageModal storage)
+        {
+            state["storage_title"] = storage.TitleLabel.Text;
+            state["stored_shown"] = storage.ShownStoredCount;
+            state["hotbar_occupied"] = storage.HotbarGrid.OccupiedCount;
+            state["cargo_occupied"] = storage.CargoGrid.OccupiedCount;
+        }
+
+        return state;
     }
 
     private void OnTerminalInteracted(Terminal terminal) =>

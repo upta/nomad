@@ -29,6 +29,12 @@ public partial class PuppetClient : Node
 
     public int EntityId => _entityId;
 
+    // The puppet's own subscription view of the Items table — proof that a
+    // second client observes item moves the first client makes.
+    public int StoredItemCount => CountItems(ItemLocationKind.Stored);
+
+    public int WorldItemCount => CountItems(ItemLocationKind.World);
+
     public override void _ExitTree()
     {
         _conn?.Disconnect();
@@ -74,6 +80,21 @@ public partial class PuppetClient : Node
             .OnConnect(OnConnected)
             .OnConnectError(e => GD.PushError($"[PuppetClient] Connection error: {e.Message}"))
             .Build();
+    }
+
+    private int CountItems(ItemLocationKind kind)
+    {
+        if (_conn is null || !_dataReady)
+            return -1;
+
+        var count = 0;
+        foreach (var item in _conn.Db.Items.Iter())
+        {
+            if (item.LocationKind == kind)
+                count++;
+        }
+
+        return count;
     }
 
     private static string GetConfig(string variable, string fallback)
