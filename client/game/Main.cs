@@ -48,6 +48,9 @@ public partial class Main
     public ICamera2D Camera { get; set; } = default!;
 
     [Node]
+    public DebugHud DebugHud { get; set; } = default!;
+
+    [Node]
     public Items.ItemSpawner ItemSpawner { get; set; } = default!;
 
     [Node]
@@ -101,6 +104,7 @@ public partial class Main
         ResourceNodeSpawner.Interacted += OnResourceNodeInteracted;
         HotbarHud.DropRequested += OnHotbarDropRequested;
         HotbarHud.UseRequested += OnHotbarUseRequested;
+        DebugHud.ResetRequested += OnDebugResetRequested;
         _vitalsService.Changed += OnVitalsChanged;
 
         _powerGridService.SetRoomCatalog(RoomTypeRegistry.All);
@@ -179,6 +183,7 @@ public partial class Main
         ResourceNodeSpawner.Interacted -= OnResourceNodeInteracted;
         HotbarHud.DropRequested -= OnHotbarDropRequested;
         HotbarHud.UseRequested -= OnHotbarUseRequested;
+        DebugHud.ResetRequested -= OnDebugResetRequested;
         _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
         _vitalsService.Unbind();
@@ -213,6 +218,8 @@ public partial class Main
 
     private void OnBreakerInteracted(Ship.Breaker breaker) =>
         _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
+
+    private void OnDebugResetRequested() => _dbManager?.Connection?.Reducers.ResetWorld();
 
     private void OnHotbarDropRequested() =>
         _inventoryService.RequestDrop(

@@ -9,15 +9,6 @@ public static partial class Module
             throw new System.UnauthorizedAccessException("Sender is not a known player.");
         }
 
-        var stale = new System.Collections.Generic.List<int>();
-        foreach (var item in ctx.Db.Items.Iter())
-        {
-            stale.Add(item.ItemId);
-        }
-
-        foreach (var itemId in stale)
-        {
-            ctx.Db.Items.ItemId.Delete(itemId);
-        }
+        DeleteAllItems(ctx);
     }
 }

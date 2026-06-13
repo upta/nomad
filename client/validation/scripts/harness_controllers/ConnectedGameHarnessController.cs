@@ -379,6 +379,14 @@ public partial class ConnectedGameHarnessController : Node2D
         // way a player closing and reopening the game would.
         _nodeActions["test_reload_main"] = ReloadMain;
 
+        // Presses the real Reset World button on Main's DebugHud — exercises the
+        // button → ResetRequested → ResetWorld reducer path end to end, instead
+        // of calling the reducer directly.
+        _nodeActions["test_press_debug_reset"] = () =>
+            _main
+                ?.GetNodeOrNull<Button>("DebugHud/Root/ResetButton")
+                ?.EmitSignal(BaseButton.SignalName.Pressed);
+
         // Opens the real Main's Fabricator modal on the Workshop slot directly
         // (no terminal navigation) so a scenario can press the actual Queue
         // button — the modal→RequestQueueCraft→reducer path that direct reducer
