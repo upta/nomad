@@ -73,6 +73,7 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
                 new Godot.Collections.Dictionary
                 {
                     ["label"] = row.NameLabel.Text,
+                    ["ingredients"] = row.IngredientsLabel.Text,
                     ["queue_enabled"] = row.QueueEnabled,
                 }
             );
@@ -163,16 +164,41 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
 
     private bool CanQueue(Recipe recipe)
     {
-        var required = new Dictionary<string, int>();
-        foreach (var ingredient in recipe.IngredientItemIds)
-            required[ingredient] = required.TryGetValue(ingredient, out var n) ? n + 1 : 1;
-
-        foreach (var (itemId, need) in required)
+        foreach (var (itemId, need) in RequiredCounts(recipe))
         {
             if (AvailableCount(itemId) < need)
                 return false;
         }
         return true;
+    }
+
+    // Distinct ingredients in recipe order with their required counts.
+    private List<(string ItemId, int Need)> RequiredCounts(Recipe recipe)
+    {
+        var order = new List<string>();
+        var counts = new Dictionary<string, int>();
+        foreach (var ingredient in recipe.IngredientItemIds)
+        {
+            if (!counts.ContainsKey(ingredient))
+                order.Add(ingredient);
+            counts[ingredient] = counts.TryGetValue(ingredient, out var n) ? n + 1 : 1;
+        }
+
+        var result = new List<(string, int)>();
+        foreach (var itemId in order)
+            result.Add((itemId, counts[itemId]));
+        return result;
+    }
+
+    // "FuelDeposit 0/1   RawOre 1/1" — held vs required per ingredient so a
+    // disabled Queue button reads as "you're missing FuelDeposit", not a dead
+    // button with no explanation.
+    private string IngredientSummary(Recipe recipe)
+    {
+        var parts = new List<string>();
+        foreach (var (itemId, need) in RequiredCounts(recipe))
+            parts.Add($"{itemId} {System.Math.Min(AvailableCount(itemId), need)}/{need}");
+        return string.Join("   ", parts);
     }
 
     private void OnHotbarSlotPressed(int index) => Inventory.RequestStore(index, _roomSlotIndex);
@@ -247,8 +273,7 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
         for (var i = 0; i < _recipeRows.Count && i < recipes.Count; i++)
         {
             var recipe = recipes[i];
-            var summary = string.Join(" + ", recipe.IngredientItemIds);
-            _recipeRows[i].Update(recipe.Label, summary, CanQueue(recipe));
+            _recipeRows[i].Update(recipe.Label, IngredientSummary(recipe), CanQueue(recipe));
         }
     }
 

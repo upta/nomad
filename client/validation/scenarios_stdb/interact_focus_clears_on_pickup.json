@@ -1,0 +1,35 @@
+{
+  "scenario_id": "interact_focus_clears_on_pickup",
+  "version": 1,
+  "description": "Picking up the currently-focused world item must not leave the interaction service or prompt pointing at the freed node. Spawn an ore on the player so it focuses, pick it up (freeing the WorldItem), and confirm focus clears cleanly with no disposed-object error and the item in the hotbar.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_spawn_ore_at_player" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_spawn_ore_at_player" },
+    { "op": "wait_until", "path": "harness_state.game.focused_label", "comparator": "contains", "expected": "Pick up", "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "focused" },
+    { "op": "assert_value", "checkpoint": "focused", "path": "harness_state.game.focused_label", "comparator": "contains", "expected": "Pick up" },
+
+    { "op": "press_action", "action": "test_pickup_nearest_world_item" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_pickup_nearest_world_item" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "picked_up" },
+    { "op": "assert_value", "checkpoint": "picked_up", "path": "harness_state.game.focused_label", "comparator": "eq", "expected": "" },
+    { "op": "assert_value", "checkpoint": "picked_up", "path": "harness_state.items.world_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "picked_up", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 1 },
+
+    { "op": "quit" }
+  ]
+}

@@ -72,6 +72,19 @@ public class InteractionService
     public void Unregister(InteractionRegistration registration)
     {
         _registrations.Remove(registration);
+
+        // Drop focus immediately if the unregistered target was focused. This
+        // runs from InteractTarget._ExitTree (before the node is disposed), so
+        // the prompt's cached registration is nulled out before any later frame
+        // can read Position off the freed node (the ObjectDisposedException a
+        // picked-up/freed focused WorldItem would otherwise throw in
+        // InteractPrompt._Process). Re-focus, if any, resolves next Process().
+        if (ReferenceEquals(Focused, registration))
+        {
+            Focused = null;
+            FocusChanged?.Invoke(null);
+        }
+
         RegistrationsChanged?.Invoke();
     }
 

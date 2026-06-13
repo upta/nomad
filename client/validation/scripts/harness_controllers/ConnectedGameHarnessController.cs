@@ -66,6 +66,14 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_clear_items"] = conn => conn.Reducers.ClearItems(),
         ["test_spawn_ore_at_origin"] = conn =>
             conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.RawOre, 0, 0),
+        // Spawn a world item on the player so the InteractProbe overlaps it and
+        // it becomes the focused target — for exercising the focused-then-freed
+        // interaction lifecycle.
+        ["test_spawn_ore_at_player"] = conn =>
+        {
+            if (PlayerEntityPos(conn) is { } pos)
+                conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.RawOre, pos.X, pos.Y);
+        },
         // Kitchen (slot 5) center per HullGeometry — proves world items render
         // away from the origin, inside a room.
         ["test_spawn_fuelcell_in_kitchen"] = conn =>
@@ -299,6 +307,22 @@ public partial class ConnectedGameHarnessController : Node2D
         // same live connection (the server keeps the entity's position), the
         // way a player closing and reopening the game would.
         _nodeActions["test_reload_main"] = ReloadMain;
+
+        // Opens the real Main's Fabricator modal on the Workshop slot directly
+        // (no terminal navigation) so a scenario can press the actual Queue
+        // button — the modal→RequestQueueCraft→reducer path that direct reducer
+        // probes never exercise.
+        _nodeActions["test_open_workshop_fabricator"] = () =>
+            _main?.ModalHost.Open(
+                new Nomad.Game.Ui.RoomModalInfo(
+                    "Workshop",
+                    Nomad.Game.Ship.TerminalType.Fabricator,
+                    true,
+                    true,
+                    4,
+                    "Workshop"
+                )
+            );
 
         foreach (
             var action in TestReducerActions

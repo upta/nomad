@@ -16,6 +16,7 @@
     { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.title", "comparator": "eq", "expected": "Workshop" },
     { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.recipe_count", "comparator": "eq", "expected": 1 },
     { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.recipes.0.label", "comparator": "eq", "expected": "Fuel Cell" },
+    { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.recipes.0.ingredients", "comparator": "contains", "expected": "FuelDeposit 0/1" },
     { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": false },
     { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.input_count", "comparator": "eq", "expected": 0 },
     { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.output_count", "comparator": "eq", "expected": 0 },
@@ -29,6 +30,7 @@
     { "op": "wait_until", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": true, "timeout_frames": 120 },
     { "op": "checkpoint", "name": "ingredients_ready" },
     { "op": "assert_value", "checkpoint": "ingredients_ready", "path": "harness_state.modal.hotbar_count", "comparator": "eq", "expected": 2 },
+    { "op": "assert_value", "checkpoint": "ingredients_ready", "path": "harness_state.modal.recipes.0.ingredients", "comparator": "contains", "expected": "FuelDeposit 1/1" },
     { "op": "assert_value", "checkpoint": "ingredients_ready", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": true },
 
     { "op": "press_action", "action": "ui_cancel_modal" },
