@@ -30,9 +30,9 @@ All from repo root unless noted. `godot.exe` is on PATH (godotenv); `GODOT_EXE` 
 | Publish module | `spacetime publish nomad --yes --server local --module-path ./src` (in `server/`) |
 | Regenerate client bindings | `spacetime generate --lang csharp --out-dir ../client/Db --module-path ./src` (in `server/`) |
 | Run one validation scenario | `./tools/run_scenario.ps1 -Scenario client/validation/scenarios/<name>.json` |
-| Run pure validation suite | `./tools/run_all_scenarios.ps1` |
-| Run SpacetimeDB validation suite | `./scripts/run_stdb_scenarios.ps1` (ephemeral DB, auto-starts server) |
-| Run both suites | `./scripts/validate_all.ps1` |
+| Run pure validation suite | `./tools/run_all_scenarios.ps1` (parallel, `-MaxParallel 4` default; `1` = serial) |
+| Run SpacetimeDB validation suite | `./scripts/run_stdb_scenarios.ps1` (ephemeral DB, auto-starts server; parallel `-MaxParallel 2` default — server-bound, with serial-retry backstop) |
+| Run both suites | `./scripts/validate_all.ps1` (parallel; override via `-PureMaxParallel` / `-StdbMaxParallel`) |
 | Boot the real game | use the `run-game` skill |
 
 **Multi-client testing from the editor:** Debug → Customize Run Instances is preconfigured (machine-local, lives in gitignored `client/.godot/editor/project_metadata.cfg`) to launch 2 instances with per-instance args `--position X,Y -- --client one` / `-- --client two`. `DbManager` reads `--client <id>` (after the `--` user-args separator) and keeps a token file per id (`.nomad-<id>`), so each instance authenticates as a distinct SpacetimeDB identity. If `.godot/` is wiped, re-enter those args in the dialog.

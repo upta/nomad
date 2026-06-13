@@ -199,6 +199,13 @@ prunes once, cleans up all DBs even on failure. Exposes `-MaxParallel` (default 
 
 **Dependencies:** Tasks 1, 2. **Files touched:** `scripts/run_stdb_scenarios.ps1`. **Scope:** M–L.
 
+**Results (2026-06-13) — DONE, design improved + key reliability finding:**
+- ✅ Better than the planned sequential publisher: build module ONCE, each worker publishes the **prebuilt wasm** (`spacetime publish --bin-path`) to its own DB — concurrent-safe, ~1.5s, no cargo rebuild/lock.
+- ✅ Per-child isolation via `Start-Process -Environment` (clone+overlay unique DB/URI/client-id). All DBs deleted on every path (0 orphans verified), 0 token litter.
+- ⚠️ **The STDB suite is server-bound** (memory pt 12): the single local server caps useful concurrency at ~2. 4-wide flaked ~1/run (sync timeouts + `-1073741819` teardown crashes), spiking to 12/45 under cumulative stress; 2-wide clean.
+- ✅ **Default `-MaxParallel 2`** (decided with Brian). **Verdict by `summary.json` status, not exit code** — an adversarial multi-agent review caught that an exit-code-only verdict + serial-retry *masks* real load-sensitive failures (re-running an assertion failure until it passes hides the concurrency bug the parallel suite exists to catch). Final design: `status=='pass'` validates even through a teardown crash → **flaky/green**; `status != 'pass'` is a real failure, never auto-forgiven. Retry removed; writes an auditable `stdb_suites/<id>/suite.json`. Verified **45/45 validated, exit 0, ~207s**.
+- ✅ **Adversarial review (10 confirmed findings)** also fixed: the pure suite's suite-level exit aggregation swallowed negative crash codes via `-gt` max (now `-ne 0` in both suites); per-DB cleanup edge cases. Re-verified both suites green post-fix.
+
 ### Checkpoint: STDB suite parallel
 - [ ] STDB suite green in parallel, faster, no DB leaks, no state leakage.
 - [ ] Reducer-authority/determinism unaffected.

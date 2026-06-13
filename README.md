@@ -49,10 +49,14 @@ Open `client/project.godot` in Godot 4.x **Mono edition**, or build with `dotnet
 
 ```powershell
 .\tools\run_scenario.ps1 -Scenario client\validation\scenarios\player_moves_right.json
-.\tools\run_all_scenarios.ps1
+.\tools\run_all_scenarios.ps1          # pure suite, runs 4-wide in parallel
+.\scripts\validate_all.ps1             # both suites (pure 4-wide, STDB 2-wide)
 ```
 
-`godot.exe` must be on PATH (or set `GODOT_EXE`). Artifacts — screenshots, event logs, scene trees, summaries — land in `client/artifacts/`.
+Suites run scenarios in parallel by default (tune with `-MaxParallel`; pass `1` for a serial
+debug run). The pure suite scales to 4-wide; the SpacetimeDB suite defaults to 2-wide because all
+clients share one local server. `godot.exe` must be on PATH (or set `GODOT_EXE`). Artifacts —
+screenshots, event logs, scene trees, summaries — land in `client/artifacts/`.
 
 ## Project Structure
 

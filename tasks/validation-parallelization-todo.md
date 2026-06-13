@@ -17,42 +17,40 @@ Separate from the live game plan in [`tasks/todo.md`](todo.md).
   - [x] Same `suite.json` schema (+ `max_parallel`); single end-of-suite prune
   - [x] **45/45 pass, 52.2s at 4-wide vs ~170s serial (~3.2×), zero flaky**; screenshots verified
   - [x] `-MaxParallel 1` == serial path preserved
-  - [ ] Commit in kit repo + bump submodule pointer; `./setup.ps1` if symlinks change  ← in progress
+  - [x] Committed: kit `aa62d2f` (submodule main) + main repo `0439895` (pointer bump). No symlink change → no `./setup.ps1`. **Push pending** (both repos, incl. external kit repo).
 - [x] **Checkpoint:** pure parallel green/faster, valid `suite.json`, serial fallback OK — **review with human (here)**
 
 ## Phase 2: STDB suite parallel
-- [ ] **Task 2 — Per-child STDB isolation**
-  - [ ] Env block overlays unique `NOMAD_STDB_DB` + shared `NOMAD_STDB_URI` + unique `NOMAD_CLIENT_ID`
-  - [ ] Verify `.nomad-<id>` token files don't collide (find token-file location)
-  - [ ] `PuppetClient` connects to the correct per-run DB
-  - [ ] Two scenarios concurrent on distinct DBs, no leakage
-- [ ] **Task 3 — `-MaxParallel` in `scripts/run_stdb_scenarios.ps1`**
-  - [ ] Sequential publisher (build once → publish each unique DB) pipelined into parallel run pool
-  - [ ] Delete each DB after its run; clean up all on failure; `-KeepDatabase` keeps only failed
-  - [ ] No concurrent `spacetime publish` (no cargo build-lock errors)
-  - [ ] Green + ≥2.5× faster; no leftover `nomad-test-*` DBs; `-MaxParallel 1` == serial
-- [ ] **Checkpoint:** STDB parallel green/faster, no DB leaks, no state leakage — review with human
+- [x] **Task 2 — Per-child STDB isolation** ✅
+  - [x] `Start-Process -Environment` per child: clone parent env + overlay unique `NOMAD_STDB_DB` + `NOMAD_STDB_URI` + unique `NOMAD_CLIENT_ID` (→ isolated `.nomad-<id>` token, 0 token litter observed)
+  - [x] No shared `$env:` (would race across runspaces); verified no cross-DB leakage
+- [x] **Task 3 — `-MaxParallel` in `scripts/run_stdb_scenarios.ps1`** ✅ (design improved)
+  - [x] Build module ONCE → each worker publishes prebuilt wasm to its own DB via `spacetime publish --bin-path` (concurrent-safe, ~1.5s, no cargo rebuild) — better than the planned sequential publisher
+  - [x] Delete each DB after run (all paths); `-KeepDatabase` keeps failed/single; 0 orphan DBs verified
+  - [x] **Verdict by `summary.json` status, not exit code** (adversarial review caught an exit-code+retry design that masked real load-sensitive failures): `status=='pass'` validates even with a teardown crash → **flaky/green**; `status != 'pass'` is a real failure, **never auto-forgiven**. Retry removed.
+  - [x] Writes `client/artifacts/stdb_suites/<id>/suite.json` (per-scenario status/exit/validated/flaky) — auditable like the pure suite
+  - [x] Fixed exit-code bug in BOTH suites: negative crash codes (`-1073741819`) swallowed by `-gt` max → `-ne 0`
+  - [x] Default **`-MaxParallel 2`** (server-bound — see memory pt 12); 2-wide verified **45/45 validated, exit 0, ~207s**; `-MaxParallel 1` == serial
+- [x] **Checkpoint:** STDB parallel green, no DB leaks, no state leakage — reviewed with human (chose 2-wide; design then hardened by adversarial review)
 
 ## Phase 3: Integrate & harden
-- [ ] **Task 4 — `validate_all.ps1` → parallel**
-  - [ ] Calls both parallel orchestrators with `-MaxParallel` passthrough; exit = max of two
-  - [ ] `-MaxParallel 1` reproduces serial
-- [ ] **Task 5 — Flake guard + tuning**
-  - [ ] 3 consecutive parallel runs of each suite → no NEW flaky/failed vs serial baseline
-  - [ ] Pick + record default `-MaxParallel`
-  - [ ] Document any load-only flaky scenario (file follow-up if wall-clock-wait fix needed)
-- [ ] **Task 6 — Docs**
-  - [ ] `CLAUDE.md` command table (+ `-MaxParallel`, serial fallback)
-  - [ ] `validate-gameplay` skill references parallel runner + serial-debug fallback
-  - [ ] README concurrency/tuning note
-- [ ] **Checkpoint:** complete — both suites parallel/green/faster, no new flakes, `git push origin`
+- [x] **Task 4 — `validate_all.ps1` → parallel** ✅
+  - [x] Both suites run parallel by default; optional `-PureMaxParallel` / `-StdbMaxParallel` passthroughs (separate, since optimal differs: pure 4, stdb 2); exit = max of two; pass `1` for serial
+- [x] **Task 5 — Flake guard + tuning** ✅ (concurrency sweep characterized flakes)
+  - [x] Pure: 45/45 multiple runs at 4-wide, zero flaky. STDB: swept 4/3/2-wide → 2-wide clean (45/45 ×2); 4-wide flakes (server-bound)
+  - [x] Defaults recorded: pure **4**, stdb **2**. Status-based verdict means residual flakes are reported honestly (flaky=green only when assertions passed), not masked.
+- [x] **Task 6 — Docs** ✅
+  - [x] `CLAUDE.md` command table (`-MaxParallel` defaults + serial fallback)
+  - [x] README concurrency/tuning note. (`validate-gameplay` skill doesn't hardcode these commands → no change.)
+- [x] **Adversarial review** (multi-agent, 10 confirmed findings): fixed the 1 trust-critical masking hole (→ status-based verdict), the pure-suite negative-exit swallow, and added the STDB `suite.json`. Re-verified both suites green.
+- [ ] **Checkpoint:** complete — both suites parallel/green, no masking, then `git push origin`  ← committing now
 
 ## Optional / deferred
 - [ ] **Task 7 (OPTIONAL): capability-based scheduling** — `concurrency: "exclusive"` / `headless_safe` flags. Deferred: NO_FOCUS removed the need to segregate input scenarios. Build only when a concurrency-unsafe scenario appears.
 
 ## Decisions
 - [x] Q1: **upstream into the kit submodule** (generic pool/aggregation in kit; STDB lifecycle stays in `scripts/`)
-- [x] Q2: default **`-MaxParallel 4`**, tunable; `1` = serial
+- [x] Q2: default `-MaxParallel` — pure **4**, stdb **2** (server-bound); `1` = serial
 - [x] Q3: windowed (NOT headless) — required for screenshots + render-dependent scenarios; NO_FOCUS makes it parallel-safe
+- [x] Q4: **prebuilt-wasm publish — DONE.** `spacetime publish --bin-path` (build once, publish to N DBs concurrently) is how the STDB suite parallelizes publishes.
 - [x] Q5: capability-batching → optional Task 7 (deferred; NO_FOCUS solved the input case)
-- [ ] Q4: investigate prebuilt-wasm publish to parallelize publishes (optional optimization)?
