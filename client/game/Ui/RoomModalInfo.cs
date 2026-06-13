@@ -7,5 +7,6 @@ public record RoomModalInfo(
     TerminalType TerminalType,
     bool IsPowered,
     bool IsPressurized,
-    int SlotIndex
+    int SlotIndex,
+    string RoomId = ""
 );

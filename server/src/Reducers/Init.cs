@@ -36,6 +36,9 @@ public static partial class Module
         // Seeds hotbar/storage capacities and reach radii.
         GetInventoryConfig(ctx);
 
+        // Seeds crafting tunables and bench input/output zone sizes.
+        GetCraftingConfig(ctx);
+
         // Dev/test convenience until real item sources (harvesting) land in
         // Phase 4: a couple of pickupable items in the corridor west of the
         // spawn point, off every validation scenario's walk path.

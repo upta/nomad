@@ -1,0 +1,41 @@
+{
+  "scenario_id": "fabricator_modal_lists_recipes",
+  "version": 1,
+  "description": "The Workshop Fabricator modal lists the Fuel Cell recipe with its ingredient summary, its Queue button is disabled while the player has no ingredients and enables once a FuelDeposit and a RawOre are in the hotbar, and the bench input/output grids render empty. Esc closes the modal.",
+  "harness_scene": "res://validation/harnesses/CraftHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/CraftHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+
+    { "op": "press_action", "action": "test_open_fabricator" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_open_fabricator" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "opened" },
+    { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.title", "comparator": "eq", "expected": "Workshop" },
+    { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.recipe_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.recipes.0.label", "comparator": "eq", "expected": "Fuel Cell" },
+    { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.input_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "opened", "path": "harness_state.modal.output_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "press_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "press_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_until", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "ingredients_ready" },
+    { "op": "assert_value", "checkpoint": "ingredients_ready", "path": "harness_state.modal.hotbar_count", "comparator": "eq", "expected": 2 },
+    { "op": "assert_value", "checkpoint": "ingredients_ready", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": true },
+
+    { "op": "press_action", "action": "ui_cancel_modal" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "ui_cancel_modal" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+
+    { "op": "quit" }
+  ]
+}

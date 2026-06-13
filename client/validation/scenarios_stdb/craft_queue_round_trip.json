@@ -1,0 +1,73 @@
+{
+  "scenario_id": "craft_queue_round_trip",
+  "version": 1,
+  "description": "A Fuel Cell craft end-to-end against a real server: pre-load a FuelDeposit into the Workshop bench input, carry a RawOre in the hotbar, QueueCraft sources both (hotbar-first then bench-input) and consumes them, the shared ChannelTick climbs Progress, the output lands in the bench output zone, and WithdrawItem pulls the Fuel Cell back into the hotbar.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_until", "path": "harness_state.power.fuel_per_burn", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_until", "path": "harness_state.connection.local_entity.x", "comparator": "lte", "expected": -280, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_fast_craft" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_fast_craft" },
+
+    { "op": "press_action", "action": "test_load_fueldeposit_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_load_fueldeposit_to_workshop" },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.input_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_give_ore_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_ore_slot0" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "before_queue" },
+    { "op": "assert_value", "checkpoint": "before_queue", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "RawOre" },
+    { "op": "assert_value", "checkpoint": "before_queue", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "press_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_until", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "queued" },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.crafting.benches.4.active", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.crafting.benches.4.active_recipe", "comparator": "eq", "expected": "FuelCell" },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.crafting.benches.4.input_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.active_progress", "comparator": "gt", "expected": 0.3, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "crafting" },
+    { "op": "assert_value", "checkpoint": "crafting", "path": "harness_state.crafting.benches.4.active", "comparator": "eq", "expected": true },
+
+    { "op": "wait_until", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.output_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "completed" },
+    { "op": "assert_value", "checkpoint": "completed", "path": "harness_state.items.stored_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "completed", "path": "harness_state.items.stored.4.0.type", "comparator": "eq", "expected": "FuelCell" },
+
+    { "op": "press_action", "action": "test_withdraw_first_bench_output" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_withdraw_first_bench_output" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "withdrawn" },
+    { "op": "assert_value", "checkpoint": "withdrawn", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "FuelCell" },
+    { "op": "assert_value", "checkpoint": "withdrawn", "path": "harness_state.items.stored_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "quit" }
+  ]
+}

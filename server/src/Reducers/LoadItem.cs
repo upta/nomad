@@ -33,8 +33,20 @@ public static partial class Module
             throw new System.InvalidOperationException("No room at that slot.");
         }
 
+        // A bench is a restricted store: it holds the item (withdrawable later)
+        // like the Cargo Bay, but only ingredient types and only in its input
+        // zone. CargoBay is the generic, any-type store. Tanks consume into a
+        // counter. One deposit verb, three behaviors.
+        var isBench = IsBench(room.RoomTypeId);
         var storesItem = AcceptsStorage(room.RoomTypeId);
-        if (!storesItem && !AcceptsTankDeposit(room.RoomTypeId, loaded.ItemTypeId))
+        if (isBench)
+        {
+            if (!BenchAcceptsType(room.RoomTypeId, loaded.ItemTypeId))
+            {
+                throw new System.InvalidOperationException("This bench does not accept that item.");
+            }
+        }
+        else if (!storesItem && !AcceptsTankDeposit(room.RoomTypeId, loaded.ItemTypeId))
         {
             throw new System.InvalidOperationException("That room does not accept this item.");
         }
@@ -53,6 +65,27 @@ public static partial class Module
         if (dx * dx + dy * dy > config.LoadRadius * config.LoadRadius)
         {
             throw new System.InvalidOperationException("Machine intake is out of reach.");
+        }
+
+        // Benches hold ingredients in their reserved input zone.
+        if (isBench)
+        {
+            if (FindFreeBenchInputSlot(ctx, roomSlotIndex) is not { } benchSlot)
+            {
+                throw new System.InvalidOperationException("The bench input is full.");
+            }
+
+            ctx.Db.Items.ItemId.Update(
+                loaded with
+                {
+                    LocationKind = ItemLocationKind.Stored,
+                    Position = new DbVector2 { X = 0, Y = 0 },
+                    Holder = default,
+                    SlotIndex = benchSlot,
+                    RoomSlotIndex = roomSlotIndex,
+                }
+            );
+            return;
         }
 
         // Storage rooms hold the item (withdrawable later); machine tanks

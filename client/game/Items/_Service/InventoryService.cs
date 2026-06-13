@@ -238,6 +238,22 @@ public class InventoryService
         return itemId;
     }
 
+    // Seeds a stored item at an explicit slot — bench zones (input vs output)
+    // are slot-index ranges, so test mirrors need to place items precisely.
+    public int SeedTestStoredItemAt(string typeId, int roomSlot, int slotIndex)
+    {
+        var itemId = _nextTestItemId++;
+        _storedItems[itemId] = new StoredItemEntry(itemId, typeId, roomSlot, slotIndex);
+        Changed?.Invoke();
+        return itemId;
+    }
+
+    public void RemoveTestStoredItem(int itemId)
+    {
+        if (_storedItems.Remove(itemId))
+            Changed?.Invoke();
+    }
+
     public int SeedTestWorldItem(string typeId, Vector2 position)
     {
         var itemId = _nextTestItemId++;

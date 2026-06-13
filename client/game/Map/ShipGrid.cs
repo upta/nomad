@@ -473,7 +473,13 @@ public partial class ShipGrid : Node2D
             && RoomTypeRegistry?.Find(ra.RoomTypeId.ToString()) is { } rt
         )
         {
-            terminal.SetRoomState(rt.Label, rt.TerminalType, ra.IsPowered, ra.IsPressurized);
+            terminal.SetRoomState(
+                rt.RoomId,
+                rt.Label,
+                rt.TerminalType,
+                ra.IsPowered,
+                ra.IsPressurized
+            );
         }
     }
 

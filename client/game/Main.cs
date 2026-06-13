@@ -15,7 +15,9 @@ using Ui;
     typeof(IProvide<Character.VitalsService>),
     typeof(IProvide<Items.InventoryService>),
     typeof(IProvide<Items.ItemTypeRegistry>),
-    typeof(IProvide<Harvest.HarvestService>)
+    typeof(IProvide<Harvest.HarvestService>),
+    typeof(IProvide<Crafting.CraftingService>),
+    typeof(IProvide<Crafting.RecipeRegistry>)
 )]
 public partial class Main
     : Node2D,
@@ -24,8 +26,11 @@ public partial class Main
         IProvide<Character.VitalsService>,
         IProvide<Items.InventoryService>,
         IProvide<Items.ItemTypeRegistry>,
-        IProvide<Harvest.HarvestService>
+        IProvide<Harvest.HarvestService>,
+        IProvide<Crafting.CraftingService>,
+        IProvide<Crafting.RecipeRegistry>
 {
+    private readonly Crafting.CraftingService _craftingService = new();
     private readonly Harvest.HarvestService _harvestService = new();
     private readonly InteractionService _interactionService = new();
     private readonly Items.InventoryService _inventoryService = new();
@@ -59,6 +64,9 @@ public partial class Main
 
     [Export]
     public PackedScene RemoteEntityScene { get; set; } = null!;
+
+    [Node]
+    public Crafting.RecipeRegistry RecipeRegistry { get; set; } = default!;
 
     [Node]
     public Harvest.ResourceNodeSpawner ResourceNodeSpawner { get; set; } = default!;
@@ -113,6 +121,10 @@ public partial class Main
 
     Harvest.HarvestService IProvide<Harvest.HarvestService>.Value() => _harvestService;
 
+    Crafting.CraftingService IProvide<Crafting.CraftingService>.Value() => _craftingService;
+
+    Crafting.RecipeRegistry IProvide<Crafting.RecipeRegistry>.Value() => RecipeRegistry;
+
     public void InstantiatePlayer(Db.DbManager dbManager)
     {
         _dbManager = dbManager;
@@ -122,6 +134,7 @@ public partial class Main
         _vitalsService.BindConnection(dbManager.Connection);
         _inventoryService.BindConnection(dbManager.Connection);
         _harvestService.BindConnection(dbManager.Connection);
+        _craftingService.BindConnection(dbManager.Connection);
 
         var conn = dbManager.Connection;
 
@@ -169,6 +182,7 @@ public partial class Main
         _vitalsService.Unbind();
         _inventoryService.Unbind();
         _harvestService.Unbind();
+        _craftingService.Unbind();
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {
@@ -249,7 +263,8 @@ public partial class Main
                 terminal.TerminalType,
                 terminal.IsPowered,
                 terminal.IsPressurized,
-                terminal.SlotIndex
+                terminal.SlotIndex,
+                terminal.RoomId
             )
         );
 

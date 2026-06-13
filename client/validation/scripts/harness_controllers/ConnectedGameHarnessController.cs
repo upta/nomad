@@ -185,6 +185,65 @@ public partial class ConnectedGameHarnessController : Node2D
                     0.0
                 );
         },
+        // Crafting probes (Task 4.3). Teleport the server entity onto the
+        // Workshop slot-4 center (HullGeometry SlotCenter(4) = (-288, 144)) so
+        // the reach check passes without flaky corridor navigation — the player
+        // node stays stationary, so MovementNetworkSync never syncs it back.
+        ["test_teleport_to_workshop"] = conn =>
+        {
+            if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } player)
+                conn.Reducers.MoveEntity(
+                    player.PlayerEntityId,
+                    new SpacetimeDB.Types.DbVector2(-288, 144),
+                    new SpacetimeDB.Types.DbVector2(0, 0),
+                    0f,
+                    0.0
+                );
+        },
+        // 400ms craft keeps timing-sensitive scenarios short; 0 args keep the
+        // bench input/output zone sizes.
+        ["test_fast_craft"] = conn => conn.Reducers.SetCraftingConfig(400, 0, 0),
+        // 2s craft leaves room to cut bench power mid-job before completion.
+        ["test_medium_craft"] = conn => conn.Reducers.SetCraftingConfig(2000, 0, 0),
+        ["test_give_fueldeposit_slot0"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.FuelDeposit, 0),
+        ["test_give_ore_slot1"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.RawOre, 1),
+        // Pre-load a FuelDeposit into the Workshop bench input zone (hotbar
+        // slot 0 → bench slot 4). Reducer calls are ordered per-connection.
+        ["test_load_fueldeposit_to_workshop"] = conn =>
+        {
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.FuelDeposit, 0);
+            conn.Reducers.LoadItem(0, 4);
+        },
+        // Deposit a non-ingredient (Scrap) into the Workshop — bench rejects it.
+        ["test_load_scrap_to_workshop"] = conn =>
+        {
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Scrap, 0);
+            conn.Reducers.LoadItem(0, 4);
+        },
+        ["test_queue_fuelcell"] = conn =>
+            conn.Reducers.QueueCraft(4, SpacetimeDB.Types.RecipeId.FuelCell),
+        // Wrong-bench probe: a Fuel Cell recipe at the Kitchen (slot 5).
+        ["test_queue_fuelcell_at_kitchen"] = conn =>
+            conn.Reducers.QueueCraft(5, SpacetimeDB.Types.RecipeId.FuelCell),
+        ["test_toggle_breaker_4"] = conn => conn.Reducers.ToggleBreaker(4),
+        // Two full ingredient sets across the hotbar, then queue twice: job one
+        // runs, job two waits in line.
+        ["test_queue_two_jobs"] = conn =>
+        {
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.FuelDeposit, 0);
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.RawOre, 1);
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.FuelDeposit, 2);
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.RawOre, 3);
+            conn.Reducers.QueueCraft(4, SpacetimeDB.Types.RecipeId.FuelCell);
+            conn.Reducers.QueueCraft(4, SpacetimeDB.Types.RecipeId.FuelCell);
+        },
+        ["test_withdraw_first_bench_output"] = conn =>
+        {
+            if (FindFirstBenchOutputItemId(conn) is { } itemId)
+                conn.Reducers.WithdrawItem(itemId);
+        },
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -275,6 +334,7 @@ public partial class ConnectedGameHarnessController : Node2D
             ["items"] = BuildItemsState(),
             ["nodes"] = BuildNodesState(),
             ["harvest"] = BuildHarvestState(),
+            ["crafting"] = BuildCraftingState(),
         };
 
         if (_puppet is { } puppet)
@@ -386,6 +446,28 @@ public partial class ConnectedGameHarnessController : Node2D
         foreach (var item in conn.Db.Items.Iter())
         {
             if (item.LocationKind != SpacetimeDB.Types.ItemLocationKind.Stored)
+                continue;
+
+            if (first is null || item.ItemId < first)
+                first = item.ItemId;
+        }
+
+        return first;
+    }
+
+    // Lowest-id Stored item in the Workshop bench's output zone (slot >= input
+    // zone size). The output zone is where completed crafts land.
+    private static int? FindFirstBenchOutputItemId(SpacetimeDB.Types.DbConnection conn)
+    {
+        var inputSlots = conn.Db.CraftingConfigs.Id.Find(0)?.BenchInputSlots ?? 4;
+        int? first = null;
+        foreach (var item in conn.Db.Items.Iter())
+        {
+            if (
+                item.LocationKind != SpacetimeDB.Types.ItemLocationKind.Stored
+                || item.RoomSlotIndex != 4
+                || item.SlotIndex < inputSlots
+            )
                 continue;
 
             if (first is null || item.ItemId < first)
@@ -823,6 +905,73 @@ public partial class ConnectedGameHarnessController : Node2D
             state["node_id"] = harvest.NodeId;
             state["progress"] = harvest.Progress;
         }
+
+        return state;
+    }
+
+    // Crafting jobs grouped by bench room slot. A job is active when CompletesAt
+    // is set; queued jobs hold null. Bench input/output occupancy is counted from
+    // the Stored items keyed on the bench's RoomSlotIndex and zone-split by the
+    // config's BenchInputSlots boundary.
+    private Godot.Collections.Dictionary BuildCraftingState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["job_count"] = 0,
+            ["benches"] = new Godot.Collections.Dictionary(),
+        };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        var inputSlots = conn.Db.CraftingConfigs.Id.Find(0)?.BenchInputSlots ?? 4;
+
+        var jobs = new List<SpacetimeDB.Types.CraftingJob>();
+        foreach (var job in conn.Db.CraftingJobs.Iter())
+            jobs.Add(job);
+        state["job_count"] = jobs.Count;
+
+        // Stored items per bench room slot, split into input/output counts.
+        var inputCounts = new Dictionary<int, int>();
+        var outputCounts = new Dictionary<int, int>();
+        foreach (var item in conn.Db.Items.Iter())
+        {
+            if (item.LocationKind != SpacetimeDB.Types.ItemLocationKind.Stored)
+                continue;
+
+            var counts = item.SlotIndex < inputSlots ? inputCounts : outputCounts;
+            counts[item.RoomSlotIndex] = counts.TryGetValue(item.RoomSlotIndex, out var prior)
+                ? prior + 1
+                : 1;
+        }
+
+        var benches = new Godot.Collections.Dictionary();
+        var slots = new HashSet<int>();
+        foreach (var job in jobs)
+            slots.Add(job.RoomSlotIndex);
+        foreach (var slot in inputCounts.Keys)
+            slots.Add(slot);
+        foreach (var slot in outputCounts.Keys)
+            slots.Add(slot);
+
+        foreach (var slot in slots)
+        {
+            var benchJobs = jobs.Where(j => j.RoomSlotIndex == slot).ToList();
+            var active = benchJobs.FirstOrDefault(j => j.CompletesAt is not null);
+            var queuedCount = benchJobs.Count(j => j.CompletesAt is null);
+
+            benches[slot.ToString()] = new Godot.Collections.Dictionary
+            {
+                ["job_count"] = benchJobs.Count,
+                ["active"] = active is not null,
+                ["active_recipe"] = active?.RecipeId.ToString() ?? "None",
+                ["active_progress"] = active?.Progress ?? 0f,
+                ["queued_count"] = queuedCount,
+                ["input_count"] = inputCounts.TryGetValue(slot, out var ic) ? ic : 0,
+                ["output_count"] = outputCounts.TryGetValue(slot, out var oc) ? oc : 0,
+            };
+        }
+        state["benches"] = benches;
 
         return state;
     }

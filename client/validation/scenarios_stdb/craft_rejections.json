@@ -1,0 +1,95 @@
+{
+  "scenario_id": "craft_rejections",
+  "version": 1,
+  "description": "Crafting rejection matrix against a real server: queueing from out of reach is rejected, a Fuel Cell recipe at the wrong bench (Kitchen) is rejected, queueing at an unpowered Workshop is rejected, depositing a non-ingredient (Scrap) into the bench is rejected, and queueing with no ingredients is rejected. In every case no job is created and the player's items stay put.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_until", "path": "harness_state.power.fuel_per_burn", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "press_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "out_of_reach" },
+    { "op": "assert_value", "checkpoint": "out_of_reach", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "out_of_reach", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 2 },
+
+    { "op": "press_action", "action": "test_queue_fuelcell_at_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_fuelcell_at_kitchen" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "wrong_bench" },
+    { "op": "assert_value", "checkpoint": "wrong_bench", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "wrong_bench", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 2 },
+
+    { "op": "press_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_until", "path": "harness_state.connection.local_entity.x", "comparator": "lte", "expected": -280, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_until", "path": "harness_state.power.rooms.4.is_powered", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "unpowered" },
+    { "op": "assert_value", "checkpoint": "unpowered", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "unpowered", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 2 },
+
+    { "op": "press_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_until", "path": "harness_state.power.rooms.4.is_powered", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_load_scrap_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_load_scrap_to_workshop" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "non_ingredient" },
+    { "op": "assert_value", "checkpoint": "non_ingredient", "path": "harness_state.items.stored_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "non_ingredient", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "Scrap" },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "missing_ingredient" },
+    { "op": "assert_value", "checkpoint": "missing_ingredient", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "quit" }
+  ]
+}

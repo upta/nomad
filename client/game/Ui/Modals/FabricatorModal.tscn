@@ -1,0 +1,95 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://game/Ui/Modals/FabricatorModal.cs" id="1"]
+[ext_resource type="PackedScene" path="res://game/Ui/Modals/RecipeRow.tscn" id="2_recipe"]
+[ext_resource type="PackedScene" path="res://game/Ui/Modals/ItemSlotGrid.tscn" id="3_grid"]
+[ext_resource type="PackedScene" path="res://game/Ui/RadialProgress/RadialProgress.tscn" id="4_ring"]
+
+[node name="FabricatorModal" type="PanelContainer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -270.0
+offset_right = 190.0
+offset_bottom = 270.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+RecipeRowScene = ExtResource("2_recipe")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="RecipesLabel" type="Label" parent="Margin/Content"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.7)
+text = "Recipes"
+
+[node name="RecipeRows" type="VBoxContainer" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RingRow" type="CenterContainer" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="ProgressRing" parent="Margin/Content/RingRow" instance=ExtResource("4_ring")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Separator" type="HSeparator" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="HotbarLabel" type="Label" parent="Margin/Content"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.7)
+text = "Your Hotbar"
+
+[node name="HotbarGrid" parent="Margin/Content" instance=ExtResource("3_grid")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="InputLabel" type="Label" parent="Margin/Content"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.7)
+text = "Bench Input"
+
+[node name="InputGrid" parent="Margin/Content" instance=ExtResource("3_grid")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="OutputLabel" type="Label" parent="Margin/Content"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.7)
+text = "Output"
+
+[node name="OutputGrid" parent="Margin/Content" instance=ExtResource("3_grid")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="CloseHint" type="Label" parent="Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+modulate = Color(1, 1, 1, 0.6)
+text = "[Enter] Queue / Deposit / Withdraw   [Esc] Close"
+horizontal_alignment = 1

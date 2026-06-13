@@ -1,0 +1,95 @@
+{
+  "scenario_id": "craft_queue_ordering_and_power",
+  "version": 1,
+  "description": "Queue ordering and the unpowered-bench hold against a real server. Two Fuel Cell jobs queued at the Workshop run one at a time in QueuedAt order: the first completes and the second auto-activates. Then a fresh job's bench is cut mid-craft - Progress climbs to 1.0 and holds with no output until power returns, at which point it completes.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_until", "path": "harness_state.power.fuel_per_burn", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_until", "path": "harness_state.connection.local_entity.x", "comparator": "lte", "expected": -280, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_medium_craft" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_medium_craft" },
+
+    { "op": "press_action", "action": "test_queue_two_jobs" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_two_jobs" },
+    { "op": "wait_until", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "two_queued" },
+    { "op": "assert_value", "checkpoint": "two_queued", "path": "harness_state.crafting.benches.4.active", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "two_queued", "path": "harness_state.crafting.benches.4.active_recipe", "comparator": "eq", "expected": "FuelCell" },
+    { "op": "assert_value", "checkpoint": "two_queued", "path": "harness_state.crafting.benches.4.queued_count", "comparator": "eq", "expected": 1 },
+
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.output_count", "comparator": "eq", "expected": 1, "timeout_frames": 600 },
+    { "op": "checkpoint", "name": "first_done" },
+    { "op": "assert_value", "checkpoint": "first_done", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "first_done", "path": "harness_state.crafting.benches.4.active", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "first_done", "path": "harness_state.crafting.benches.4.queued_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.output_count", "comparator": "eq", "expected": 2, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "both_done" },
+    { "op": "assert_value", "checkpoint": "both_done", "path": "harness_state.items.stored_count", "comparator": "eq", "expected": 2 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.stored_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "press_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.active", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_until", "path": "harness_state.power.rooms.4.is_powered", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.active_progress", "comparator": "gte", "expected": 0.99, "timeout_frames": 600 },
+    { "op": "checkpoint", "name": "held" },
+    { "op": "assert_value", "checkpoint": "held", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "held", "path": "harness_state.crafting.benches.4.output_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "still_held" },
+    { "op": "assert_value", "checkpoint": "still_held", "path": "harness_state.crafting.benches.4.output_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "still_held", "path": "harness_state.crafting.benches.4.active_progress", "comparator": "gte", "expected": 0.99 },
+
+    { "op": "press_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_toggle_breaker_4" },
+    { "op": "wait_until", "path": "harness_state.power.rooms.4.is_powered", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.output_count", "comparator": "eq", "expected": 1, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "completed_after_power" },
+    { "op": "assert_value", "checkpoint": "completed_after_power", "path": "harness_state.items.stored_count", "comparator": "eq", "expected": 1 },
+
+    { "op": "quit" }
+  ]
+}

@@ -700,31 +700,33 @@ Design notes (user-confirmed 2026-06-12):
 - [x] **Adversarial review** (4-lens workflow → skeptic verification): 12 raised, 7 confirmed, 5 rejected as nits. Applied: move-cancel reducer-spam latch (optimistic local end on cancel, cf. TrackCurrentRoom) + gate `Changed` to self-rows only (skip remote harvesters' per-tick churn); added coverage for the **completion-time reach re-check** (`harvest_completion_revalidates.json` — teleport server entity out of reach via MoveEntity without CancelHarvest, also depleted-mid-channel), **death-during-channel clear** (`harvest_death_clears_channel.json`), and channel **restart/upsert** (folded into round_trip). Rejected nits: HarvestService rebind symmetry (latent only), `fill_easing` export drop (default-identical), Continuous no-op signal emit (no subscribers), `[Tool]` omission (scene-first material handles editor preview), unused `test_fast_harvest`.
 - [ ] **Deferred (4.3):** two simultaneous channels through the one shared `ChannelTick` are not yet exercised by a scenario (the collect-then-mutate multi-row path) — needs puppet-driven harvest infra (PuppetClient only moves). Land it when 4.3 extends ChannelTick to CraftingJob, where multi-row coverage matters more.
 
-## Task 4.3: Bench crafting + Fabricator modal (Refine verb) — Scope: L 🔄 PLANNED
+## Task 4.3: Bench crafting + Fabricator modal (Refine verb) — Scope: L ✅ DONE
 
-### Subtask 4.3.1: Server — bench storage + recipes + queue — Scope: M
-- [ ] `Types/RecipeId.cs` (None, FuelCell, Meal — Meal recipe rules in 4.4) + `Crafting/CraftingRules.cs` (recipe → bench RoomTypeId + ingredients + output: FuelCell = Workshop [FuelDeposit, RawOre]; `BenchAcceptsType`; config getter/seeder)
-- [ ] `Tables/CraftingConfig.cs` (`CraftMillis` 5000, `BenchInputSlots` 4, `BenchOutputSlots` 4) + `Reducers/SetCraftingConfig.cs`
-- [ ] `Tables/CraftingJob.cs` (`JobId` PK AutoInc, `RoomSlotIndex`, `RecipeId`, `QueuedBy Identity`, `QueuedAt Timestamp`, `StartedAt`/`CompletesAt Timestamp?` null=queued, `Progress float`, `Public = true`) — **spike `Timestamp?` codegen first; fallback `bool IsActive` + sentinels**
-- [ ] Extend `Items/ItemRules.cs` + `LoadItem.cs`/`WithdrawItem.cs`: benches = storage rooms with type+zone restriction (deposit `BenchAcceptsType` into free input slot; withdraw any bench slot)
-- [ ] `Reducers/QueueCraft.cs` (auth + alive + reach + room-type-matches-bench + IsPowered + ingredients hotbar-then-bench-input as distinct rows → validate all, delete; idle → activate, else enqueue)
-- [ ] Extend `ChannelTick`: per active `CraftingJob` advance `Progress`; on complete re-validate bench (unpowered → hold 1.0 retry; reassigned → delete job; else deposit output to free output slot / fallback World item at bench), clear job, activate next by `(QueuedAt, JobId)`
-- [ ] Publish + generate + builds
+### Subtask 4.3.1: Server — bench storage + recipes + queue — Scope: M ✅
+- [x] `Types/RecipeId.cs` (None, FuelCell, Meal — Meal recipe rules in 4.4) + `Crafting/CraftingRules.cs` (recipe catalog `RecipeFor`/`AllRecipes`: FuelCell = Workshop [FuelDeposit, RawOre]; `IsBench`/`BenchAcceptsType`; `GetCraftingConfig`; `FindFreeBenchInput/OutputSlot` + `OccupiedBenchSlots`)
+- [x] `Tables/CraftingConfig.cs` (`CraftMillis` 5000, `BenchInputSlots` 4, `BenchOutputSlots` 4) + `Reducers/SetCraftingConfig.cs` (SetHarvestConfig "0 = keep" convention)
+- [x] `Tables/CraftingJob.cs` — **`Timestamp?` codegen spike SUCCEEDED** (generated clean `SpacetimeDB.Timestamp? StartedAt/CompletesAt`; no fallback needed). null `CompletesAt` = queued
+- [x] `LoadItem.cs`: bench branch (restricted store — `BenchAcceptsType` + free input-zone slot) before the CargoBay storage / tank branches; `WithdrawItem` unchanged (withdraws any Stored item by id, reach vs SlotCenter)
+- [x] `Reducers/QueueCraft.cs` (auth + alive + recipe + room-type-matches-bench + IsPowered + reach LoadRadius + `FindIngredientRow` hotbar-then-bench-input distinct rows, validate-all-then-delete; idle → activate timestamps, else enqueue null)
+- [x] Extend `ChannelTick`: active `CraftingJob` (CompletesAt != null) advance `Progress`; `CompleteCraft` re-validates bench (gone/recipe-unknown/reassigned → delete + activate next; unpowered → hold 1.0; else output to free output slot / fallback World item) + `ActivateNextQueued` by `(QueuedAt, JobId)`
+- [x] `Init.cs` seeds `CraftingConfig`; publish `--delete-data=always` + generate + builds
 
-### Subtask 4.3.2: stdb validation — Scope: M
-- [ ] Harness `crafting` section (per-bench job recipe/progress/active/queued + input/output occupancy) + `test_fast_craft` (400ms), `test_give_fuel_ingredients`, `test_load_bench_input`, `test_queue_fuelcell`, `test_queue_two_jobs`
-- [ ] `craft_queue_round_trip.json` (hotbar + pre-loaded input → queue → consumed → progress → output slot → withdraw) + `craft_rejections.json` (missing ingredient / wrong room / unpowered / out of reach / non-ingredient deposit) + `craft_queue_ordering_and_power.json` (QueuedAt order; cut power → hold 1.0 → restore completes)
+### Subtask 4.3.2: stdb validation — Scope: M ✅
+- [x] `ConnectedGameHarnessController`: `crafting` section (per-bench `job_count`/`active`/`active_recipe`/`active_progress`/`queued_count`/`input_count`/`output_count`) + `test_teleport_to_workshop` (MoveEntity to SlotCenter(4) = (-288,144), dodges nav flake), `test_fast_craft`/`test_medium_craft`, `test_load_fueldeposit_to_workshop`, `test_load_scrap_to_workshop`, `test_queue_fuelcell`(+`_at_kitchen`), `test_queue_two_jobs`, `test_toggle_breaker_4`, `test_withdraw_first_bench_output`
+- [x] `craft_queue_round_trip.json` (pre-loaded bench input + hotbar → queue consumes both → progress → output zone → withdraw) + `craft_rejections.json` (out-of-reach / wrong-bench / unpowered / non-ingredient deposit / missing ingredient) + `craft_queue_ordering_and_power.json` (two jobs FIFO; cut Workshop power mid-craft → Progress holds 1.0, no output → restore → completes). All green
 
-### Subtask 4.3.3: Client — Recipe + CraftingService + FabricatorModal — Scope: M
-- [ ] `client/game/Crafting/Recipe.cs` (`[GlobalClass]`: RecipeId, Label, BenchRoomId, ingredients, output) + `FuelCellRecipe.tres` + `RecipeRegistry` (`[Export]` array, wired per declaring scene)
-- [ ] `_Service/CraftingService.cs` (recipes-for-bench, job entries with `Progress` off row, input/output views, `RequestQueueCraft`/deposit/withdraw via InventoryService, BindConnection on `CraftingJobs`, seeders + mirror)
-- [ ] `Ui/Modals/FabricatorModal.tscn`/`.cs` (StorageModal dual-grid + recipe list: rows label/ingredients/focusable Queue disabled when unavailable + input/output `ItemSlotGrid` + Chunked `RadialProgress` on active job); `ModalHost.tscn` repoints Fabricator export; `Main.cs` provides `CraftingService`
+### Subtask 4.3.3: Client — Recipe + CraftingService + FabricatorModal — Scope: M ✅
+- [x] `client/game/Crafting/Recipe.cs` (`[GlobalClass]`: RecipeId/Label/BenchRoomId/IngredientItemIds/OutputItemId) + `Recipes/FuelCellRecipe.tres` + `RecipeRegistry` (`[Export]` array + `ForBench`, wired in Main.tscn + CraftHarness.tscn)
+- [x] `_Service/CraftingService.cs` (per-bench `ActiveJobAt`/`QueuedCountAt`, `Progress` off row, `BenchInput/OutputSlots`, `RequestQueueCraft` → QueueCraft reducer / `TestQueueRequested`; BindConnection on `CraftingJobs`; test mirror `SeedTestJob`/`AdvanceTestActiveJobs`/`JobCompleted`)
+- [x] `Ui/Modals/FabricatorModal.tscn`/`.cs` (recipe list w/ `RecipeRow` Queue buttons disabled when unavailable; hotbar→deposit grid + input/output `ItemSlotGrid`; Chunked `RadialProgress` on active job) + `RecipeRow.tscn`/`.cs`; `ModalHost.tscn` repoints Fabricator export; `RoomModalInfo`/`Terminal` gain `RoomId` so the modal filters recipes by bench; `Main.cs` provides `CraftingService` + `RecipeRegistry`
+- [x] `InventoryService` test helpers `SeedTestStoredItemAt`/`RemoveTestStoredItem` for bench-zone mirrors
 
-### Subtask 4.3.4: Pure validation — Scope: M
-- [ ] CraftHarness; `fabricator_modal_lists_recipes.json` (Fuel Cell row; queue disabled/enabled; grids render) + `fabricator_queue_progress_mirror.json` (queue → ingredients leave → progress advances → output in output grid)
+### Subtask 4.3.4: Pure validation — Scope: M ✅
+- [x] `CraftHarness.tscn` + `CraftHarnessController` (provides Interaction/Inventory/Crafting/RecipeRegistry/ItemTypeRegistry; opens modal directly via `test_open_fabricator` to dodge nav flake; test mirror consumes ingredients hotbar-then-input + deposits output)
+- [x] `fabricator_modal_lists_recipes.json` (Fuel Cell row + ingredient summary; Queue disabled→enabled with ingredients; grids render) + `fabricator_queue_progress_mirror.json` (pre-loaded input + hotbar → queue consumes both → ring animates + progress climbs → FuelCell in output grid). Screenshots reviewed — modal layout, white progress arc, output tile land correctly
 
-### Subtask 4.3.5: DoD sweep — Scope: S
-- [ ] Both suites green, boot clean, builds + format, screenshot review, plan/todo tick, push
+### Subtask 4.3.5: DoD sweep — Scope: S ✅
+- [x] `./scripts/validate_all.ps1` both suites green (44 pure + 41 stdb), zero flaky (the 3 historically-flaky PowerHarness modal scenarios passed); game boots clean 13s (zero ERROR, DbManager connected + subscription, RecipeRegistry loaded); `dotnet build` + csharpier (client), `spacetime build` + format (server); uids imported; plan/todo ticked; push
 
 ## Task 4.4: Meals feature whole + economy checkpoint — Scope: M 🔄 PLANNED
 

@@ -19,6 +19,8 @@ public partial class Terminal : Node2D
 
     public bool IsPressurized { get; private set; }
 
+    public string RoomId { get; private set; } = "";
+
     public string RoomLabel { get; private set; } = "";
 
     public int SlotIndex { get; set; }
@@ -38,12 +40,14 @@ public partial class Terminal : Node2D
     }
 
     public void SetRoomState(
+        string roomId,
         string roomLabel,
         TerminalType terminalType,
         bool isPowered,
         bool isPressurized
     )
     {
+        RoomId = roomId;
         RoomLabel = roomLabel;
         TerminalType = terminalType;
         IsPowered = isPowered;

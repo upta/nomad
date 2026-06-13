@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3]
+[gd_scene load_steps=41 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/HotbarHud.tscn" id="10_hotbar_hud"]
@@ -37,6 +37,9 @@
 [ext_resource type="Resource" path="res://game/Harvest/ResourceNodeTypes/WreckageDebrisNode.tres" id="rn1"]
 [ext_resource type="Resource" path="res://game/Harvest/ResourceNodeTypes/FuelDepositNode.tres" id="rn2"]
 [ext_resource type="Resource" path="res://game/Harvest/ResourceNodeTypes/BiomassPatchNode.tres" id="rn3"]
+[ext_resource type="Script" path="res://game/Crafting/RecipeRegistry.cs" id="cr_registry"]
+[ext_resource type="Script" path="res://game/Crafting/Recipe.cs" id="cr_script"]
+[ext_resource type="Resource" path="res://game/Crafting/Recipes/FuelCellRecipe.tres" id="cr0"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -57,6 +60,11 @@ ItemTypes = Array[ExtResource("it_script")]([ExtResource("it0"), ExtResource("it
 unique_name_in_owner = true
 script = ExtResource("rn_registry")
 NodeTypes = Array[ExtResource("rn_script")]([ExtResource("rn0"), ExtResource("rn1"), ExtResource("rn2"), ExtResource("rn3")])
+
+[node name="RecipeRegistry" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("cr_registry")
+Recipes = Array[ExtResource("cr_script")]([ExtResource("cr0")])
 
 [node name="ShipGrid" parent="." instance=ExtResource("5_shipgrid")]
 unique_name_in_owner = true

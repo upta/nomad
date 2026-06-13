@@ -1,0 +1,48 @@
+{
+  "scenario_id": "fabricator_queue_progress_mirror",
+  "version": 1,
+  "description": "With a FuelDeposit pre-loaded in the Workshop bench input and a RawOre in the hotbar, queueing a Fuel Cell consumes both (input and hotbar empty), the progress ring activates and its progress climbs, and on completion the finished Fuel Cell lands in the bench output grid.",
+  "harness_scene": "res://validation/harnesses/CraftHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/CraftHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+
+    { "op": "press_action", "action": "test_load_fueldeposit_to_bench" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_load_fueldeposit_to_bench" },
+    { "op": "press_action", "action": "test_give_ore_slot0" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_give_ore_slot0" },
+
+    { "op": "press_action", "action": "test_open_fabricator" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_open_fabricator" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "ready" },
+    { "op": "assert_value", "checkpoint": "ready", "path": "harness_state.modal.input_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "ready", "path": "harness_state.modal.hotbar_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "ready", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": true },
+
+    { "op": "press_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_until", "path": "harness_state.modal.active", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "queued" },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.modal.input_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.modal.hotbar_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.modal.ring_visible", "comparator": "eq", "expected": true },
+
+    { "op": "wait_until", "path": "harness_state.modal.active_progress", "comparator": "gt", "expected": 0.3, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "progressing" },
+    { "op": "assert_value", "checkpoint": "progressing", "path": "harness_state.modal.active", "comparator": "eq", "expected": true },
+
+    { "op": "wait_until", "path": "harness_state.modal.output_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "completed" },
+    { "op": "assert_value", "checkpoint": "completed", "path": "harness_state.modal.active", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "completed", "path": "harness_state.bench_output.0.type", "comparator": "eq", "expected": "FuelCell" },
+
+    { "op": "quit" }
+  ]
+}

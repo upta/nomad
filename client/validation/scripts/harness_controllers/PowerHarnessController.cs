@@ -247,7 +247,8 @@ public partial class PowerHarnessController
                 terminal.TerminalType,
                 terminal.IsPowered,
                 terminal.IsPressurized,
-                terminal.SlotIndex
+                terminal.SlotIndex,
+                terminal.RoomId
             )
         );
 }
