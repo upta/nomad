@@ -10,6 +10,7 @@ using Chickensoft.Introspection;
 using Godot;
 using Nomad.Game.Harvest;
 using Nomad.Game.Interaction;
+using Nomad.Game.Items;
 using Nomad.Game.Map;
 using Nomad.Game.Ship;
 using Nomad.Game.Ui;
@@ -20,6 +21,10 @@ public partial class HarvestHarnessController
         IProvide<InteractionService>,
         IProvide<HarvestService>
 {
+    // Mirrors the server channel: ~25 frames (~0.4s) to complete, a comfortable
+    // window to observe the ring climb before completion.
+    private const float TestHarvestProgressPerFrame = 0.04f;
+
     private static readonly Dictionary<string, Key> ActionKeyBridge = new()
     {
         ["move_up"] = Key.W,
@@ -32,6 +37,7 @@ public partial class HarvestHarnessController
     private readonly Dictionary<string, bool> _bridgeState = [];
     private readonly HarvestService _harvestService = new();
     private readonly InteractionService _interactionService = new();
+    private readonly InventoryService _inventoryService = new();
     private readonly Dictionary<string, bool> _testActionState = [];
     private ResourceNodeTypeRegistry _nodeTypeRegistry = null!;
     private int _oreNodeId;
@@ -60,6 +66,11 @@ public partial class HarvestHarnessController
                 run();
             }
         }
+
+        // Drives the pure-mode channel forward; the real game uses the server's
+        // shared ChannelTick.
+        if (_harvestService.HasActiveHarvest)
+            _harvestService.AdvanceTestHarvest(TestHarvestProgressPerFrame);
     }
 
     public override void _Process(double delta)
@@ -77,6 +88,13 @@ public partial class HarvestHarnessController
         _shipGrid.RoomTypeRegistry = GetNode<RoomTypeRegistry>("RoomTypeRegistry");
         _spawner.Registry = _nodeTypeRegistry;
 
+        // The player breaks its own channel on movement; completion deposits the
+        // yield into the InventoryService hotbar (the harness owns the deposit,
+        // mirroring InventoryService.TestLoadRequested).
+        _player.Harvest = _harvestService;
+        _spawner.Interacted += OnNodeInteracted;
+        _harvestService.Harvested += OnTestHarvested;
+
         _testActions = new Dictionary<string, Action>
         {
             // Seeds the four node types across the east corridor, mirroring the
@@ -84,6 +102,10 @@ public partial class HarvestHarnessController
             ["test_seed_all_nodes"] = SeedAllNodes,
             ["test_seed_ore_node"] = () =>
                 _oreNodeId = _harvestService.SeedTestNode("OreVein", new Vector2(96, 0), 5),
+            // Spawns on the player's spawn cell so the InteractProbe overlaps it
+            // immediately — no flaky walk-up navigation for channel scenarios.
+            ["test_seed_node_at_origin"] = () =>
+                _oreNodeId = _harvestService.SeedTestNode("OreVein", new Vector2(0, 0), 5),
             ["test_set_ore_yield_partial"] = () => _harvestService.SetTestYield(_oreNodeId, 1),
             ["test_deplete_ore"] = () => _harvestService.SetTestYield(_oreNodeId, 0),
             ["test_clear_nodes"] = () => _harvestService.ClearTestNodes(),
@@ -151,11 +173,20 @@ public partial class HarvestHarnessController
                     ["yield_remaining"] = node.YieldRemaining,
                     ["yield_max"] = node.YieldMax,
                     ["scale"] = node.Visual.Scale.X,
+                    ["ring_visible"] = node.HarvestRingVisible,
                     ["color_r"] = node.Sprite.Color.R,
                     ["color_g"] = node.Sprite.Color.G,
                     ["color_b"] = node.Sprite.Color.B,
                 }
             );
+        }
+
+        var hotbar = new Godot.Collections.Dictionary();
+        var slots = _inventoryService.Slots;
+        for (var i = 0; i < slots.Count; i++)
+        {
+            if (slots[i] is { } typeId)
+                hotbar[i.ToString()] = typeId;
         }
 
         return new Godot.Collections.Dictionary
@@ -164,6 +195,14 @@ public partial class HarvestHarnessController
             ["node_types"] = nodeTypes,
             ["node_count"] = _spawner.NodeCount,
             ["nodes"] = nodes,
+            ["hotbar"] = hotbar,
+            ["hotbar_count"] = hotbar.Count,
+            ["harvest"] = new Godot.Collections.Dictionary
+            {
+                ["active_exists"] = _harvestService.HasActiveHarvest,
+                ["node_id"] = _harvestService.ActiveHarvestNodeId,
+                ["progress"] = _harvestService.ActiveHarvestProgress,
+            },
             ["player"] = new Godot.Collections.Dictionary
             {
                 ["x"] = _player.GlobalPosition.X,
@@ -176,6 +215,23 @@ public partial class HarvestHarnessController
                 ["prompt_visible"] = _prompt.Visible,
             },
         };
+    }
+
+    private void OnNodeInteracted(int nodeId) => _harvestService.RequestStartHarvest(nodeId);
+
+    // Pure-mode completion: map the harvested node to its yield item and drop it
+    // into the hotbar (or nowhere if full — the world-drop path is stdb-only).
+    private void OnTestHarvested(int nodeId)
+    {
+        foreach (var entry in _harvestService.Nodes)
+        {
+            if (entry.NodeId != nodeId)
+                continue;
+
+            if (_nodeTypeRegistry.Find(entry.TypeId) is { } type)
+                _inventoryService.AddTestHotbarItem(type.YieldItemId);
+            return;
+        }
     }
 
     private void SeedAllNodes()

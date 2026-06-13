@@ -37,14 +37,32 @@ public partial class ResourceNodeSpawner : Node2D
     public override void _ExitTree()
     {
         if (_subscribed)
-            Harvest.Changed -= Sync;
+            Harvest.Changed -= OnHarvestChanged;
     }
 
     public void OnResolved()
     {
-        Harvest.Changed += Sync;
+        Harvest.Changed += OnHarvestChanged;
         _subscribed = true;
+        OnHarvestChanged();
+    }
+
+    private void OnHarvestChanged()
+    {
         Sync();
+        UpdateRings();
+    }
+
+    // Show the channel ring over whichever node the local player is harvesting;
+    // the Chunked ring smooths the discrete per-tick Progress updates.
+    private void UpdateRings()
+    {
+        var active = Harvest.HasActiveHarvest;
+        var activeId = Harvest.ActiveHarvestNodeId;
+        var progress = Harvest.ActiveHarvestProgress;
+
+        foreach (var (id, node) in _nodes)
+            node.SetHarvestProgress(active && id == activeId, progress);
     }
 
     private void Sync()

@@ -136,6 +136,55 @@ public partial class ConnectedGameHarnessController : Node2D
                 5
             ),
         ["test_clear_nodes"] = conn => conn.Reducers.ClearResourceNodes(),
+        // Harvest channel probes. Spawning at the player's own position keeps
+        // the node in reach without flaky wall-clamp navigation; "nearest"
+        // targets whatever single node the scenario just spawned.
+        ["test_fast_harvest"] = conn => conn.Reducers.SetHarvestConfig(400, 0, 0),
+        ["test_spawn_node_at_player"] = conn =>
+        {
+            if (PlayerEntityPos(conn) is { } pos)
+                conn.Reducers.SpawnResourceNode(
+                    SpacetimeDB.Types.ResourceNodeTypeId.OreVein,
+                    pos.X,
+                    pos.Y,
+                    5
+                );
+        },
+        // Well beyond HarvestRadius (96) from the spawn — drives the
+        // out-of-reach rejection.
+        ["test_spawn_node_far"] = conn =>
+            conn.Reducers.SpawnResourceNode(
+                SpacetimeDB.Types.ResourceNodeTypeId.OreVein,
+                2000,
+                2000,
+                5
+            ),
+        ["test_start_harvest_nearest"] = conn =>
+        {
+            if (FindNearestNodeId(conn) is { } id)
+                conn.Reducers.StartHarvest(id);
+        },
+        ["test_cancel_harvest"] = conn => conn.Reducers.CancelHarvest(),
+        ["test_deplete_nearest_node"] = conn =>
+        {
+            if (FindNearestNodeId(conn) is { } id)
+                conn.Reducers.SetNodeYield(id, 0);
+        },
+        // Teleports the server entity far WITHOUT going through movement (so the
+        // client never fires CancelHarvest) — exercises the completion-time reach
+        // re-check on a still-active channel. The player node stays put and is
+        // stationary, so MovementNetworkSync never syncs the entity back.
+        ["test_teleport_player_far"] = conn =>
+        {
+            if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } player)
+                conn.Reducers.MoveEntity(
+                    player.PlayerEntityId,
+                    new SpacetimeDB.Types.DbVector2(2000, 2000),
+                    new SpacetimeDB.Types.DbVector2(0, 0),
+                    0f,
+                    0.0
+                );
+        },
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -225,6 +274,7 @@ public partial class ConnectedGameHarnessController : Node2D
             ["stores"] = BuildStoresState(),
             ["items"] = BuildItemsState(),
             ["nodes"] = BuildNodesState(),
+            ["harvest"] = BuildHarvestState(),
         };
 
         if (_puppet is { } puppet)
@@ -366,6 +416,37 @@ public partial class ConnectedGameHarnessController : Node2D
             {
                 nearestDistSq = distSq;
                 nearest = item.ItemId;
+            }
+        }
+
+        return nearest;
+    }
+
+    private static Vector2? PlayerEntityPos(SpacetimeDB.Types.DbConnection conn)
+    {
+        if (conn.Identity is not { } me || conn.Db.Players.Identity.Find(me) is not { } player)
+            return null;
+
+        if (conn.Db.Entities.EntityId.Find(player.PlayerEntityId) is not { } entity)
+            return null;
+
+        return new Vector2(entity.Position.X, entity.Position.Y);
+    }
+
+    private static int? FindNearestNodeId(SpacetimeDB.Types.DbConnection conn)
+    {
+        if (PlayerEntityPos(conn) is not { } origin)
+            return null;
+
+        int? nearest = null;
+        var nearestDistSq = float.MaxValue;
+        foreach (var node in conn.Db.ResourceNodes.Iter())
+        {
+            var distSq = origin.DistanceSquaredTo(new Vector2(node.Position.X, node.Position.Y));
+            if (distSq < nearestDistSq)
+            {
+                nearestDistSq = distSq;
+                nearest = node.NodeId;
             }
         }
 
@@ -718,6 +799,30 @@ public partial class ConnectedGameHarnessController : Node2D
             );
         }
         state["list"] = list;
+
+        return state;
+    }
+
+    // The local client's active channel, read straight off the ActiveHarvest
+    // row (server-written Progress — no clock-skew math).
+    private Godot.Collections.Dictionary BuildHarvestState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["active_exists"] = false,
+            ["node_id"] = 0,
+            ["progress"] = 0f,
+        };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn || conn.Identity is not { } me)
+            return state;
+
+        if (conn.Db.ActiveHarvests.Identity.Find(me) is { } harvest)
+        {
+            state["active_exists"] = true;
+            state["node_id"] = harvest.NodeId;
+            state["progress"] = harvest.Progress;
+        }
 
         return state;
     }

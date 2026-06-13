@@ -26,6 +26,10 @@ public static partial class Module
         var vitalsConfig = GetVitalsConfig(ctx);
         RescheduleVitalsTick(ctx, vitalsConfig.TickMillis);
 
+        // Creates the HarvestConfig row and starts the shared channel ticker
+        // (harvest now, crafting in 4.3).
+        RescheduleChannelTick(ctx, GetHarvestConfig(ctx).TickMillis);
+
         // Seeds the ship's shared stores (biomass = three respawns).
         GetShipStores(ctx);
 

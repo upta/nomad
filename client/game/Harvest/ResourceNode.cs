@@ -8,6 +8,7 @@ using Chickensoft.GodotNodeInterfaces;
 using Chickensoft.Introspection;
 using Godot;
 using Nomad.Game.Interaction;
+using Nomad.Game.Ui;
 
 // A harvestable node rendered from a ResourceNode row. Depletion is driven by
 // YieldRemaining/YieldMax: full color and size when untouched, lerping toward
@@ -16,6 +17,7 @@ using Nomad.Game.Interaction;
 [Meta(typeof(IAutoNode))]
 public partial class ResourceNode : Node2D
 {
+    private bool _harvestActive;
     private ResourceNodeType _type = default!;
 
     public override void _Notification(int what) => this.Notify(what);
@@ -32,6 +34,9 @@ public partial class ResourceNode : Node2D
 
     [Node]
     public ILabel Glyph { get; set; } = default!;
+
+    [Node]
+    public RadialProgress HarvestRing { get; set; } = default!;
 
     [Node]
     public IColorRect Sprite { get; set; } = default!;
@@ -73,6 +78,23 @@ public partial class ResourceNode : Node2D
         YieldMax = yieldMax;
         RefreshVisual();
     }
+
+    // Driven by the spawner from the local player's active channel. The ring
+    // snaps to empty when a channel begins (no Chunked flash of the old fill),
+    // then eases up with Progress; it hides the instant the channel ends.
+    public void SetHarvestProgress(bool active, float progress)
+    {
+        if (active && !_harvestActive)
+            HarvestRing.Reset(0f);
+
+        _harvestActive = active;
+        HarvestRing.Visible = active;
+
+        if (active)
+            HarvestRing.SetProgress(progress);
+    }
+
+    public bool HarvestRingVisible => HarvestRing.Visible;
 
     private void RefreshVisual()
     {

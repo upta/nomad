@@ -55,6 +55,11 @@ public partial class Player : CharacterBody2D
     // boundaries); enables room tracking when present.
     public Nomad.Game.Ship.HullTemplate? Hull { get; set; }
 
+    // Set by Main/harness when instantiating; lets a moving player break an
+    // active harvest channel. Not an AutoInject dependency so interaction-only
+    // harnesses don't all have to provide it.
+    public Nomad.Game.Harvest.HarvestService? Harvest { get; set; }
+
     public int CurrentSlotIndex { get; private set; } = int.MinValue;
 
     public bool IsGhostMode { get; private set; }
@@ -75,6 +80,11 @@ public partial class Player : CharacterBody2D
         var inputMagnitude = direction.Length();
         if (inputMagnitude > 1f)
             direction /= inputMagnitude;
+
+        // Moving breaks the channel — no movement lock, the harvest just ends.
+        // The server re-checks reach at completion regardless (bounded trust).
+        if (direction != Vector2.Zero && Harvest is { HasActiveHarvest: true })
+            Harvest.RequestCancelHarvest();
 
         var targetVelocity = direction * MoveSpeed * _speedModifier;
         var rate = direction != Vector2.Zero ? Acceleration : Deceleration;

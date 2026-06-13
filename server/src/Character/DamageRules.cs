@@ -32,15 +32,24 @@ public static partial class Module
             }
         );
 
-        // Death scatters the hotbar at the body. Missing player/entity rows
-        // skip the drop — the damage itself must still commit.
-        if (
-            died
-            && ctx.Db.Players.Identity.Find(identity) is { } player
-            && ctx.Db.Entities.EntityId.Find(player.PlayerEntityId) is { } entity
-        )
+        if (died)
         {
-            DropAllHotbarItems(ctx, identity, entity.Position);
+            // A corpse should show no ghost harvest progress; clear any channel
+            // before the body's hotbar scatters.
+            if (ctx.Db.ActiveHarvests.Identity.Find(identity) is not null)
+            {
+                ctx.Db.ActiveHarvests.Identity.Delete(identity);
+            }
+
+            // Death scatters the hotbar at the body. Missing player/entity rows
+            // skip the drop — the damage itself must still commit.
+            if (
+                ctx.Db.Players.Identity.Find(identity) is { } player
+                && ctx.Db.Entities.EntityId.Find(player.PlayerEntityId) is { } entity
+            )
+            {
+                DropAllHotbarItems(ctx, identity, entity.Position);
+            }
         }
     }
 

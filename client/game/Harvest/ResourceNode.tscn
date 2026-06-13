@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://game/Harvest/ResourceNode.cs" id="1"]
 [ext_resource type="Script" path="res://game/Interaction/_Component/InteractTarget.cs" id="2_target"]
 [ext_resource type="Script" path="res://game/Guide/GuideActionBinding.cs" id="3_binding"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/Interact.tres" id="4_interact"]
+[ext_resource type="PackedScene" path="res://game/Ui/RadialProgress/RadialProgress.tscn" id="5_ring"]
 
 [sub_resource type="Resource" id="interact_bound"]
 script = ExtResource("3_binding")
@@ -44,3 +45,12 @@ Trigger = SubResource("interact_bound")
 
 [node name="TargetShape" type="CollisionShape2D" parent="Target"]
 shape = SubResource("target_circle")
+
+[node name="HarvestRing" parent="." instance=ExtResource("5_ring")]
+unique_name_in_owner = true
+visible = false
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+Mode = 0

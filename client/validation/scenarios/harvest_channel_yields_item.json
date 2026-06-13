@@ -1,0 +1,38 @@
+{
+  "scenario_id": "harvest_channel_yields_item",
+  "version": 3,
+  "description": "The client harvest flow: with a node under the player, interacting starts a channel that shows the RadialProgress ring over the node and climbs Progress; on completion one unit lands in the hotbar, the node yield drops, and the ring disappears.",
+  "harness_scene": "res://validation/harnesses/HarvestHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/HarvestHarness.tscn" },
+    { "op": "wait_frames", "frames": 5 },
+
+    { "op": "press_action", "action": "test_seed_node_at_origin" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_node_at_origin" },
+    { "op": "wait_until", "path": "harness_state.node_count", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "focused" },
+    { "op": "assert_value", "checkpoint": "focused", "path": "harness_state.interaction.focused_label", "comparator": "contains", "expected": "Harvest" },
+    { "op": "assert_value", "checkpoint": "focused", "path": "harness_state.harvest.active_exists", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "focused", "path": "harness_state.nodes.0.ring_visible", "comparator": "eq", "expected": false },
+
+    { "op": "press_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "interact" },
+    { "op": "wait_until", "path": "harness_state.harvest.active_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.harvest.progress", "comparator": "gt", "expected": 0.3, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "channeling" },
+    { "op": "assert_value", "checkpoint": "channeling", "path": "harness_state.nodes.0.ring_visible", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "channeling", "path": "harness_state.nodes.0.yield_remaining", "comparator": "eq", "expected": 5 },
+
+    { "op": "wait_until", "path": "harness_state.harvest.active_exists", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 4 },
+    { "op": "checkpoint", "name": "harvested" },
+    { "op": "assert_value", "checkpoint": "harvested", "path": "harness_state.hotbar.0", "comparator": "eq", "expected": "RawOre" },
+    { "op": "assert_value", "checkpoint": "harvested", "path": "harness_state.nodes.0.yield_remaining", "comparator": "eq", "expected": 4 },
+    { "op": "assert_value", "checkpoint": "harvested", "path": "harness_state.nodes.0.ring_visible", "comparator": "eq", "expected": false },
+
+    { "op": "quit" }
+  ]
+}

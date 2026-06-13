@@ -90,6 +90,7 @@ public partial class Main
         ShipGrid.BreakerInteracted += OnBreakerInteracted;
         ShipGrid.SuitRackInteracted += OnSuitRackInteracted;
         ItemSpawner.Interacted += OnWorldItemInteracted;
+        ResourceNodeSpawner.Interacted += OnResourceNodeInteracted;
         HotbarHud.DropRequested += OnHotbarDropRequested;
         _vitalsService.Changed += OnVitalsChanged;
 
@@ -127,6 +128,7 @@ public partial class Main
         _localPlayer = PlayerScene.Instantiate<Player.Player>();
         _localPlayer.DbManagerNode = dbManager;
         _localPlayer.Hull = ShipGrid.HullTemplate;
+        _localPlayer.Harvest = _harvestService;
         AddChild(_localPlayer);
 
         _localEntityId = GetLocalEntityId(conn);
@@ -160,6 +162,7 @@ public partial class Main
         ShipGrid.BreakerInteracted -= OnBreakerInteracted;
         ShipGrid.SuitRackInteracted -= OnSuitRackInteracted;
         ItemSpawner.Interacted -= OnWorldItemInteracted;
+        ResourceNodeSpawner.Interacted -= OnResourceNodeInteracted;
         HotbarHud.DropRequested -= OnHotbarDropRequested;
         _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
@@ -202,6 +205,9 @@ public partial class Main
         );
 
     private void OnWorldItemInteracted(int itemId) => _inventoryService.RequestPickUp(itemId);
+
+    private void OnResourceNodeInteracted(int nodeId) =>
+        _harvestService.RequestStartHarvest(nodeId);
 
     private void OnSuitRackInteracted(Ship.SuitRack rack) =>
         _dbManager?.Connection?.Reducers.SetSuitEquipped(!_vitalsService.SuitEquipped);

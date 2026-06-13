@@ -668,34 +668,37 @@ Design notes (user-confirmed 2026-06-12):
 - [x] `dotnet build` + csharpier (client), `spacetime build` + format (server); uids imported (`*.cs.uid` sidecars staged)
 - [x] plan/todo ticked; `git push origin`
 
-## Task 4.2: Harvest verb (channeled) — Scope: L 🔄 PLANNED
+## Task 4.2: Harvest verb (channeled) — Scope: L ✅ DONE
 
-### Subtask 4.2.1: Server — channel + shared ticker — Scope: M
-- [ ] `Tables/HarvestConfig.cs` (single-row: `HarvestMillis` 2000, `HarvestRadius` 96f, `TickMillis` 150; getter/seeder in HarvestRules) + `Reducers/SetHarvestConfig.cs`
-- [ ] `Tables/ActiveHarvest.cs` (`Identity` PK, `NodeId`, `StartedAt`/`CompletesAt Timestamp`, `Progress float`, `Public = true`)
-- [ ] `Tables/ChannelTickTimer.cs` (private, repeating `Scheduled = nameof(Module.ChannelTick)`, `ScheduleAt.Interval` from `TickMillis`) seeded in `Init`
-- [ ] `Reducers/ChannelTick.cs` — per `ActiveHarvest`: set `Progress`; if `now ≥ CompletesAt` → re-validate alive + yield + reach off row `Identity` → `FindFreeHotbarSlot` insert (**full → World item at node**), decrement yield, delete harvest
-- [ ] `Reducers/StartHarvest.cs` (auth + alive + node exists + "Node is depleted." + reach + free-slot precheck; upsert sender's `ActiveHarvest`) + `Reducers/CancelHarvest.cs` (delete sender's; no-op if none)
-- [ ] `DamageRules.ApplyDamage` death hook clears victim's harvest; publish + generate + builds; CLI round trip verified
+### Subtask 4.2.1: Server — channel + shared ticker — Scope: M ✅
+- [x] `Tables/HarvestConfig.cs` (single-row Id 0: `HarvestMillis` 2000, `HarvestRadius` 96f, `TickMillis` 150; `GetHarvestConfig`/`RescheduleChannelTick` in HarvestRules) + `Reducers/SetHarvestConfig.cs` (any non-positive arg = keep current, SetFuelBurn convention)
+- [x] `Tables/ActiveHarvest.cs` (`Identity` PK, `NodeId`, `StartedAt`/`CompletesAt Timestamp`, `Progress float`, `Public = true`)
+- [x] `Tables/ChannelTickTimer.cs` (private, repeating `Scheduled = nameof(Module.ChannelTick)`, `ScheduleAt.Interval` from `TickMillis`) seeded in `Init`
+- [x] `Reducers/ChannelTick.cs` — collect-then-mutate over `ActiveHarvest`: set `Progress = clamp((now−StartedAt)/dur)` via `Timestamp.TimeDurationSince(...).Microseconds`; if `now.CompareTo(CompletesAt) ≥ 0` → `CompleteHarvest` (delete row first, then re-validate alive + node yield + reach off row `Identity`; reach check BEFORE decrement) → `FindFreeHotbarSlot` insert (**full → World item at node**), decrement yield
+- [x] `Reducers/StartHarvest.cs` (auth + alive + node exists + "Node is depleted." + reach + free-hotbar-slot precheck; upsert sender's `ActiveHarvest`) + `Reducers/CancelHarvest.cs` (delete sender's; no-op if none)
+- [x] `DamageRules.ApplyDamage` death hook clears victim's harvest (before the hotbar scatter); `SetNodeYield.cs` debug setter (for depleted-node validation). Publish `--delete-data=always` + generate + builds; HarvestConfig/ChannelTickTimer seeded (verified via `spacetime sql`)
+- Confirmed `SpacetimeDB.Timestamp` API by DLL reflection: `MicrosecondsSinceUnixEpoch`, `TimeDurationSince`, `op_Addition(Timestamp,TimeDuration)`, `CompareTo`, `op_LessThan/GreaterThan`; `Timestamp + TimeSpan` works via implicit `TimeSpan→TimeDuration`.
 
-### Subtask 4.2.2: stdb validation — Scope: M
-- [ ] Harness `harvest` section (active exists/node_id/progress) + `test_fast_harvest` (400ms), `test_start_harvest_<node>`, `test_cancel_harvest`, `test_fill_hotbar`
-- [ ] `harvest_round_trip.json` (start → progress crosses 0.5 → item + yield down) + `harvest_cancel_and_rejections.json` (cancel/out-of-reach/depleted) + `harvest_full_hotbar_drops_world.json`
+### Subtask 4.2.2: stdb validation — Scope: M ✅
+- [x] `ConnectedGameHarnessController`: `harvest` observed section (active_exists/node_id/progress) + `test_fast_harvest`, `test_spawn_node_at_player`/`test_spawn_node_far`, `test_start_harvest_nearest`, `test_cancel_harvest`, `test_deplete_nearest_node`, `test_teleport_player_far`; `FindNearestNodeId`/`PlayerEntityPos` helpers. (Nodes spawned AT the player's server position to guarantee reach without flaky wall-clamp navigation.)
+- [x] `harvest_round_trip.json` (start → progress > 0.5 → **restart upsert resets progress** → completes once → item + yield 5→4) + `harvest_cancel_and_rejections.json` (cancel mid-channel / out-of-reach / depleted-at-start) + `harvest_full_hotbar_drops_world.json` (fill hotbar mid-channel → world drop, no hotbar ore, yield down)
 
-### Subtask 4.2.3: Client — RadialProgress port — Scope: M
-- [ ] `client/game/Ui/RadialProgress/RadialProgress.gdshader` (verbatim) + `RadialProgress.cs` (port of `radial_progress.gd`) + `RadialProgress.tscn` (ShaderMaterial `resource_local_to_scene = true`)
-- [ ] `[Export] ProgressMode Mode` — Chunked (tweened) / Continuous (direct); `radial_progress_modes.json` (continuous exact; chunked mid-tween between old/new) + screenshot review
+### Subtask 4.2.3: Client — RadialProgress port — Scope: M ✅
+- [x] `client/game/Ui/RadialProgress/RadialProgress.gdshader` (verbatim copy from trail) + `RadialProgress.cs` (port of `radial_progress.gd`; tween methods via `Callable.From<float>`; `Reset(value)` snap-without-tween for channel start) + `RadialProgress.tscn` (ShaderMaterial `resource_local_to_scene = true`, declared in scene not built in `_Ready`)
+- [x] `[Export] ProgressMode Mode` — Chunked (tweened ease toward each target) / Continuous (direct set, tweens bypassed); `radial_progress_modes.json` (continuous snaps to set value exactly; chunked still mid-ease at the same early frame, settles later) + ring screenshots reviewed (two 40% arcs)
 
-### Subtask 4.2.4: Client — harvest flow — Scope: M
-- [ ] `HarvestService` active-harvest half (subscribe `ActiveHarvests` local-identity; `Progress` read off row), `RequestStartHarvest`/`RequestCancelHarvest` (reducer connected / local mirror)
-- [ ] `ResourceNode` interact → start; Chunked `RadialProgress` over node tracks `Progress`, hidden when none; `Player.cs` movement while harvesting → `RequestCancelHarvest()` (no movement lock)
+### Subtask 4.2.4: Client — harvest flow — Scope: M ✅
+- [x] `HarvestService` active-harvest half (subscribe `ActiveHarvests` filtered to local identity; `Progress` read off the row), `RequestStartHarvest`/`RequestCancelHarvest` (reducer when connected, local mirror + `AdvanceTestHarvest`/`Harvested` event in test mode)
+- [x] `ResourceNode` `%HarvestRing` (RadialProgress instance, Chunked, hidden) + `SetHarvestProgress(active, progress)`; `ResourceNodeSpawner.UpdateRings` drives it from the local active channel; `Player.Harvest` settable prop (not an AutoInject dep) → movement while harvesting fires `RequestCancelHarvest()` (no movement lock); `Main` wires `ResourceNodeSpawner.Interacted` → start + hands the player the service
 
-### Subtask 4.2.5: Pure validation — Scope: M
-- [ ] HarvestHarness pure mirror (local tick drives `Progress` + yields into InventoryService hotbar)
-- [ ] `harvest_channel_yields_item.json` (ring + progress climb → item + yield down) + `harvest_move_cancels.json` (move mid-channel → ring gone, no item)
+### Subtask 4.2.5: Pure validation — Scope: M ✅
+- [x] `HarvestHarnessController`: pure mirror (`_PhysicsProcess` advances `AdvanceTestHarvest`; `Harvested` → `InventoryService.AddTestHotbarItem` via registry YieldItemId), `test_seed_node_at_origin` (player overlaps node → no walk-up), `harvest`/`hotbar`/`ring_visible` observed
+- [x] `harvest_channel_yields_item.json` (interact → ring visible + progress climbs → RawOre in hotbar, yield 5→4, ring gone) + `harvest_move_cancels.json` (interact → move → ring gone, hotbar empty, yield untouched); ring-over-node screenshot reviewed
 
-### Subtask 4.2.6: DoD sweep — Scope: S
-- [ ] Both suites green, boot clean, builds + format, screenshot review, plan/todo tick, push
+### Subtask 4.2.6: DoD sweep + adversarial review — Scope: S ✅
+- [x] `./scripts/validate_all.ps1` — both suites green (pure + 38 stdb), no regressions; game boots clean 13s (zero ERROR, DbManager connected + subscription + 4 node types); `dotnet build` + csharpier (client), `spacetime build` + format (server); uids imported
+- [x] **Adversarial review** (4-lens workflow → skeptic verification): 12 raised, 7 confirmed, 5 rejected as nits. Applied: move-cancel reducer-spam latch (optimistic local end on cancel, cf. TrackCurrentRoom) + gate `Changed` to self-rows only (skip remote harvesters' per-tick churn); added coverage for the **completion-time reach re-check** (`harvest_completion_revalidates.json` — teleport server entity out of reach via MoveEntity without CancelHarvest, also depleted-mid-channel), **death-during-channel clear** (`harvest_death_clears_channel.json`), and channel **restart/upsert** (folded into round_trip). Rejected nits: HarvestService rebind symmetry (latent only), `fill_easing` export drop (default-identical), Continuous no-op signal emit (no subscribers), `[Tool]` omission (scene-first material handles editor preview), unused `test_fast_harvest`.
+- [ ] **Deferred (4.3):** two simultaneous channels through the one shared `ChannelTick` are not yet exercised by a scenario (the collect-then-mutate multi-row path) — needs puppet-driven harvest infra (PuppetClient only moves). Land it when 4.3 extends ChannelTick to CraftingJob, where multi-row coverage matters more.
 
 ## Task 4.3: Bench crafting + Fabricator modal (Refine verb) — Scope: L 🔄 PLANNED
 

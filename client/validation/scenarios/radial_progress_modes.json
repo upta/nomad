@@ -1,0 +1,51 @@
+{
+  "scenario_id": "radial_progress_modes",
+  "version": 3,
+  "description": "The RadialProgress port's two modes: both rings start full (1.0); after setting both to 0.4, the Continuous ring's current value snaps to 0.4 exactly that same frame while the Chunked ring is still mid-ease (well above 0.4); after the ease settles the Chunked ring also reaches 0.4.",
+  "harness_scene": "res://validation/harnesses/RadialProgressHarness.tscn",
+  "done_contract": { "target": 0.4, "tolerance": 0.02 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/RadialProgressHarness.tscn" },
+    { "op": "wait_frames", "frames": 8 },
+    { "op": "checkpoint", "name": "start" },
+    { "op": "assert_value", "checkpoint": "start", "path": "harness_state.chunked.current", "comparator": "eq", "expected": 1.0 },
+    { "op": "assert_value", "checkpoint": "start", "path": "harness_state.continuous.current", "comparator": "eq", "expected": 1.0 },
+
+    { "op": "press_action", "action": "test_set_both_04" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_set_both_04" },
+    { "op": "checkpoint", "name": "early" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "current": { "kind": "checkpoint", "checkpoint": "early", "path": "harness_state.continuous.current" },
+        "target": { "kind": "contract", "path": "done_contract.target" },
+        "tolerance": { "kind": "contract", "path": "done_contract.tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["current", "target"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    { "op": "assert_value", "checkpoint": "early", "path": "harness_state.chunked.current", "comparator": "gt", "expected": 0.55 },
+
+    { "op": "wait_frames", "frames": 70 },
+    { "op": "checkpoint", "name": "settled" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "current": { "kind": "checkpoint", "checkpoint": "settled", "path": "harness_state.chunked.current" },
+        "target": { "kind": "contract", "path": "done_contract.target" },
+        "tolerance": { "kind": "contract", "path": "done_contract.tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["current", "target"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+
+    { "op": "quit" }
+  ]
+}

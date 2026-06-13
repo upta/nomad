@@ -213,6 +213,20 @@ public class InventoryService
         Changed?.Invoke();
     }
 
+    // Test-mode harvest yield drop: places an item in the first free hotbar
+    // slot, or returns null if the hotbar is full (caller falls back to a world
+    // drop, mirroring the server's ChannelTick completion).
+    public int? AddTestHotbarItem(string typeId)
+    {
+        if (FindFreeTestSlot() is not { } slot)
+            return null;
+
+        var itemId = _nextTestItemId++;
+        _hotbarItems[itemId] = new HotbarItemEntry(itemId, typeId, slot);
+        Changed?.Invoke();
+        return slot;
+    }
+
     public int SeedTestStoredItem(string typeId, int roomSlot)
     {
         if (FindFreeTestStoreSlot(roomSlot) is not { } storeSlot)
