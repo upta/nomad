@@ -12,10 +12,13 @@ using SpacetimeDB.Types;
 // directly so pure harnesses can drive the same consumers.
 public class InventoryService
 {
+    private const int DefaultCargoCapacity = 12;
     private const int DefaultHotbarSlots = 4;
 
     private readonly Dictionary<int, HotbarItemEntry> _hotbarItems = [];
+    private readonly Dictionary<int, StoredItemEntry> _storedItems = [];
     private readonly SortedDictionary<int, WorldItemEntry> _worldItems = [];
+    private int _cargoCapacity = DefaultCargoCapacity;
     private DbConnection? _conn;
     private int _hotbarSlotCount = DefaultHotbarSlots;
     private int _nextTestItemId = 1;
@@ -25,6 +28,8 @@ public class InventoryService
     // Test-mode mirror of the LoadItem reducer — pure harnesses bump their
     // own counters (biomass/fuel) when a deposit request fires.
     public event Action<string, int>? TestLoadRequested;
+
+    public int CargoCapacity => _cargoCapacity;
 
     public int HotbarSlotCount => _hotbarSlotCount;
 
@@ -52,7 +57,10 @@ public class InventoryService
         _conn = conn;
 
         if (conn.Db.InventoryConfigs.Id.Find(0) is { } config)
+        {
             _hotbarSlotCount = config.HotbarSlots;
+            _cargoCapacity = config.CargoCapacity;
+        }
 
         foreach (var item in conn.Db.Items.Iter())
             Apply(item);
@@ -90,6 +98,7 @@ public class InventoryService
     {
         _worldItems.Clear();
         _hotbarItems.Clear();
+        _storedItems.Clear();
         Changed?.Invoke();
     }
 
@@ -136,6 +145,55 @@ public class InventoryService
         TestLoadRequested?.Invoke(typeId, roomSlotIndex);
     }
 
+    // Storage deposit — the same LoadItem verb as RequestLoad, addressed by
+    // hotbar slot because the storage branch takes any item type.
+    public void RequestStore(int slotIndex, int roomSlotIndex)
+    {
+        if (_conn is { } conn)
+        {
+            conn.Reducers.LoadItem(slotIndex, roomSlotIndex);
+            return;
+        }
+
+        foreach (var (itemId, entry) in _hotbarItems)
+        {
+            if (entry.SlotIndex != slotIndex)
+                continue;
+
+            if (FindFreeTestStoreSlot(roomSlotIndex) is not { } storeSlot)
+                return;
+
+            _hotbarItems.Remove(itemId);
+            _storedItems[itemId] = new StoredItemEntry(
+                itemId,
+                entry.TypeId,
+                roomSlotIndex,
+                storeSlot
+            );
+            Changed?.Invoke();
+            return;
+        }
+    }
+
+    public void RequestWithdraw(int itemId)
+    {
+        if (_conn is { } conn)
+        {
+            conn.Reducers.WithdrawItem(itemId);
+            return;
+        }
+
+        if (!_storedItems.TryGetValue(itemId, out var entry))
+            return;
+
+        if (FindFreeTestSlot() is not { } slot)
+            return;
+
+        _storedItems.Remove(itemId);
+        _hotbarItems[itemId] = new HotbarItemEntry(itemId, entry.TypeId, slot);
+        Changed?.Invoke();
+    }
+
     public void RequestPickUp(int itemId)
     {
         if (_conn is { } conn)
@@ -155,12 +213,36 @@ public class InventoryService
         Changed?.Invoke();
     }
 
+    public int SeedTestStoredItem(string typeId, int roomSlot)
+    {
+        if (FindFreeTestStoreSlot(roomSlot) is not { } storeSlot)
+            return -1;
+
+        var itemId = _nextTestItemId++;
+        _storedItems[itemId] = new StoredItemEntry(itemId, typeId, roomSlot, storeSlot);
+        Changed?.Invoke();
+        return itemId;
+    }
+
     public int SeedTestWorldItem(string typeId, Vector2 position)
     {
         var itemId = _nextTestItemId++;
         _worldItems[itemId] = new WorldItemEntry(itemId, typeId, position);
         Changed?.Invoke();
         return itemId;
+    }
+
+    public IReadOnlyList<StoredItemEntry> StoredIn(int roomSlot)
+    {
+        var entries = new List<StoredItemEntry>();
+        foreach (var entry in _storedItems.Values)
+        {
+            if (entry.RoomSlot == roomSlot)
+                entries.Add(entry);
+        }
+
+        entries.Sort((a, b) => a.SlotIndex.CompareTo(b.SlotIndex));
+        return entries;
     }
 
     public void SelectSlot(int index)
@@ -206,11 +288,13 @@ public class InventoryService
 
     private void Apply(Item item)
     {
-        // Pickup is a row UPDATE (World → Hotbar), not a delete — rows that
-        // leave World must be evicted here, not just in OnDelete.
+        // Location moves are row UPDATEs (World → Hotbar → Stored), not
+        // deletes — rows leaving a location must be evicted here, not just
+        // in OnDelete.
         if (item.LocationKind == ItemLocationKind.World)
         {
             _hotbarItems.Remove(item.ItemId);
+            _storedItems.Remove(item.ItemId);
             _worldItems[item.ItemId] = new WorldItemEntry(
                 item.ItemId,
                 item.ItemTypeId.ToString(),
@@ -220,6 +304,20 @@ public class InventoryService
         }
 
         _worldItems.Remove(item.ItemId);
+
+        if (item.LocationKind == ItemLocationKind.Stored)
+        {
+            _hotbarItems.Remove(item.ItemId);
+            _storedItems[item.ItemId] = new StoredItemEntry(
+                item.ItemId,
+                item.ItemTypeId.ToString(),
+                item.RoomSlotIndex,
+                item.SlotIndex
+            );
+            return;
+        }
+
+        _storedItems.Remove(item.ItemId);
 
         if (
             item.LocationKind == ItemLocationKind.Hotbar
@@ -237,6 +335,24 @@ public class InventoryService
         {
             _hotbarItems.Remove(item.ItemId);
         }
+    }
+
+    private int? FindFreeTestStoreSlot(int roomSlot)
+    {
+        var occupied = new HashSet<int>();
+        foreach (var entry in _storedItems.Values)
+        {
+            if (entry.RoomSlot == roomSlot)
+                occupied.Add(entry.SlotIndex);
+        }
+
+        for (var slot = 0; slot < _cargoCapacity; slot++)
+        {
+            if (!occupied.Contains(slot))
+                return slot;
+        }
+
+        return null;
     }
 
     private int? FindFreeTestSlot()
@@ -258,6 +374,7 @@ public class InventoryService
     {
         _worldItems.Remove(item.ItemId);
         _hotbarItems.Remove(item.ItemId);
+        _storedItems.Remove(item.ItemId);
         Changed?.Invoke();
     }
 
@@ -275,5 +392,7 @@ public class InventoryService
 }
 
 public record HotbarItemEntry(int ItemId, string TypeId, int SlotIndex);
+
+public record StoredItemEntry(int ItemId, string TypeId, int RoomSlot, int SlotIndex);
 
 public record WorldItemEntry(int ItemId, string TypeId, Vector2 Position);

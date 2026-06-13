@@ -38,6 +38,9 @@ public partial class ModalHost : CanvasLayer
     public PackedScene StarChartModal { get; set; } = null!;
 
     [Export]
+    public PackedScene StorageModal { get; set; } = null!;
+
+    [Export]
     public InputModeContext UiModeContext { get; set; } = null!;
 
     public Control? CurrentModal => _current;
@@ -107,6 +110,7 @@ public partial class ModalHost : CanvasLayer
             TerminalType.PowerRouter => PowerRouterModal,
             TerminalType.Fabricator => FabricatorModal,
             TerminalType.Cloning => CloningModal,
+            TerminalType.Storage => StorageModal,
             _ => InfoModal,
         };
 }

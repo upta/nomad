@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://game/Ui/ModalHost.cs" id="1"]
 [ext_resource type="Script" path="res://game/Guide/GuideActionBinding.cs" id="2_binding"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://game/Ui/Modals/RoomInfoModal.tscn" id="5_info"]
 [ext_resource type="PackedScene" path="res://game/Ui/Modals/PowerRouterModal.tscn" id="6_power_router"]
 [ext_resource type="PackedScene" path="res://game/Ui/Modals/CloningModal.tscn" id="7_cloning"]
+[ext_resource type="PackedScene" path="res://game/Ui/Modals/StorageModal.tscn" id="8_storage"]
 
 [sub_resource type="Resource" id="cancel_bound"]
 script = ExtResource("2_binding")
@@ -21,3 +22,4 @@ PowerRouterModal = ExtResource("6_power_router")
 FabricatorModal = ExtResource("5_info")
 CloningModal = ExtResource("7_cloning")
 InfoModal = ExtResource("5_info")
+StorageModal = ExtResource("8_storage")

@@ -13,14 +13,16 @@ using Ui;
     typeof(IProvide<InteractionService>),
     typeof(IProvide<Ship.PowerGridService>),
     typeof(IProvide<Character.VitalsService>),
-    typeof(IProvide<Items.InventoryService>)
+    typeof(IProvide<Items.InventoryService>),
+    typeof(IProvide<Items.ItemTypeRegistry>)
 )]
 public partial class Main
     : Node2D,
         IProvide<InteractionService>,
         IProvide<Ship.PowerGridService>,
         IProvide<Character.VitalsService>,
-        IProvide<Items.InventoryService>
+        IProvide<Items.InventoryService>,
+        IProvide<Items.ItemTypeRegistry>
 {
     private readonly InteractionService _interactionService = new();
     private readonly Items.InventoryService _inventoryService = new();
@@ -95,6 +97,8 @@ public partial class Main
     Character.VitalsService IProvide<Character.VitalsService>.Value() => _vitalsService;
 
     Items.InventoryService IProvide<Items.InventoryService>.Value() => _inventoryService;
+
+    Items.ItemTypeRegistry IProvide<Items.ItemTypeRegistry>.Value() => ItemTypeRegistry;
 
     public void InstantiatePlayer(Db.DbManager dbManager)
     {
