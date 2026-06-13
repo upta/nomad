@@ -309,6 +309,9 @@ public partial class ShipGrid : Node2D
         QueueRedraw();
     }
 
+    public bool IsRoomPressurized(int slotIndex) =>
+        !_assignments.TryGetValue(slotIndex, out var ra) || ra.IsPressurized;
+
     private void AddFloorRect(int x, int y, int width, int height)
     {
         for (var dx = 0; dx < width; dx++)

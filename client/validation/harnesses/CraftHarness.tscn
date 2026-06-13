@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://validation/scripts/harness_controllers/CraftHarnessController.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Map/ShipGrid.tscn" id="2"]
@@ -24,9 +24,11 @@
 [ext_resource type="Resource" path="res://game/Items/ItemTypes/FuelCellItem.tres" id="it3"]
 [ext_resource type="Resource" path="res://game/Items/ItemTypes/ScrapItem.tres" id="it4"]
 [ext_resource type="Resource" path="res://game/Items/ItemTypes/ComponentsItem.tres" id="it5"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/MealItem.tres" id="it6"]
 [ext_resource type="Script" path="res://game/Crafting/RecipeRegistry.cs" id="cr_registry"]
 [ext_resource type="Script" path="res://game/Crafting/Recipe.cs" id="cr_script"]
 [ext_resource type="Resource" path="res://game/Crafting/Recipes/FuelCellRecipe.tres" id="cr0"]
+[ext_resource type="Resource" path="res://game/Crafting/Recipes/MealRecipe.tres" id="cr1"]
 
 [node name="CraftHarness" type="Node2D"]
 script = ExtResource("1")
@@ -37,11 +39,11 @@ RoomTypes = Array[ExtResource("rt_script")]([ExtResource("rt0"), ExtResource("rt
 
 [node name="ItemTypeRegistry" type="Node" parent="."]
 script = ExtResource("it_registry")
-ItemTypes = Array[ExtResource("it_script")]([ExtResource("it0"), ExtResource("it1"), ExtResource("it2"), ExtResource("it3"), ExtResource("it4"), ExtResource("it5")])
+ItemTypes = Array[ExtResource("it_script")]([ExtResource("it0"), ExtResource("it1"), ExtResource("it2"), ExtResource("it3"), ExtResource("it4"), ExtResource("it5"), ExtResource("it6")])
 
 [node name="RecipeRegistry" type="Node" parent="."]
 script = ExtResource("cr_registry")
-Recipes = Array[ExtResource("cr_script")]([ExtResource("cr0")])
+Recipes = Array[ExtResource("cr_script")]([ExtResource("cr0"), ExtResource("cr1")])
 
 [node name="ShipGrid" parent="." instance=ExtResource("2")]
 HullTemplate = ExtResource("4")

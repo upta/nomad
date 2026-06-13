@@ -1,0 +1,20 @@
+{
+  "scenario_id": "fabricator_kitchen_lists_meal",
+  "version": 3,
+  "description": "The Kitchen Fabricator modal lists only the Meal recipe (per-bench filter) — never the Workshop's Fuel Cell.",
+  "harness_scene": "res://validation/harnesses/CraftHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/CraftHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "press_action", "action": "test_open_kitchen_fabricator" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_open_kitchen_fabricator" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "kitchen_modal" },
+    { "op": "assert_value", "checkpoint": "kitchen_modal", "path": "harness_state.modal.title", "comparator": "eq", "expected": "Kitchen" },
+    { "op": "assert_value", "checkpoint": "kitchen_modal", "path": "harness_state.modal.recipe_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "kitchen_modal", "path": "harness_state.modal.recipes.0.label", "comparator": "eq", "expected": "Meal" },
+    { "op": "quit" }
+  ]
+}

@@ -103,6 +103,24 @@ public partial class PowerHarnessController
             ["test_assign_kitchen_reactor"] = () => AssignTestRoom(5, "Reactor"),
             ["test_depressurize_kitchen"] = () => _shipGrid.SetTestPressurization(5, false),
             ["test_repressurize_kitchen"] = () => _shipGrid.SetTestPressurization(5, true),
+            // Hydroponics (slot 3) keeps an Info terminal — the only room whose
+            // RoomInfoModal (with its pressure text) a player can still open
+            // in-game now that Kitchen/Workshop are crafting benches.
+            ["test_depressurize_hydroponics"] = () => _shipGrid.SetTestPressurization(3, false),
+            // Direct-open the Hydroponics RoomInfoModal carrying the room's live
+            // pressure state — deterministic (no walk-up nav flake), and it opens
+            // the real Info modal regardless of where the player is standing.
+            ["test_open_hydroponics_info_modal"] = () =>
+                _modalHost.Open(
+                    new RoomModalInfo(
+                        "Hydroponics",
+                        TerminalType.Info,
+                        true,
+                        _shipGrid.IsRoomPressurized(3),
+                        3,
+                        "Hydroponics"
+                    )
+                ),
             ["test_depressurize_corridor"] = () => _shipGrid.SetTestPressurization(7, false),
             ["test_repressurize_corridor"] = () => _shipGrid.SetTestPressurization(7, true),
             ["test_seed_fuel_store"] = () => _powerGridService.SetTestFuel(5, 0),

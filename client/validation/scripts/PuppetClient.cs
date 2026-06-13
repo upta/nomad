@@ -35,6 +35,23 @@ public partial class PuppetClient : Node
 
     public int WorldItemCount => CountItems(ItemLocationKind.World);
 
+    // Sum of all resource-node yields the puppet observes — proof a second
+    // client sees node depletion as the first client harvests.
+    public int TotalNodeYield
+    {
+        get
+        {
+            if (_conn is null || !_dataReady)
+                return -1;
+
+            var total = 0;
+            foreach (var node in _conn.Db.ResourceNodes.Iter())
+                total += node.YieldRemaining;
+
+            return total;
+        }
+    }
+
     public override void _ExitTree()
     {
         _conn?.Disconnect();

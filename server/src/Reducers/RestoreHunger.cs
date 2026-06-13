@@ -18,17 +18,6 @@ public static partial class Module
             );
         }
 
-        if (ctx.Db.VitalsRows.Identity.Find(ctx.Sender) is not { } vitals)
-        {
-            throw new System.InvalidOperationException("No vitals row for this identity.");
-        }
-
-        var hunger = System.Math.Min(vitals.Hunger.Max, vitals.Hunger.Current + amount);
-        ctx.Db.VitalsRows.Identity.Update(
-            vitals with
-            {
-                Hunger = vitals.Hunger with { Current = hunger },
-            }
-        );
+        RestoreHungerFor(ctx, ctx.Sender, amount);
     }
 }

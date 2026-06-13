@@ -21,8 +21,30 @@ public static partial class Module
                 SuitCapacityMultiplier = 2f,
                 SuitSpeedFactor = 0.8f,
                 RespawnBiomassCost = 1,
+                // One meal restores half a full stomach — the eat-from-hotbar
+                // amount, never a client-supplied value.
+                MealHungerRestore = 50f,
             }
         );
+
+    // Shared hunger restore: the RestoreHunger reducer and EatItem both land
+    // here. Callers own auth/amount validation; this clamps and writes. Throws
+    // if the identity has no vitals row (preserves RestoreHunger's contract).
+    private static void RestoreHungerFor(ReducerContext ctx, Identity identity, float amount)
+    {
+        if (ctx.Db.VitalsRows.Identity.Find(identity) is not { } vitals)
+        {
+            throw new System.InvalidOperationException("No vitals row for this identity.");
+        }
+
+        var hunger = System.Math.Min(vitals.Hunger.Max, vitals.Hunger.Current + amount);
+        ctx.Db.VitalsRows.Identity.Update(
+            vitals with
+            {
+                Hunger = vitals.Hunger with { Current = hunger },
+            }
+        );
+    }
 
     // The repeating tick is a single row; replacing it (rather than updating)
     // is the only way to change the interval of a scheduled table.

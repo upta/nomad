@@ -29,6 +29,11 @@ public class InventoryService
     // own counters (biomass/fuel) when a deposit request fires.
     public event Action<string, int>? TestLoadRequested;
 
+    // Test-mode mirror of the EatItem reducer — pure harnesses decide edibility
+    // and restore hunger on the VitalsService (which this service can't reach).
+    // Carries the slot index and the type id occupying it (null if empty).
+    public event Action<int, string?>? TestUseRequested;
+
     public int CargoCapacity => _cargoCapacity;
 
     public int HotbarSlotCount => _hotbarSlotCount;
@@ -128,6 +133,30 @@ public class InventoryService
                 return;
             }
         }
+    }
+
+    // Use (eat) the item in a hotbar slot. Connected mode delegates to EatItem,
+    // which decides edibility server-side; test mode hands the slot's type to
+    // the harness mirror, which consumes + restores hunger only if it's edible.
+    public void RequestUse(int slotIndex)
+    {
+        if (_conn is { } conn)
+        {
+            conn.Reducers.EatItem(slotIndex);
+            return;
+        }
+
+        string? typeId = null;
+        foreach (var entry in _hotbarItems.Values)
+        {
+            if (entry.SlotIndex == slotIndex)
+            {
+                typeId = entry.TypeId;
+                break;
+            }
+        }
+
+        TestUseRequested?.Invoke(slotIndex, typeId);
     }
 
     public void RequestLoad(string typeId, int roomSlotIndex)

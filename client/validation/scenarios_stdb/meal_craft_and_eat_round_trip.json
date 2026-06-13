@@ -1,0 +1,57 @@
+{
+  "scenario_id": "meal_craft_and_eat_round_trip",
+  "version": 3,
+  "description": "Biomass crafts a Meal at the Kitchen bench; the meal is withdrawn into the hotbar and eaten on the server, restoring hunger by the configured amount (delta asserted so the slow vitals drain can't skew it).",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "done_contract": { "min_hunger_restore": 40.0 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "press_action", "action": "test_fast_craft" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_fast_craft" },
+    { "op": "press_action", "action": "test_teleport_to_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_kitchen" },
+    { "op": "press_action", "action": "test_load_biomass_to_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_load_biomass_to_kitchen" },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.5.input_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "biomass_loaded" },
+    { "op": "press_action", "action": "test_queue_meal" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_meal" },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.5.active_recipe", "comparator": "eq", "expected": "Meal", "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "crafting" },
+    { "op": "assert_value", "checkpoint": "crafting", "path": "harness_state.crafting.benches.5.input_count", "comparator": "eq", "expected": 0 },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.5.output_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "meal_crafted" },
+    { "op": "press_action", "action": "test_set_hunger_low" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_hunger_low" },
+    { "op": "wait_until", "path": "harness_state.vitals.hunger", "comparator": "lte", "expected": 10, "timeout_frames": 200 },
+    { "op": "press_action", "action": "test_withdraw_first_kitchen_output" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_withdraw_first_kitchen_output" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "Meal", "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "meal_in_hotbar" },
+    { "op": "press_action", "action": "test_eat_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_eat_slot0" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "eaten" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before_hunger": { "kind": "checkpoint", "checkpoint": "meal_in_hotbar", "path": "harness_state.vitals.hunger" },
+        "after_hunger": { "kind": "checkpoint", "checkpoint": "eaten", "path": "harness_state.vitals.hunger" },
+        "threshold": { "kind": "contract", "path": "done_contract.min_hunger_restore" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["after_hunger", "before_hunger"], "as": "restored" }
+      ],
+      "assert": { "actual": "restored", "comparator": "gte", "expected_source": "threshold" }
+    },
+    { "op": "quit" }
+  ]
+}

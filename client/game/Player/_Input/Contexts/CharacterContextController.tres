@@ -16,6 +16,7 @@
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot2.tres" id="13_slot2"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot3.tres" id="14_slot3"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot4.tres" id="15_slot4"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarUse.tres" id="16_use"]
 
 [sub_resource type="Resource" id="Resource_joy_axis"]
 script = ExtResource("5_joy2d")
@@ -114,6 +115,19 @@ script = ExtResource("1_mapping")
 action = ExtResource("10_drop")
 input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_drop_input")])
 
+[sub_resource type="Resource" id="Resource_use_btn"]
+script = ExtResource("11_joybtn")
+button = 3
+
+[sub_resource type="Resource" id="Resource_use_input"]
+script = ExtResource("4_input")
+input = SubResource("Resource_use_btn")
+
+[sub_resource type="Resource" id="Resource_use_action"]
+script = ExtResource("1_mapping")
+action = ExtResource("16_use")
+input_mappings = Array[ExtResource("4_input")]([SubResource("Resource_use_input")])
+
 [resource]
 script = ExtResource("2_ctx")
-mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_interact_action"), SubResource("Resource_slot1_action"), SubResource("Resource_slot2_action"), SubResource("Resource_slot3_action"), SubResource("Resource_slot4_action"), SubResource("Resource_drop_action")])
+mappings = Array[ExtResource("1_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_interact_action"), SubResource("Resource_slot1_action"), SubResource("Resource_slot2_action"), SubResource("Resource_slot3_action"), SubResource("Resource_slot4_action"), SubResource("Resource_drop_action"), SubResource("Resource_use_action")])

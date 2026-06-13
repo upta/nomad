@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://game/Ui/HotbarHud.cs" id="1"]
 [ext_resource type="Script" path="res://game/Guide/GuideActionBinding.cs" id="2_binding"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot3.tres" id="5_slot3"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarSlot4.tres" id="6_slot4"]
 [ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarDropItem.tres" id="7_drop"]
+[ext_resource type="Resource" path="res://game/Player/_Input/Actions/HotbarUse.tres" id="9_use"]
 [ext_resource type="PackedScene" path="res://game/Ui/ItemSlotPanel.tscn" id="8_panel"]
 
 [sub_resource type="Resource" id="slot1_bound"]
@@ -29,6 +30,10 @@ Action = ExtResource("6_slot4")
 script = ExtResource("2_binding")
 Action = ExtResource("7_drop")
 
+[sub_resource type="Resource" id="use_bound"]
+script = ExtResource("2_binding")
+Action = ExtResource("9_use")
+
 [node name="HotbarHud" type="CanvasLayer"]
 script = ExtResource("1")
 Slot1Action = SubResource("slot1_bound")
@@ -36,6 +41,7 @@ Slot2Action = SubResource("slot2_bound")
 Slot3Action = SubResource("slot3_bound")
 Slot4Action = SubResource("slot4_bound")
 DropAction = SubResource("drop_bound")
+UseAction = SubResource("use_bound")
 
 [node name="Root" type="Control" parent="."]
 layout_mode = 3

@@ -39,13 +39,6 @@ public static partial class Module
         // Seeds crafting tunables and bench input/output zone sizes.
         GetCraftingConfig(ctx);
 
-        // Dev/test convenience until real item sources (harvesting) land in
-        // Phase 4: a couple of pickupable items in the corridor west of the
-        // spawn point, off every validation scenario's walk path.
-        SeedWorldItem(ctx, ItemTypeId.RawOre, -96f, 0f);
-        SeedWorldItem(ctx, ItemTypeId.FuelCell, -160f, 0f);
-        SeedWorldItem(ctx, ItemTypeId.Biomass, -224f, 0f);
-
         // Placeholder harvestable nodes on the open east corridor floor, clear
         // of door lanes and the dev items. Position-agnostic — Phase 5.2 moves
         // node spawning to exterior grids unchanged.
@@ -71,22 +64,6 @@ public static partial class Module
                 Position = new DbVector2 { X = x, Y = y },
                 YieldRemaining = yieldMax,
                 YieldMax = yieldMax,
-            }
-        );
-    }
-
-    private static void SeedWorldItem(ReducerContext ctx, ItemTypeId itemTypeId, float x, float y)
-    {
-        ctx.Db.Items.Insert(
-            new Item
-            {
-                ItemId = 0,
-                ItemTypeId = itemTypeId,
-                LocationKind = ItemLocationKind.World,
-                Position = new DbVector2 { X = x, Y = y },
-                Holder = default,
-                SlotIndex = 0,
-                RoomSlotIndex = -1,
             }
         );
     }

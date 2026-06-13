@@ -1,7 +1,7 @@
 {
   "scenario_id": "terminal_interact_opens_modal",
   "version": 3,
-  "description": "Walking up to the Kitchen terminal shows the interact prompt; pressing interact opens the Kitchen room modal; movement is locked while the modal is open; cancel closes it and restores movement.",
+  "description": "Walking up to the Hydroponics terminal shows the interact prompt; pressing interact opens the room modal; movement is locked while the modal is open; cancel closes it and restores movement. (Hydroponics sits at the straight-down slot here — it keeps an Info terminal whose RoomInfoModal needs no crafting services, unlike the now-Fabricator Kitchen.)",
   "harness_scene": "res://validation/harnesses/InteractionHarness.tscn",
   "done_contract": {
     "max_locked_drift": 2.0,
@@ -20,7 +20,7 @@
     { "op": "wait_frames", "frames": 20 },
     { "op": "checkpoint", "name": "prompt" },
     { "op": "assert_value", "checkpoint": "prompt", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": true },
-    { "op": "assert_value", "checkpoint": "prompt", "path": "harness_state.interaction.focused_label", "comparator": "contains", "expected": "Kitchen" },
+    { "op": "assert_value", "checkpoint": "prompt", "path": "harness_state.interaction.focused_label", "comparator": "contains", "expected": "Hydroponics" },
     { "op": "assert_value", "checkpoint": "prompt", "path": "harness_state.modal.open", "comparator": "eq", "expected": false },
     { "op": "press_action", "action": "interact" },
     { "op": "wait_frames", "frames": 5 },
@@ -28,7 +28,7 @@
     { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
     { "op": "wait_frames", "frames": 10 },
     { "op": "checkpoint", "name": "modal_open" },
-    { "op": "assert_value", "checkpoint": "modal_open", "path": "harness_state.modal.title", "comparator": "eq", "expected": "Kitchen" },
+    { "op": "assert_value", "checkpoint": "modal_open", "path": "harness_state.modal.title", "comparator": "eq", "expected": "Hydroponics" },
     { "op": "press_action", "action": "move_down" },
     { "op": "wait_frames", "frames": 30 },
     { "op": "release_action", "action": "move_down" },

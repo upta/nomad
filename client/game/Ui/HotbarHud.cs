@@ -19,11 +19,16 @@ public partial class HotbarHud : CanvasLayer
 
     public event Action? DropRequested;
 
+    public event Action? UseRequested;
+
     [Dependency]
     private InventoryService Inventory => this.DependOn<InventoryService>();
 
     [Export]
     public GuideActionBinding DropAction { get; set; } = null!;
+
+    [Export]
+    public GuideActionBinding UseAction { get; set; } = null!;
 
     [Node]
     public ItemSlotPanel Slot0 { get; set; } = default!;
@@ -61,6 +66,7 @@ public partial class HotbarHud : CanvasLayer
         Slot3Action.JustTriggered -= OnSlot3;
         Slot4Action.JustTriggered -= OnSlot4;
         DropAction.JustTriggered -= OnDrop;
+        UseAction.JustTriggered -= OnUse;
     }
 
     public override void _Ready()
@@ -102,10 +108,13 @@ public partial class HotbarHud : CanvasLayer
         Slot3Action.JustTriggered += OnSlot3;
         Slot4Action.JustTriggered += OnSlot4;
         DropAction.JustTriggered += OnDrop;
+        UseAction.JustTriggered += OnUse;
         Sync();
     }
 
     private void OnDrop() => DropRequested?.Invoke();
+
+    private void OnUse() => UseRequested?.Invoke();
 
     private void OnSlot1() => Inventory.SelectSlot(0);
 

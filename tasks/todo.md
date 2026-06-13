@@ -728,25 +728,27 @@ Design notes (user-confirmed 2026-06-12):
 ### Subtask 4.3.5: DoD sweep — Scope: S ✅
 - [x] `./scripts/validate_all.ps1` both suites green (44 pure + 41 stdb), zero flaky (the 3 historically-flaky PowerHarness modal scenarios passed); game boots clean 13s (zero ERROR, DbManager connected + subscription, RecipeRegistry loaded); `dotnet build` + csharpier (client), `spacetime build` + format (server); uids imported; plan/todo ticked; push
 
-## Task 4.4: Meals feature whole + economy checkpoint — Scope: M 🔄 PLANNED
+## Task 4.4: Meals feature whole + economy checkpoint — Scope: M ✅ DONE
 
-### Subtask 4.4.1: Server — Meal + EatItem — Scope: S
-- [ ] `ItemTypeId` += `Meal` (last); `CraftingRules` += Meal recipe (Kitchen, [Biomass]→Meal); `BenchAcceptsType` lets Kitchen accept Biomass
-- [ ] `VitalsConfig` += `float MealHungerRestore` (50, seeded); `VitalsRules.RestoreHungerFor(ctx, identity, amount)` helper; `RestoreHunger.cs` delegates (signature unchanged)
-- [ ] `Reducers/EatItem.cs` (auth + alive ("Dead players cannot eat.") + slot item is Meal → delete + `RestoreHungerFor` config amount); publish + generate + builds
+### Subtask 4.4.1: Server — Meal + EatItem — Scope: S ✅
+- [x] `ItemTypeId` += `Meal` (appended last); `CraftingRules.AllRecipes` += `Meal` + `RecipeFor` Meal (Kitchen, [Biomass]→Meal) — `BenchAcceptsType`/`IsBench` derive it, so Kitchen now accepts Biomass into its input zone
+- [x] `VitalsConfig` += `float MealHungerRestore` (seeded 50); `VitalsRules.RestoreHungerFor(ctx, identity, amount)` helper (clamps + writes, throws on missing row); `RestoreHunger.cs` delegates to it (signature + semantics unchanged)
+- [x] `Reducers/EatItem.cs` (known-player auth + alive guard "Dead players cannot eat." + hotbar-slot item is Meal → delete + `RestoreHungerFor` with `GetVitalsConfig().MealHungerRestore`, never client-supplied); publish `--delete-data=always` + generate bindings + client build. CLI confirmed `meal_hunger_restore = 50` + `eat_item` registered
 
-### Subtask 4.4.2: stdb validation — Scope: S
-- [ ] `test_give_meal_slot0`, `test_eat_slot0`, `test_set_hunger_low`
-- [ ] `meal_craft_and_eat_round_trip.json` (biomass → queue Meal at Kitchen → output slot → withdraw → hunger low → eat → restored, gone) + eat rejections (non-meal, dead)
+### Subtask 4.4.2: stdb validation — Scope: S ✅
+- [x] `ConnectedGameHarnessController`: `test_give_meal_slot0`/`test_eat_slot0`/`test_teleport_to_kitchen`/`test_load_biomass_to_kitchen`/`test_queue_meal`/`test_withdraw_first_kitchen_output`; `FindFirstBenchOutputItemId` generalized to a roomSlot param (`test_set_hunger_low` already existed)
+- [x] `meal_craft_and_eat_round_trip.json` (biomass → Kitchen input → queue Meal → output slot → set hunger low → withdraw → eat → hunger restored by config amount via delta assert, meal gone) + `meal_eat_rejections.json` (non-meal RawOre: no consume, no restore; dead: no restore — alive guard short-circuits)
 
-### Subtask 4.4.3: Client — Kitchen bench + eat input — Scope: M
-- [ ] `KitchenRoom.tres` TerminalType Info → Fabricator; `MealItem.tres` + registry wiring (every `ItemTypeRegistry` scene); `MealRecipe.tres` + RecipeRegistry wiring
-- [ ] `HotbarUse.tres` (F) GUIDE action mapped KBM/controller; `AppRoot.EnsureInputActions()` += `hotbar_use` → Key.F; `HotbarHud` UseAction → `UseRequested`; `Main` → `InventoryService.RequestUse(selectedSlot)` (EatItem connected / pure hunger mirror)
+### Subtask 4.4.3: Client — Kitchen bench + eat input — Scope: M ✅
+- [x] `KitchenRoom.tres` TerminalType Info(4) → Fabricator(2); `MealItem.tres` (orange "M") wired into every `ItemTypeRegistry` scene (Main + Inventory + Craft harnesses); `MealRecipe.tres` (Kitchen, [Biomass]→Meal) wired into every `RecipeRegistry` scene (Main + CraftHarness)
+- [x] `HotbarUse.tres` GUIDE action mapped KBM (F=70) + controller (joy button 3); `AppRoot.EnsureInputActions()` += `hotbar_use` → Key.F; `HotbarHud` `UseAction` export + `UseRequested` event; `InventoryService.RequestUse(slot)` (EatItem reducer connected / `TestUseRequested` mirror); `Main` routes `HotbarHud.UseRequested` → `RequestUse(SelectedSlot)`; `VitalsService.RestoreTestHunger` for the pure mirror
 
-### Subtask 4.4.4: Pure validation — Scope: S
-- [ ] `hotbar_use_eats_meal.json` (meal + low hunger → F → gone, HUD restored) + non-edible no-op; Kitchen modal shows only Meal recipe (filter assert)
+### Subtask 4.4.4: Pure validation — Scope: S ✅
+- [x] `hotbar_use_eats_meal.json` (InventoryHarness gained VitalsService provider + VitalsHud node + eat wiring + `OnTestUse` edibility mirror): meal + low hunger → F → meal gone + FOOD 10→60; non-edible RawOre → F → no-op (item stays, hunger unchanged). Screenshots reviewed (orange "M" slot, FOOD bar restored)
+- [x] `fabricator_kitchen_lists_meal.json` (CraftHarness `test_open_kitchen_fabricator`): Kitchen Fabricator lists only the Meal recipe (per-bench `ForBench` filter). Screenshot shows the single Meal row
+- [x] Regression fix: Kitchen→Fabricator broke `terminal_interact_opens_modal` + `pressure_modal_shows_lost` (both walked to the now-Fabricator Kitchen terminal, whose modal needs crafting services those dep-light harnesses lack). Confirmed via clean-HEAD stash test. Fixed faithfully: InteractionHarness swaps Kitchen↔Hydroponics so the straight-down walk-up slot keeps an Info terminal; pressure scenario retargets to Hydroponics (the only room whose RoomInfoModal a player can still open in-game) via a deterministic direct-open. `item_types_load.json` updated 6→7 types (+ Meal)
 
-### Subtask 4.4.5: Economy checkpoint + cleanup + DoD — Scope: M
-- [ ] `scenarios_stdb/economy_loop_end_to_end.json` — harvest FuelDeposit + RawOre → Fuel Cell at Workshop → withdraw → Load Reactor (fuel up); harvest Biomass → Meal at Kitchen → withdraw → eat (hunger up); puppet client sees node depletion + bench output items
-- [ ] **Cleanup:** remove 3 dev world-item seeds from `Init.cs` → publish + full both-suite sweep
-- [ ] Boot clean, builds + format, plan/todo tick, **Checkpoint: Economy** marked, push
+### Subtask 4.4.5: Economy checkpoint + cleanup + DoD — Scope: M ✅
+- [x] `scenarios_stdb/economy_loop_end_to_end.json` (MultiplayerGameHarness): harvest RawOre + FuelDeposit → Fuel Cell at Workshop → withdraw → Load Reactor (fuel up); harvest Biomass → Meal at Kitchen → withdraw → eat (hunger up). Puppet client asserts it observes node depletion (`total_node_yield` 5→4, new on PuppetClient) + the Fuel Cell bench-output item (`stored_item_count`). Screenshot shows FOOD 60/100 after the loop
+- [x] **Cleanup:** removed the 3 dev world-item seeds + `SeedWorldItem` helper from `Init.cs`; deleted `world_items_seeded_on_init.json` (the only scenario asserting them — every other item scenario clears items first, so the 0-baseline is unaffected); publish `--delete-data=always`
+- [x] Both suites green (47 pure + 47 stdb); game boots clean 13s (zero ERROR, DbManager connected + subscription, 7 item types incl. Meal, 2 recipes); `dotnet build` + csharpier (client), `spacetime build` + format (server); **Checkpoint: Economy** marked; push

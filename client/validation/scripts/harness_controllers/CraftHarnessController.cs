@@ -36,6 +36,7 @@ public partial class CraftHarnessController
         IProvide<RecipeRegistry>,
         IProvide<ItemTypeRegistry>
 {
+    private const int KitchenSlot = 5;
     private const int WorkshopSlot = 4;
 
     // ~25 frames (~0.4s) to complete — a comfortable window to observe the ring
@@ -111,6 +112,19 @@ public partial class CraftHarnessController
         {
             ["test_open_fabricator"] = () => OpenFabricator(true),
             ["test_open_fabricator_unpowered"] = () => OpenFabricator(false),
+            // Kitchen bench — its recipe list must show only the Meal recipe
+            // (the per-bench filter), never the Workshop's Fuel Cell.
+            ["test_open_kitchen_fabricator"] = () =>
+                _modalHost.Open(
+                    new RoomModalInfo(
+                        "Kitchen",
+                        TerminalType.Fabricator,
+                        true,
+                        true,
+                        KitchenSlot,
+                        "Kitchen"
+                    )
+                ),
             // Direct close (no bridged Esc) so reopen-after-power scenarios don't
             // ride the flaky modal-key path.
             ["test_close_modal"] = () => _modalHost.Close(),

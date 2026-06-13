@@ -14,5 +14,6 @@ public static partial class Module
         public float SuitCapacityMultiplier;
         public float SuitSpeedFactor;
         public int RespawnBiomassCost;
+        public float MealHungerRestore;
     }
 }

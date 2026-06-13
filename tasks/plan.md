@@ -238,9 +238,9 @@ Full plan: `C:\Users\upta\.claude\plans\nested-sauteeing-sketch.md`.
 
 - [x] **Task 4.3: Bench crafting + Fabricator modal (Refine verb)** — Interact with Workshop/Kitchen benches to queue crafts via a walk-up Fabricator modal (§5). Benches get type-restricted input/output storage (reusing the Cargo Bay `Stored`-item stack with config-defined input/output `SlotIndex` zones); `QueueCraft` sources ingredients hotbar-first then bench-input, outputs land in reserved output slots. `CraftingJob` queue ordered by `QueuedAt`; completion runs inside `ChannelTick`. Proven with the Fuel Cell recipe at the Workshop. **Scope: L**
 
-- [ ] **Task 4.4: Crafting recipes + meals whole** — Recipes carry a bench `RoomTypeId`: Fuel Cells (FuelDeposit + RawOre) at the Workshop, Meals (Biomass) at the Kitchen. Owns the **meals feature whole**: Meal item type, recipe, and eat-from-hotbar on **F** (→ the 2.3 `RestoreHunger` entry point via a shared `RestoreHungerFor` helper) land together here (moved from 3.2 per the feature-complete rule). Closes with an end-to-end multiplayer economy-loop scenario + removal of the now-obsolete dev item seeds. The Ammo Crate recipe ships with 5.5 and the Probe recipe with 6.2, alongside their consumers. **Scope: M**
+- [x] **Task 4.4: Crafting recipes + meals whole** — Recipes carry a bench `RoomTypeId`: Fuel Cells (FuelDeposit + RawOre) at the Workshop, Meals (Biomass) at the Kitchen. Owns the **meals feature whole**: Meal item type, recipe, and eat-from-hotbar on **F** (→ the 2.3 `RestoreHunger` entry point via a shared `RestoreHungerFor` helper) land together here (moved from 3.2 per the feature-complete rule). Closes with an end-to-end multiplayer economy-loop scenario + removal of the now-obsolete dev item seeds. The Ammo Crate recipe ships with 5.5 and the Probe recipe with 6.2, alongside their consumers. **Scope: M**
 
-**Checkpoint: Economy** — Harvest→Refine→Load→Consume loop works end-to-end in multiplayer.
+**Checkpoint: Economy** ✅ — Harvest→Refine→Load→Consume loop works end-to-end in multiplayer (proven by `economy_loop_end_to_end.json`). Phase 4 complete (47 pure + 47 stdb scenarios green).
 
 ### Phase 5: Node Activities
 

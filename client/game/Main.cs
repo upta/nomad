@@ -100,6 +100,7 @@ public partial class Main
         ItemSpawner.Interacted += OnWorldItemInteracted;
         ResourceNodeSpawner.Interacted += OnResourceNodeInteracted;
         HotbarHud.DropRequested += OnHotbarDropRequested;
+        HotbarHud.UseRequested += OnHotbarUseRequested;
         _vitalsService.Changed += OnVitalsChanged;
 
         _powerGridService.SetRoomCatalog(RoomTypeRegistry.All);
@@ -177,6 +178,7 @@ public partial class Main
         ItemSpawner.Interacted -= OnWorldItemInteracted;
         ResourceNodeSpawner.Interacted -= OnResourceNodeInteracted;
         HotbarHud.DropRequested -= OnHotbarDropRequested;
+        HotbarHud.UseRequested -= OnHotbarUseRequested;
         _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
         _vitalsService.Unbind();
@@ -217,6 +219,9 @@ public partial class Main
             _inventoryService.SelectedSlot,
             _localPlayer?.GlobalPosition ?? Vector2.Zero
         );
+
+    private void OnHotbarUseRequested() =>
+        _inventoryService.RequestUse(_inventoryService.SelectedSlot);
 
     private void OnWorldItemInteracted(int itemId) => _inventoryService.RequestPickUp(itemId);
 

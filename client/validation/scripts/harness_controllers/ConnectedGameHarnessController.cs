@@ -158,6 +158,29 @@ public partial class ConnectedGameHarnessController : Node2D
                     5
                 );
         },
+        // Economy-loop harvest probes: spawn the FuelDeposit / Biomass node types
+        // on the player so the nearest-node harvest yields each raw material in
+        // reach (OreVein → RawOre is test_spawn_node_at_player above).
+        ["test_spawn_fueldeposit_node_at_player"] = conn =>
+        {
+            if (PlayerEntityPos(conn) is { } pos)
+                conn.Reducers.SpawnResourceNode(
+                    SpacetimeDB.Types.ResourceNodeTypeId.FuelDepositNode,
+                    pos.X,
+                    pos.Y,
+                    5
+                );
+        },
+        ["test_spawn_biomass_node_at_player"] = conn =>
+        {
+            if (PlayerEntityPos(conn) is { } pos)
+                conn.Reducers.SpawnResourceNode(
+                    SpacetimeDB.Types.ResourceNodeTypeId.BiomassPatch,
+                    pos.X,
+                    pos.Y,
+                    5
+                );
+        },
         // Well beyond HarvestRadius (96) from the spawn — drives the
         // out-of-reach rejection.
         ["test_spawn_node_far"] = conn =>
@@ -254,9 +277,52 @@ public partial class ConnectedGameHarnessController : Node2D
         },
         ["test_withdraw_first_bench_output"] = conn =>
         {
-            if (FindFirstBenchOutputItemId(conn) is { } itemId)
+            if (FindFirstBenchOutputItemId(conn, 4) is { } itemId)
                 conn.Reducers.WithdrawItem(itemId);
         },
+        // Meals (Task 4.4). Teleport onto the Kitchen slot-5 center (HullGeometry
+        // SlotCenter(5) = (16, 144)) so Load/Queue/Withdraw reach checks pass
+        // without flaky navigation.
+        ["test_teleport_to_kitchen"] = conn =>
+        {
+            if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } player)
+                conn.Reducers.MoveEntity(
+                    player.PlayerEntityId,
+                    new SpacetimeDB.Types.DbVector2(16, 144),
+                    new SpacetimeDB.Types.DbVector2(0, 0),
+                    0f,
+                    0.0
+                );
+        },
+        // Reactor slot-0 center (HullGeometry SlotCenter(0) = (-336, -144)) so a
+        // fuel-cell Load passes the reach check without navigation.
+        ["test_teleport_to_reactor"] = conn =>
+        {
+            if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } player)
+                conn.Reducers.MoveEntity(
+                    player.PlayerEntityId,
+                    new SpacetimeDB.Types.DbVector2(-336, -144),
+                    new SpacetimeDB.Types.DbVector2(0, 0),
+                    0f,
+                    0.0
+                );
+        },
+        // Pre-load a Biomass into the Kitchen bench input zone (hotbar slot 0 →
+        // bench slot 0 at room slot 5). Reducer calls are ordered per-connection.
+        ["test_load_biomass_to_kitchen"] = conn =>
+        {
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Biomass, 0);
+            conn.Reducers.LoadItem(0, 5);
+        },
+        ["test_queue_meal"] = conn => conn.Reducers.QueueCraft(5, SpacetimeDB.Types.RecipeId.Meal),
+        ["test_withdraw_first_kitchen_output"] = conn =>
+        {
+            if (FindFirstBenchOutputItemId(conn, 5) is { } itemId)
+                conn.Reducers.WithdrawItem(itemId);
+        },
+        ["test_give_meal_slot0"] = conn =>
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Meal, 0),
+        ["test_eat_slot0"] = conn => conn.Reducers.EatItem(0),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -381,6 +447,7 @@ public partial class ConnectedGameHarnessController : Node2D
                 ["displacement_from_initial"] = puppet.DisplacementFromInitial,
                 ["world_item_count"] = puppet.WorldItemCount,
                 ["stored_item_count"] = puppet.StoredItemCount,
+                ["total_node_yield"] = puppet.TotalNodeYield,
             };
         }
 
@@ -492,7 +559,10 @@ public partial class ConnectedGameHarnessController : Node2D
 
     // Lowest-id Stored item in the Workshop bench's output zone (slot >= input
     // zone size). The output zone is where completed crafts land.
-    private static int? FindFirstBenchOutputItemId(SpacetimeDB.Types.DbConnection conn)
+    private static int? FindFirstBenchOutputItemId(
+        SpacetimeDB.Types.DbConnection conn,
+        int roomSlot
+    )
     {
         var inputSlots = conn.Db.CraftingConfigs.Id.Find(0)?.BenchInputSlots ?? 4;
         int? first = null;
@@ -500,7 +570,7 @@ public partial class ConnectedGameHarnessController : Node2D
         {
             if (
                 item.LocationKind != SpacetimeDB.Types.ItemLocationKind.Stored
-                || item.RoomSlotIndex != 4
+                || item.RoomSlotIndex != roomSlot
                 || item.SlotIndex < inputSlots
             )
                 continue;

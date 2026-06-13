@@ -1,0 +1,146 @@
+{
+  "scenario_id": "economy_loop_end_to_end",
+  "version": 3,
+  "description": "The full Phase 4 economy loop in one connected multiplayer run: harvest RawOre + FuelDeposit -> craft a Fuel Cell at the Workshop -> load it into the Reactor (fuel up); harvest Biomass -> craft a Meal at the Kitchen -> eat it (hunger up). A second (puppet) client asserts it observes node depletion and the bench-output item the first client produced.",
+  "harness_scene": "res://validation/harnesses/MultiplayerGameHarness.tscn",
+  "done_contract": { "min_fuel_gain": 1.0, "min_hunger_restore": 40.0 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/MultiplayerGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.puppet.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_fast_harvest" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_fast_harvest" },
+    { "op": "press_action", "action": "test_fast_craft" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_fast_craft" },
+    { "op": "press_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_disable_fuel_burn" },
+
+    { "op": "press_action", "action": "test_clear_nodes" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_nodes" },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_spawn_node_at_player" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_spawn_node_at_player" },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.puppet.total_node_yield", "comparator": "eq", "expected": 5, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_start_harvest_nearest" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_start_harvest_nearest" },
+    { "op": "wait_until", "path": "harness_state.harvest.active_exists", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "RawOre", "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.puppet.total_node_yield", "comparator": "eq", "expected": 4, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "ore_harvested_puppet_sees_depletion" },
+
+    { "op": "press_action", "action": "test_clear_nodes" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_nodes" },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_spawn_fueldeposit_node_at_player" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_spawn_fueldeposit_node_at_player" },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_start_harvest_nearest" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_start_harvest_nearest" },
+    { "op": "wait_until", "path": "harness_state.harvest.active_exists", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.items.hotbar.1", "comparator": "eq", "expected": "FuelDeposit", "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_workshop" },
+    { "op": "press_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_fuelcell" },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.active_recipe", "comparator": "eq", "expected": "FuelCell", "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.output_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.puppet.stored_item_count", "comparator": "gte", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "fuelcell_output_puppet_sees" },
+    { "op": "assert_value", "checkpoint": "fuelcell_output_puppet_sees", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "press_action", "action": "test_withdraw_first_bench_output" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_withdraw_first_bench_output" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "FuelCell", "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "before_fuel" },
+
+    { "op": "press_action", "action": "test_teleport_to_reactor" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_reactor" },
+    { "op": "press_action", "action": "test_load_slot0_to_reactor" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_load_slot0_to_reactor" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "after_fuel" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before": { "kind": "checkpoint", "checkpoint": "before_fuel", "path": "harness_state.stores.fuel" },
+        "after": { "kind": "checkpoint", "checkpoint": "after_fuel", "path": "harness_state.stores.fuel" },
+        "threshold": { "kind": "contract", "path": "done_contract.min_fuel_gain" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["after", "before"], "as": "gained" }
+      ],
+      "assert": { "actual": "gained", "comparator": "gte", "expected_source": "threshold" }
+    },
+
+    { "op": "press_action", "action": "test_clear_nodes" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_nodes" },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_spawn_biomass_node_at_player" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_spawn_biomass_node_at_player" },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_start_harvest_nearest" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_start_harvest_nearest" },
+    { "op": "wait_until", "path": "harness_state.harvest.active_exists", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "Biomass", "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_kitchen" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_kitchen" },
+    { "op": "press_action", "action": "test_queue_meal" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_queue_meal" },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.5.active_recipe", "comparator": "eq", "expected": "Meal", "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.5.output_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_withdraw_first_kitchen_output" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_withdraw_first_kitchen_output" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "Meal", "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_set_hunger_low" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_hunger_low" },
+    { "op": "wait_until", "path": "harness_state.vitals.hunger", "comparator": "lte", "expected": 10, "timeout_frames": 200 },
+    { "op": "checkpoint", "name": "before_eat" },
+    { "op": "press_action", "action": "test_eat_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_eat_slot0" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "after_eat" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before": { "kind": "checkpoint", "checkpoint": "before_eat", "path": "harness_state.vitals.hunger" },
+        "after": { "kind": "checkpoint", "checkpoint": "after_eat", "path": "harness_state.vitals.hunger" },
+        "threshold": { "kind": "contract", "path": "done_contract.min_hunger_restore" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["after", "before"], "as": "restored" }
+      ],
+      "assert": { "actual": "restored", "comparator": "gte", "expected_source": "threshold" }
+    },
+
+    { "op": "quit" }
+  ]
+}

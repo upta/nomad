@@ -24,6 +24,7 @@ public partial class AppRoot : Node, IProvide<GuideService>
         ["hotbar_slot_3"] = Key.Key3,
         ["hotbar_slot_4"] = Key.Key4,
         ["hotbar_drop"] = Key.Q,
+        ["hotbar_use"] = Key.F,
     };
 
     private static readonly PackedScene TestScene = GD.Load<PackedScene>(

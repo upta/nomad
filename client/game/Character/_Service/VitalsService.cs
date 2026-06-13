@@ -87,6 +87,14 @@ public class VitalsService
         Changed?.Invoke();
     }
 
+    // Test-mode mirror of RestoreHungerFor — pure harnesses bump hunger when an
+    // eaten meal fires InventoryService.TestUseRequested.
+    public void RestoreTestHunger(float amount)
+    {
+        Hunger = Math.Min(MaxHunger, Hunger + amount);
+        Changed?.Invoke();
+    }
+
     public void SetTestOxygen(float oxygen, float maxOxygen, bool suitEquipped)
     {
         Oxygen = oxygen;

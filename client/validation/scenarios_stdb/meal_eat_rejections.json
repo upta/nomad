@@ -1,0 +1,59 @@
+{
+  "scenario_id": "meal_eat_rejections",
+  "version": 3,
+  "description": "EatItem rejects a non-meal item (no consume, no hunger restore) and rejects a dead player (no restore — the alive guard short-circuits before the slot lookup).",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "done_contract": { "max_noop_drift": 1.0 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "press_action", "action": "test_set_hunger_low" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_hunger_low" },
+    { "op": "wait_until", "path": "harness_state.vitals.hunger", "comparator": "lte", "expected": 10, "timeout_frames": 200 },
+    { "op": "press_action", "action": "test_give_ore_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_ore_slot0" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "RawOre", "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "before_noneat" },
+    { "op": "press_action", "action": "test_eat_slot0" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "release_action", "action": "test_eat_slot0" },
+    { "op": "checkpoint", "name": "after_noneat" },
+    { "op": "assert_value", "checkpoint": "after_noneat", "path": "harness_state.items.hotbar.0", "comparator": "eq", "expected": "RawOre" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before_hunger": { "kind": "checkpoint", "checkpoint": "before_noneat", "path": "harness_state.vitals.hunger" },
+        "after_hunger": { "kind": "checkpoint", "checkpoint": "after_noneat", "path": "harness_state.vitals.hunger" },
+        "threshold": { "kind": "contract", "path": "done_contract.max_noop_drift" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["after_hunger", "before_hunger"], "as": "drift" }
+      ],
+      "assert": { "actual": "drift", "comparator": "lte", "expected_source": "threshold" }
+    },
+    { "op": "press_action", "action": "test_damage_kill" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_damage_kill" },
+    { "op": "wait_until", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": true, "timeout_frames": 200 },
+    { "op": "checkpoint", "name": "dead_before" },
+    { "op": "press_action", "action": "test_eat_slot0" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "release_action", "action": "test_eat_slot0" },
+    { "op": "checkpoint", "name": "dead_after" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "before_hunger": { "kind": "checkpoint", "checkpoint": "dead_before", "path": "harness_state.vitals.hunger" },
+        "after_hunger": { "kind": "checkpoint", "checkpoint": "dead_after", "path": "harness_state.vitals.hunger" },
+        "threshold": { "kind": "contract", "path": "done_contract.max_noop_drift" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["after_hunger", "before_hunger"], "as": "drift" }
+      ],
+      "assert": { "actual": "drift", "comparator": "lte", "expected_source": "threshold" }
+    },
+    { "op": "quit" }
+  ]
+}

@@ -12,11 +12,11 @@ public static partial class Module
         ItemTypeId Output
     );
 
-    // The recipe catalog. FuelCell crafts at the Workshop; the Meal recipe
-    // (Kitchen, Biomass) lands whole with the meals feature in 4.4. Add new
-    // recipes here and to AllRecipes — BenchAcceptsType / IsBench derive from
-    // this catalog the way PowerDrawFor derives the power model.
-    private static readonly RecipeId[] AllRecipes = [RecipeId.FuelCell];
+    // The recipe catalog. FuelCell crafts at the Workshop; Meal crafts at the
+    // Kitchen. Add new recipes here and to AllRecipes — BenchAcceptsType /
+    // IsBench derive from this catalog the way PowerDrawFor derives the power
+    // model.
+    private static readonly RecipeId[] AllRecipes = [RecipeId.FuelCell, RecipeId.Meal];
 
     private static RecipeDef? RecipeFor(RecipeId recipeId) =>
         recipeId switch
@@ -25,6 +25,11 @@ public static partial class Module
                 RoomTypeId.Workshop,
                 [ItemTypeId.FuelDeposit, ItemTypeId.RawOre],
                 ItemTypeId.FuelCell
+            ),
+            RecipeId.Meal => new RecipeDef(
+                RoomTypeId.Kitchen,
+                [ItemTypeId.Biomass],
+                ItemTypeId.Meal
             ),
             _ => null,
         };

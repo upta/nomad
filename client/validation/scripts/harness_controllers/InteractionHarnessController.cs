@@ -52,13 +52,17 @@ public partial class InteractionHarnessController : Node2D, IProvide<Interaction
 
         this.Provide();
 
-        // Mirror the server Init seed so terminals spawn for every room.
+        // Mirror the server Init seed so terminals spawn for every room — but
+        // Kitchen and Hydroponics are swapped: Kitchen is now a Fabricator bench
+        // whose modal depends on crafting services this interaction-only harness
+        // doesn't provide, so the straight-down walk-up slot (5) gets the
+        // Info-terminal Hydroponics, which opens a dependency-free RoomInfoModal.
         _shipGrid.SetTestAssignment(0, "Reactor");
         _shipGrid.SetTestAssignment(1, "Bridge");
         _shipGrid.SetTestAssignment(2, "CloningBay");
-        _shipGrid.SetTestAssignment(3, "Hydroponics");
+        _shipGrid.SetTestAssignment(3, "Kitchen");
         _shipGrid.SetTestAssignment(4, "Workshop");
-        _shipGrid.SetTestAssignment(5, "Kitchen");
+        _shipGrid.SetTestAssignment(5, "Hydroponics");
         _shipGrid.SetTestAssignment(6, "CargoBay");
     }
 

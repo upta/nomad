@@ -8,6 +8,7 @@ using System.Linq;
 using Chickensoft.AutoInject;
 using Chickensoft.Introspection;
 using Godot;
+using Nomad.Game.Character;
 using Nomad.Game.Interaction;
 using Nomad.Game.Items;
 using Nomad.Game.Map;
@@ -18,14 +19,20 @@ using Nomad.Game.Ui;
     typeof(IAutoNode),
     typeof(IProvide<InteractionService>),
     typeof(IProvide<InventoryService>),
-    typeof(IProvide<ItemTypeRegistry>)
+    typeof(IProvide<ItemTypeRegistry>),
+    typeof(IProvide<VitalsService>)
 )]
 public partial class InventoryHarnessController
     : Node2D,
         IProvide<InteractionService>,
         IProvide<InventoryService>,
-        IProvide<ItemTypeRegistry>
+        IProvide<ItemTypeRegistry>,
+        IProvide<VitalsService>
 {
+    // Mirrors the server's VitalsConfig.MealHungerRestore so the test-mode eat
+    // restores the same amount the connected EatItem reducer would.
+    private const float MealHungerRestore = 50f;
+
     private static readonly Dictionary<string, Key> ActionKeyBridge = new()
     {
         ["move_up"] = Key.W,
@@ -41,16 +48,19 @@ public partial class InventoryHarnessController
         ["hotbar_slot_3"] = Key.Key3,
         ["hotbar_slot_4"] = Key.Key4,
         ["hotbar_drop"] = Key.Q,
+        ["hotbar_use"] = Key.F,
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
     private readonly InteractionService _interactionService = new();
     private readonly InventoryService _inventoryService = new();
     private readonly Dictionary<string, bool> _testActionState = [];
+    private readonly VitalsService _vitalsService = new();
     private HotbarHud _hotbarHud = null!;
     private ItemSpawner _itemSpawner = null!;
     private ItemTypeRegistry _itemTypeRegistry = null!;
     private ModalHost _modalHost = null!;
+    private VitalsHud _vitalsHud = null!;
     private int _oreItemId;
     private Nomad.Game.Player.Player _player = null!;
     private InteractPrompt _prompt = null!;
@@ -93,16 +103,20 @@ public partial class InventoryHarnessController
         _itemTypeRegistry = GetNode<ItemTypeRegistry>("ItemTypeRegistry");
         _modalHost = GetNode<ModalHost>("ModalHost");
         _hotbarHud = GetNode<HotbarHud>("HotbarHud");
+        _vitalsHud = GetNode<VitalsHud>("VitalsHud");
         _shipGrid.RoomTypeRegistry = GetNode<RoomTypeRegistry>("RoomTypeRegistry");
         _itemSpawner.Registry = _itemTypeRegistry;
         _hotbarHud.Registry = _itemTypeRegistry;
         _shipGrid.TerminalInteracted += OnTerminalInteracted;
 
-        // Mirror Main's pickup/drop wiring so the test-mode mirrors drive
+        // Mirror Main's pickup/drop/use wiring so the test-mode mirrors drive
         // the same consumer chain as the connected game.
         _itemSpawner.Interacted += itemId => _inventoryService.RequestPickUp(itemId);
         _hotbarHud.DropRequested += () =>
             _inventoryService.RequestDrop(_inventoryService.SelectedSlot, _player.GlobalPosition);
+        _hotbarHud.UseRequested += () =>
+            _inventoryService.RequestUse(_inventoryService.SelectedSlot);
+        _inventoryService.TestUseRequested += OnTestUse;
 
         _testActions = new Dictionary<string, Action>
         {
@@ -115,6 +129,9 @@ public partial class InventoryHarnessController
             ["test_clear_items"] = () => _inventoryService.ClearTestItems(),
             ["test_seed_biomass_slot0"] = () => _inventoryService.SetTestSlot(0, "Biomass"),
             ["test_seed_ore_slot2"] = () => _inventoryService.SetTestSlot(2, "RawOre"),
+            ["test_give_meal_slot0"] = () => _inventoryService.SetTestSlot(0, "Meal"),
+            ["test_give_ore_slot0"] = () => _inventoryService.SetTestSlot(0, "RawOre"),
+            ["test_set_hunger_low"] = () => _vitalsService.SetTestHunger(10, 100),
             // Pre-existing cargo (slot 6) — proves the modal renders items
             // already in storage when it opens, not just ones stored live.
             ["test_seed_stored_ore_cargo"] = () =>
@@ -151,6 +168,20 @@ public partial class InventoryHarnessController
     InventoryService IProvide<InventoryService>.Value() => _inventoryService;
 
     ItemTypeRegistry IProvide<ItemTypeRegistry>.Value() => _itemTypeRegistry;
+
+    VitalsService IProvide<VitalsService>.Value() => _vitalsService;
+
+    // Test-mode eat: edibility lives in the meal type, so consume + restore only
+    // for a Meal (mirrors EatItem's server-side type check). Anything else is a
+    // no-op — the item stays, hunger unchanged.
+    private void OnTestUse(int slotIndex, string? typeId)
+    {
+        if (typeId != "Meal")
+            return;
+
+        _inventoryService.SetTestSlot(slotIndex, null);
+        _vitalsService.RestoreTestHunger(MealHungerRestore);
+    }
 
     public Godot.Collections.Dictionary get_observed_state()
     {
@@ -212,6 +243,11 @@ public partial class InventoryHarnessController
             ["storage"] = new Godot.Collections.Dictionary
             {
                 ["stored_in_cargo"] = _inventoryService.StoredIn(6).Count,
+            },
+            ["vitals"] = new Godot.Collections.Dictionary
+            {
+                ["hunger"] = _vitalsService.Hunger,
+                ["hunger_fill_ratio"] = _vitalsHud.HungerFillRatio,
             },
             ["modal"] = BuildModalState(),
         };

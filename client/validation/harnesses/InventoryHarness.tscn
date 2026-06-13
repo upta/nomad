@@ -1,7 +1,8 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://validation/scripts/harness_controllers/InventoryHarnessController.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/HotbarHud.tscn" id="hud_hotbar"]
+[ext_resource type="PackedScene" path="res://game/Ui/VitalsHud.tscn" id="hud_vitals"]
 [ext_resource type="PackedScene" path="res://game/Ui/ModalHost.tscn" id="modal_host"]
 [ext_resource type="PackedScene" path="res://game/Map/ShipGrid.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="3"]
@@ -27,6 +28,7 @@
 [ext_resource type="Resource" path="res://game/Items/ItemTypes/FuelCellItem.tres" id="it3"]
 [ext_resource type="Resource" path="res://game/Items/ItemTypes/ScrapItem.tres" id="it4"]
 [ext_resource type="Resource" path="res://game/Items/ItemTypes/ComponentsItem.tres" id="it5"]
+[ext_resource type="Resource" path="res://game/Items/ItemTypes/MealItem.tres" id="it6"]
 
 [node name="InventoryHarness" type="Node2D"]
 script = ExtResource("1")
@@ -37,7 +39,7 @@ RoomTypes = Array[ExtResource("rt_script")]([ExtResource("rt0"), ExtResource("rt
 
 [node name="ItemTypeRegistry" type="Node" parent="."]
 script = ExtResource("it_registry")
-ItemTypes = Array[ExtResource("it_script")]([ExtResource("it0"), ExtResource("it1"), ExtResource("it2"), ExtResource("it3"), ExtResource("it4"), ExtResource("it5")])
+ItemTypes = Array[ExtResource("it_script")]([ExtResource("it0"), ExtResource("it1"), ExtResource("it2"), ExtResource("it3"), ExtResource("it4"), ExtResource("it5"), ExtResource("it6")])
 
 [node name="ShipGrid" parent="." instance=ExtResource("2")]
 HullTemplate = ExtResource("4")
@@ -57,3 +59,5 @@ position = Vector2(32, 64)
 [node name="ModalHost" parent="." instance=ExtResource("modal_host")]
 
 [node name="HotbarHud" parent="." instance=ExtResource("hud_hotbar")]
+
+[node name="VitalsHud" parent="." instance=ExtResource("hud_vitals")]
