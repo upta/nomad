@@ -45,9 +45,14 @@ public partial class StorageModal : PanelContainer, IRoomModal
         Inventory.Changed -= Sync;
     }
 
+    // ModalHost calls Initialize after AddChild (which fires OnResolved), so
+    // the first paint must happen here — OnResolved runs before the room slot
+    // is known and would read StoredIn(-1), hiding already-stored items.
     public void Initialize(RoomModalInfo info)
     {
         _roomSlotIndex = info.SlotIndex;
+        Sync();
+        Callable.From(FocusFirstOccupied).CallDeferred();
     }
 
     public void OnResolved()
@@ -55,8 +60,6 @@ public partial class StorageModal : PanelContainer, IRoomModal
         Inventory.Changed += Sync;
         HotbarGrid.SlotPressed += OnHotbarSlotPressed;
         CargoGrid.SlotPressed += OnCargoSlotPressed;
-        Sync();
-        Callable.From(FocusFirstOccupied).CallDeferred();
     }
 
     private void FocusFirstOccupied()

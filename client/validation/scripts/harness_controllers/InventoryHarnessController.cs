@@ -114,6 +114,10 @@ public partial class InventoryHarnessController
             ["test_clear_items"] = () => _inventoryService.ClearTestItems(),
             ["test_seed_biomass_slot0"] = () => _inventoryService.SetTestSlot(0, "Biomass"),
             ["test_seed_ore_slot2"] = () => _inventoryService.SetTestSlot(2, "RawOre"),
+            // Pre-existing cargo (slot 6) — proves the modal renders items
+            // already in storage when it opens, not just ones stored live.
+            ["test_seed_stored_ore_cargo"] = () =>
+                _inventoryService.SeedTestStoredItem("RawOre", 6),
             // Drives the real ModalHost.Open path (exclusive UiModeContext
             // push) without depending on navigation — the walk-up→modal flow
             // is already covered by terminal_interact_opens_modal.
