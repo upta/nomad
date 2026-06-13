@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ResourceNodeType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/Harvest/ResourceNodeType.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+NodeId = "BiomassPatch"
+Label = "Biomass Patch"
+Color = Color(0.35, 0.6, 0.32, 1)
+Glyph = "B"
+YieldItemId = "Biomass"

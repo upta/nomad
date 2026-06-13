@@ -1,0 +1,104 @@
+{
+  "scenario_id": "resource_nodes_render_depletion_states",
+  "version": 3,
+  "description": "Resource nodes render one node per row and drive depletion visuals from YieldRemaining/YieldMax: full (yield 5) at base color and full scale, partial (yield 1) desaturated darker and shrunk, husk (yield 0) at the dark husk color and smallest scale. The OreVein (nodes.0) is depleted while the other three stay full as a reference.",
+  "harness_scene": "res://validation/harnesses/HarvestHarness.tscn",
+  "done_contract": { "husk_r": 0.18, "color_tolerance": 0.02 },
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/HarvestHarness.tscn" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "empty" },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.node_count", "comparator": "eq", "expected": 0 },
+    { "op": "press_action", "action": "test_seed_all_nodes" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_seed_all_nodes" },
+    { "op": "wait_until", "path": "harness_state.node_count", "comparator": "eq", "expected": 4, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "full" },
+    { "op": "assert_value", "checkpoint": "full", "path": "harness_state.nodes.0.glyph", "comparator": "eq", "expected": "O" },
+    { "op": "assert_value", "checkpoint": "full", "path": "harness_state.nodes.0.yield_remaining", "comparator": "eq", "expected": 5 },
+    { "op": "assert_value", "checkpoint": "full", "path": "harness_state.nodes.0.yield_max", "comparator": "eq", "expected": 5 },
+    { "op": "press_action", "action": "test_set_ore_yield_partial" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_ore_yield_partial" },
+    { "op": "wait_until", "path": "harness_state.nodes.0.yield_remaining", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "partial" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "full_r": { "kind": "checkpoint", "checkpoint": "full", "path": "harness_state.nodes.0.color_r" },
+        "partial_r": { "kind": "checkpoint", "checkpoint": "partial", "path": "harness_state.nodes.0.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["full_r", "partial_r"], "as": "r_drop" }
+      ],
+      "assert": { "actual": "r_drop", "comparator": "gt", "expected": 0 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "full_scale": { "kind": "checkpoint", "checkpoint": "full", "path": "harness_state.nodes.0.scale" },
+        "partial_scale": { "kind": "checkpoint", "checkpoint": "partial", "path": "harness_state.nodes.0.scale" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["full_scale", "partial_scale"], "as": "scale_drop" }
+      ],
+      "assert": { "actual": "scale_drop", "comparator": "gt", "expected": 0 }
+    },
+    { "op": "press_action", "action": "test_deplete_ore" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_deplete_ore" },
+    { "op": "wait_until", "path": "harness_state.nodes.0.yield_remaining", "comparator": "eq", "expected": 0, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "husk" },
+    { "op": "assert_value", "checkpoint": "husk", "path": "harness_state.nodes.3.yield_remaining", "comparator": "eq", "expected": 5 },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "partial_r": { "kind": "checkpoint", "checkpoint": "partial", "path": "harness_state.nodes.0.color_r" },
+        "husk_r": { "kind": "checkpoint", "checkpoint": "husk", "path": "harness_state.nodes.0.color_r" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["partial_r", "husk_r"], "as": "r_drop" }
+      ],
+      "assert": { "actual": "r_drop", "comparator": "gt", "expected": 0 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "full_b": { "kind": "checkpoint", "checkpoint": "full", "path": "harness_state.nodes.0.color_b" },
+        "husk_b": { "kind": "checkpoint", "checkpoint": "husk", "path": "harness_state.nodes.0.color_b" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["full_b", "husk_b"], "as": "b_drop" }
+      ],
+      "assert": { "actual": "b_drop", "comparator": "gt", "expected": 0 }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "husk_r": { "kind": "checkpoint", "checkpoint": "husk", "path": "harness_state.nodes.0.color_r" },
+        "expected_husk_r": { "kind": "contract", "path": "done_contract.husk_r" },
+        "tolerance": { "kind": "contract", "path": "done_contract.color_tolerance" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["husk_r", "expected_husk_r"], "as": "diff" },
+        { "op": "abs", "inputs": ["diff"], "as": "abs_diff" }
+      ],
+      "assert": { "actual": "abs_diff", "comparator": "lte", "expected_source": "tolerance" }
+    },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "partial_scale": { "kind": "checkpoint", "checkpoint": "partial", "path": "harness_state.nodes.0.scale" },
+        "husk_scale": { "kind": "checkpoint", "checkpoint": "husk", "path": "harness_state.nodes.0.scale" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["partial_scale", "husk_scale"], "as": "scale_drop" }
+      ],
+      "assert": { "actual": "scale_drop", "comparator": "gt", "expected": 0 }
+    },
+    { "op": "quit" }
+  ]
+}

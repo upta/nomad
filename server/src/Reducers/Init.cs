@@ -38,6 +38,34 @@ public static partial class Module
         SeedWorldItem(ctx, ItemTypeId.RawOre, -96f, 0f);
         SeedWorldItem(ctx, ItemTypeId.FuelCell, -160f, 0f);
         SeedWorldItem(ctx, ItemTypeId.Biomass, -224f, 0f);
+
+        // Placeholder harvestable nodes on the open east corridor floor, clear
+        // of door lanes and the dev items. Position-agnostic — Phase 5.2 moves
+        // node spawning to exterior grids unchanged.
+        SeedResourceNode(ctx, ResourceNodeTypeId.OreVein, 96f, 0f, 5);
+        SeedResourceNode(ctx, ResourceNodeTypeId.WreckageDebris, 192f, 0f, 5);
+        SeedResourceNode(ctx, ResourceNodeTypeId.FuelDepositNode, 256f, 0f, 5);
+        SeedResourceNode(ctx, ResourceNodeTypeId.BiomassPatch, 384f, 0f, 5);
+    }
+
+    private static void SeedResourceNode(
+        ReducerContext ctx,
+        ResourceNodeTypeId nodeType,
+        float x,
+        float y,
+        int yieldMax
+    )
+    {
+        ctx.Db.ResourceNodes.Insert(
+            new ResourceNode
+            {
+                NodeId = 0,
+                ResourceNodeTypeId = nodeType,
+                Position = new DbVector2 { X = x, Y = y },
+                YieldRemaining = yieldMax,
+                YieldMax = yieldMax,
+            }
+        );
     }
 
     private static void SeedWorldItem(ReducerContext ctx, ItemTypeId itemTypeId, float x, float y)

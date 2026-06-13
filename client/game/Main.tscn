@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/HotbarHud.tscn" id="10_hotbar_hud"]
@@ -29,6 +29,14 @@
 [ext_resource type="Resource" path="res://game/Ship/RoomTypes/KitchenRoom.tres" id="rt5"]
 [ext_resource type="Resource" path="res://game/Ship/RoomTypes/CargoBayRoom.tres" id="rt6"]
 [ext_resource type="Resource" path="res://game/Ship/RoomTypes/CorridorRoom.tres" id="rt7"]
+[ext_resource type="Script" path="res://game/Harvest/ResourceNodeTypeRegistry.cs" id="rn_registry"]
+[ext_resource type="Script" path="res://game/Harvest/ResourceNodeType.cs" id="rn_script"]
+[ext_resource type="Script" path="res://game/Harvest/ResourceNodeSpawner.cs" id="rn_spawner"]
+[ext_resource type="PackedScene" path="res://game/Harvest/ResourceNode.tscn" id="rn_node_scene"]
+[ext_resource type="Resource" path="res://game/Harvest/ResourceNodeTypes/OreVeinNode.tres" id="rn0"]
+[ext_resource type="Resource" path="res://game/Harvest/ResourceNodeTypes/WreckageDebrisNode.tres" id="rn1"]
+[ext_resource type="Resource" path="res://game/Harvest/ResourceNodeTypes/FuelDepositNode.tres" id="rn2"]
+[ext_resource type="Resource" path="res://game/Harvest/ResourceNodeTypes/BiomassPatchNode.tres" id="rn3"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -45,6 +53,11 @@ unique_name_in_owner = true
 script = ExtResource("it_registry")
 ItemTypes = Array[ExtResource("it_script")]([ExtResource("it0"), ExtResource("it1"), ExtResource("it2"), ExtResource("it3"), ExtResource("it4"), ExtResource("it5")])
 
+[node name="ResourceNodeTypeRegistry" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("rn_registry")
+NodeTypes = Array[ExtResource("rn_script")]([ExtResource("rn0"), ExtResource("rn1"), ExtResource("rn2"), ExtResource("rn3")])
+
 [node name="ShipGrid" parent="." instance=ExtResource("5_shipgrid")]
 unique_name_in_owner = true
 HullTemplate = ExtResource("6_hull")
@@ -53,6 +66,11 @@ HullTemplate = ExtResource("6_hull")
 unique_name_in_owner = true
 script = ExtResource("it_spawner")
 WorldItemScene = ExtResource("it_world_item")
+
+[node name="ResourceNodeSpawner" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("rn_spawner")
+ResourceNodeScene = ExtResource("rn_node_scene")
 
 [node name="Camera" type="Camera2D" parent="."]
 unique_name_in_owner = true

@@ -619,3 +619,129 @@ Design notes (user-confirmed):
 
 ## Subtask 3.5.5: DoD sweep + Phase 3 checkpoint — Scope: S ✅
 - [x] Full `validate_all.ps1` both suites green (36 pure + 31 stdb); boot clean zero ERROR; builds + csharpier both sides; uids imported; plan/todo checked incl. **Checkpoint: Inventory**; push
+
+---
+
+# Phase 4: Resource Economy 🔄 PLANNED
+
+Full plan: `C:\Users\upta\.claude\plans\nested-sauteeing-sketch.md`.
+
+Closes the economy loop — Harvest (nodes → raw materials) → Refine/Craft (workshop/kitchen benches → consumables) → Load (3.4 sinks) → Consume (meals → hunger). Prerequisite for Phase 5 node activities.
+
+Design notes (user-confirmed 2026-06-12):
+- **Node placement:** ship-interior placeholder positions, Init-seeded on open east-corridor floor (clear of door lanes + the 3 dev items). Position-agnostic — Phase 5.2 relocates spawning to exterior grids with no rework.
+- **Channeled harvest + progress ticker:** `StartHarvest` pins `StartedAt`/`CompletesAt` + `Progress=0` on a one-per-player `ActiveHarvest`; one shared repeating `ChannelTick` (~150ms) recomputes `Progress = clamp((now−StartedAt)/dur)` and completes when `now ≥ CompletesAt`. **No one-shot timers, no `TimerId` bookkeeping, no module-identity guard** (completion gated on real server time → client-invoking the ticker is harmless). Client reads `Progress` off the row (no clock-skew math); movement cancels (`CancelHarvest`), server re-checks reach at completion.
+- **Bench input/output storage:** Workshop/Kitchen benches reuse the Cargo Bay stack (`Item.LocationKind.Stored` on the bench `RoomSlotIndex`, `FindFreeStoreSlot`, `ItemSlotGrid`, `WithdrawItem`). Config-defined `SlotIndex` ranges split **input** (`BenchInputSlots`, e.g. 0–3, accepts only the bench's recipe ingredients) from **output** (`BenchOutputSlots`, e.g. 4–7, reserved completion target — no full-store race). `QueueCraft` sources each ingredient hotbar-first then bench-input. No `Item` schema change.
+- **Kitchen owns meals:** Kitchen terminal → Fabricator (Biomass → Meal); Workshop → Fuel Cell (FuelDeposit + RawOre). Recipes carry a bench `RoomTypeId`; one system, two benches.
+- **RadialProgress port:** trail's `radial_progress.gd`+`.gdshader` → C#, `[Export] ProgressMode` Chunked (tweened easing toward each discrete target, original behavior) / Continuous (direct set). Ring fed by server `Progress`; Chunked smooths the per-tick updates. ShaderMaterial declared in `.tscn` (`resource_local_to_scene`), not built in `_Ready`.
+- **Eat:** new GUIDE action `HotbarUse` on **F**; InputMap `hotbar_use`.
+- **Publish ritual** every schema change: `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` + regenerate bindings + re-green stdb suite before commit. `Meal` appended at END of `ItemTypeId`.
+
+## Task 4.1: Resource nodes — Scope: M ✅ DONE
+
+### Subtask 4.1.1: Server — node table + seeding — Scope: S ✅
+- [x] `Types/ResourceNodeTypeId.cs` — None, OreVein, WreckageDebris, FuelDepositNode, BiomassPatch
+- [x] `Tables/ResourceNode.cs` — `NodeId` PK AutoInc int, `ResourceNodeTypeId`, `Position DbVector2`, `YieldRemaining`/`YieldMax` int, `Public = true`, accessor `ResourceNodes` (SQL/subscribe name `resource_nodes`)
+- [x] `Harvest/HarvestRules.cs` — `YieldItemFor(ResourceNodeTypeId)` switch → RawOre/Scrap/FuelDeposit/Biomass (consumed by 4.2's channel; documents the mapping now)
+- [x] `Reducers/SpawnResourceNode.cs` (+ `yieldMax` arg) + `ClearResourceNodes.cs` (mirror `SpawnWorldItem`/`ClearItems`: known-player auth, reject None / `yield <= 0`)
+- [x] `Init.cs` seeds 4 nodes: OreVein (96,0), WreckageDebris (192,0), FuelDepositNode (256,0), BiomassPatch (384,0), yield 5
+- [x] Publish `--delete-data=always` + generate + builds; `spacetime sql` shows 4 nodes. Reducers gate on known-player auth, so spawn/clear round-trip is proven by the stdb scenario (not raw CLI — same as SpawnWorldItem). `SetNodeYield` debug reducer NOT needed for 4.1 (depletion proof is the pure scenario via service seeders; revisit if 4.2 wants server-driven depletion validation)
+
+### Subtask 4.1.2: stdb validation — Scope: S ✅
+- [x] `ConnectedGameHarnessController`: `nodes` observed section (count + `list` per-node type/yield/x/y ordered by NodeId) + `game.resource_node_nodes` render count + `test_spawn_ore_node`/`test_clear_nodes`
+- [x] `scenarios_stdb/resource_nodes_spawn_and_render.json` — seed asserts (4 nodes, per-type x/yield) → render 4 in connected Main → spawn → 5 → clear → 0. Green; rendered.png shows nodes in the real Main east corridor
+
+### Subtask 4.1.3: Client — node rendering + service half — Scope: M ✅
+- [x] `client/game/Harvest/ResourceNodeType.cs` (`[GlobalClass]` Resource: Color/Glyph/Label/NodeId/YieldItemId) + 4 `.tres` + `ResourceNodeTypeRegistry` (`[Export]` array — wired in Main.tscn + HarvestHarness.tscn)
+- [x] `ResourceNode.tscn`/`.cs` (Node2D, WorldItem pattern: `Visual` wrapper(ColorRect + glyph) + `InteractTarget`, label "Harvest {Label}", **no blocking collider** — Area2D on the Interactable layer only; depletion color + scale lerp full→husk from YieldRemaining/YieldMax). Interact routed to a no-op `Interacted` event (harvest lands in 4.2)
+- [x] `_Service/HarvestService.cs` (plain C#: `Changed`, `BindConnection` on `ResourceNodes`, `ResourceNodeEntry` list, seeders `SeedTestNode`/`SetTestYield`/`ClearTestNodes`). Aliased `StdbResourceNode` to dodge the scene-class/row-type name clash
+- [x] `ResourceNodeSpawner` (ItemSpawner pattern, update-in-place on yield) declared in `Main.tscn`; `Main.cs` provides `HarvestService`, binds on connect, unbinds in `_ExitTree`
+
+### Subtask 4.1.4: Pure validation — Scope: S ✅
+- [x] `HarvestHarness.tscn` + controller (InventoryHarness pattern; provides Interaction + Harvest; Player only needs Interaction)
+- [x] `resource_node_types_load.json` (4 types: ids/labels/glyphs/yield-item-ids) + `resource_nodes_render_depletion_states.json` (full → yield 1 partial → yield 0 husk: monotonic r/b darkening + scale shrink + husk≈0.18 fingerprint). Screenshots reviewed — OreVein depletes to a dark shrunk husk while W/F/B stay full
+
+### Subtask 4.1.5: DoD sweep — Scope: S ✅
+- [x] stdb suite fully green (new node scenario + zero regressions — the seeded corridor nodes don't steal interaction focus in any cargo/cloning/load navigation scenario). Pure suite: my 2 new scenarios + every non-flaky scenario green
+- [x] **Pre-existing flake caveat:** 3 PowerHarness modal scenarios (`power_router_modal_deposit_fuel`, `power_router_modal_toggles_breaker`, `pressure_modal_shows_lost`) flake on bridged modal-key navigation. **Proven pre-existing** — they fail identically on a clean-HEAD build with all 4.1 work stashed; none load any 4.1 code. NOT a 4.1 regression
+- [x] Game boots clean ≥13s headless, zero ERROR, DbManager connected + subscription applied, registry loaded 4 node types
+- [x] `dotnet build` + csharpier (client), `spacetime build` + format (server); uids imported (`*.cs.uid` sidecars staged)
+- [x] plan/todo ticked; `git push origin`
+
+## Task 4.2: Harvest verb (channeled) — Scope: L 🔄 PLANNED
+
+### Subtask 4.2.1: Server — channel + shared ticker — Scope: M
+- [ ] `Tables/HarvestConfig.cs` (single-row: `HarvestMillis` 2000, `HarvestRadius` 96f, `TickMillis` 150; getter/seeder in HarvestRules) + `Reducers/SetHarvestConfig.cs`
+- [ ] `Tables/ActiveHarvest.cs` (`Identity` PK, `NodeId`, `StartedAt`/`CompletesAt Timestamp`, `Progress float`, `Public = true`)
+- [ ] `Tables/ChannelTickTimer.cs` (private, repeating `Scheduled = nameof(Module.ChannelTick)`, `ScheduleAt.Interval` from `TickMillis`) seeded in `Init`
+- [ ] `Reducers/ChannelTick.cs` — per `ActiveHarvest`: set `Progress`; if `now ≥ CompletesAt` → re-validate alive + yield + reach off row `Identity` → `FindFreeHotbarSlot` insert (**full → World item at node**), decrement yield, delete harvest
+- [ ] `Reducers/StartHarvest.cs` (auth + alive + node exists + "Node is depleted." + reach + free-slot precheck; upsert sender's `ActiveHarvest`) + `Reducers/CancelHarvest.cs` (delete sender's; no-op if none)
+- [ ] `DamageRules.ApplyDamage` death hook clears victim's harvest; publish + generate + builds; CLI round trip verified
+
+### Subtask 4.2.2: stdb validation — Scope: M
+- [ ] Harness `harvest` section (active exists/node_id/progress) + `test_fast_harvest` (400ms), `test_start_harvest_<node>`, `test_cancel_harvest`, `test_fill_hotbar`
+- [ ] `harvest_round_trip.json` (start → progress crosses 0.5 → item + yield down) + `harvest_cancel_and_rejections.json` (cancel/out-of-reach/depleted) + `harvest_full_hotbar_drops_world.json`
+
+### Subtask 4.2.3: Client — RadialProgress port — Scope: M
+- [ ] `client/game/Ui/RadialProgress/RadialProgress.gdshader` (verbatim) + `RadialProgress.cs` (port of `radial_progress.gd`) + `RadialProgress.tscn` (ShaderMaterial `resource_local_to_scene = true`)
+- [ ] `[Export] ProgressMode Mode` — Chunked (tweened) / Continuous (direct); `radial_progress_modes.json` (continuous exact; chunked mid-tween between old/new) + screenshot review
+
+### Subtask 4.2.4: Client — harvest flow — Scope: M
+- [ ] `HarvestService` active-harvest half (subscribe `ActiveHarvests` local-identity; `Progress` read off row), `RequestStartHarvest`/`RequestCancelHarvest` (reducer connected / local mirror)
+- [ ] `ResourceNode` interact → start; Chunked `RadialProgress` over node tracks `Progress`, hidden when none; `Player.cs` movement while harvesting → `RequestCancelHarvest()` (no movement lock)
+
+### Subtask 4.2.5: Pure validation — Scope: M
+- [ ] HarvestHarness pure mirror (local tick drives `Progress` + yields into InventoryService hotbar)
+- [ ] `harvest_channel_yields_item.json` (ring + progress climb → item + yield down) + `harvest_move_cancels.json` (move mid-channel → ring gone, no item)
+
+### Subtask 4.2.6: DoD sweep — Scope: S
+- [ ] Both suites green, boot clean, builds + format, screenshot review, plan/todo tick, push
+
+## Task 4.3: Bench crafting + Fabricator modal (Refine verb) — Scope: L 🔄 PLANNED
+
+### Subtask 4.3.1: Server — bench storage + recipes + queue — Scope: M
+- [ ] `Types/RecipeId.cs` (None, FuelCell, Meal — Meal recipe rules in 4.4) + `Crafting/CraftingRules.cs` (recipe → bench RoomTypeId + ingredients + output: FuelCell = Workshop [FuelDeposit, RawOre]; `BenchAcceptsType`; config getter/seeder)
+- [ ] `Tables/CraftingConfig.cs` (`CraftMillis` 5000, `BenchInputSlots` 4, `BenchOutputSlots` 4) + `Reducers/SetCraftingConfig.cs`
+- [ ] `Tables/CraftingJob.cs` (`JobId` PK AutoInc, `RoomSlotIndex`, `RecipeId`, `QueuedBy Identity`, `QueuedAt Timestamp`, `StartedAt`/`CompletesAt Timestamp?` null=queued, `Progress float`, `Public = true`) — **spike `Timestamp?` codegen first; fallback `bool IsActive` + sentinels**
+- [ ] Extend `Items/ItemRules.cs` + `LoadItem.cs`/`WithdrawItem.cs`: benches = storage rooms with type+zone restriction (deposit `BenchAcceptsType` into free input slot; withdraw any bench slot)
+- [ ] `Reducers/QueueCraft.cs` (auth + alive + reach + room-type-matches-bench + IsPowered + ingredients hotbar-then-bench-input as distinct rows → validate all, delete; idle → activate, else enqueue)
+- [ ] Extend `ChannelTick`: per active `CraftingJob` advance `Progress`; on complete re-validate bench (unpowered → hold 1.0 retry; reassigned → delete job; else deposit output to free output slot / fallback World item at bench), clear job, activate next by `(QueuedAt, JobId)`
+- [ ] Publish + generate + builds
+
+### Subtask 4.3.2: stdb validation — Scope: M
+- [ ] Harness `crafting` section (per-bench job recipe/progress/active/queued + input/output occupancy) + `test_fast_craft` (400ms), `test_give_fuel_ingredients`, `test_load_bench_input`, `test_queue_fuelcell`, `test_queue_two_jobs`
+- [ ] `craft_queue_round_trip.json` (hotbar + pre-loaded input → queue → consumed → progress → output slot → withdraw) + `craft_rejections.json` (missing ingredient / wrong room / unpowered / out of reach / non-ingredient deposit) + `craft_queue_ordering_and_power.json` (QueuedAt order; cut power → hold 1.0 → restore completes)
+
+### Subtask 4.3.3: Client — Recipe + CraftingService + FabricatorModal — Scope: M
+- [ ] `client/game/Crafting/Recipe.cs` (`[GlobalClass]`: RecipeId, Label, BenchRoomId, ingredients, output) + `FuelCellRecipe.tres` + `RecipeRegistry` (`[Export]` array, wired per declaring scene)
+- [ ] `_Service/CraftingService.cs` (recipes-for-bench, job entries with `Progress` off row, input/output views, `RequestQueueCraft`/deposit/withdraw via InventoryService, BindConnection on `CraftingJobs`, seeders + mirror)
+- [ ] `Ui/Modals/FabricatorModal.tscn`/`.cs` (StorageModal dual-grid + recipe list: rows label/ingredients/focusable Queue disabled when unavailable + input/output `ItemSlotGrid` + Chunked `RadialProgress` on active job); `ModalHost.tscn` repoints Fabricator export; `Main.cs` provides `CraftingService`
+
+### Subtask 4.3.4: Pure validation — Scope: M
+- [ ] CraftHarness; `fabricator_modal_lists_recipes.json` (Fuel Cell row; queue disabled/enabled; grids render) + `fabricator_queue_progress_mirror.json` (queue → ingredients leave → progress advances → output in output grid)
+
+### Subtask 4.3.5: DoD sweep — Scope: S
+- [ ] Both suites green, boot clean, builds + format, screenshot review, plan/todo tick, push
+
+## Task 4.4: Meals feature whole + economy checkpoint — Scope: M 🔄 PLANNED
+
+### Subtask 4.4.1: Server — Meal + EatItem — Scope: S
+- [ ] `ItemTypeId` += `Meal` (last); `CraftingRules` += Meal recipe (Kitchen, [Biomass]→Meal); `BenchAcceptsType` lets Kitchen accept Biomass
+- [ ] `VitalsConfig` += `float MealHungerRestore` (50, seeded); `VitalsRules.RestoreHungerFor(ctx, identity, amount)` helper; `RestoreHunger.cs` delegates (signature unchanged)
+- [ ] `Reducers/EatItem.cs` (auth + alive ("Dead players cannot eat.") + slot item is Meal → delete + `RestoreHungerFor` config amount); publish + generate + builds
+
+### Subtask 4.4.2: stdb validation — Scope: S
+- [ ] `test_give_meal_slot0`, `test_eat_slot0`, `test_set_hunger_low`
+- [ ] `meal_craft_and_eat_round_trip.json` (biomass → queue Meal at Kitchen → output slot → withdraw → hunger low → eat → restored, gone) + eat rejections (non-meal, dead)
+
+### Subtask 4.4.3: Client — Kitchen bench + eat input — Scope: M
+- [ ] `KitchenRoom.tres` TerminalType Info → Fabricator; `MealItem.tres` + registry wiring (every `ItemTypeRegistry` scene); `MealRecipe.tres` + RecipeRegistry wiring
+- [ ] `HotbarUse.tres` (F) GUIDE action mapped KBM/controller; `AppRoot.EnsureInputActions()` += `hotbar_use` → Key.F; `HotbarHud` UseAction → `UseRequested`; `Main` → `InventoryService.RequestUse(selectedSlot)` (EatItem connected / pure hunger mirror)
+
+### Subtask 4.4.4: Pure validation — Scope: S
+- [ ] `hotbar_use_eats_meal.json` (meal + low hunger → F → gone, HUD restored) + non-edible no-op; Kitchen modal shows only Meal recipe (filter assert)
+
+### Subtask 4.4.5: Economy checkpoint + cleanup + DoD — Scope: M
+- [ ] `scenarios_stdb/economy_loop_end_to_end.json` — harvest FuelDeposit + RawOre → Fuel Cell at Workshop → withdraw → Load Reactor (fuel up); harvest Biomass → Meal at Kitchen → withdraw → eat (hunger up); puppet client sees node depletion + bench output items
+- [ ] **Cleanup:** remove 3 dev world-item seeds from `Init.cs` → publish + full both-suite sweep
+- [ ] Boot clean, builds + format, plan/todo tick, **Checkpoint: Economy** marked, push

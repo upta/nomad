@@ -1,0 +1,26 @@
+{
+  "scenario_id": "resource_node_types_load",
+  "version": 3,
+  "description": "All 4 resource-node types load with metadata (ids, labels, distinct glyphs, yield item ids) — OreVein, WreckageDebris, FuelDepositNode, BiomassPatch.",
+  "harness_scene": "res://validation/harnesses/HarvestHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/HarvestHarness.tscn" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "loaded" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.type_count", "comparator": "eq", "expected": 4 },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.0.node_id", "comparator": "eq", "expected": "OreVein" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.0.label", "comparator": "eq", "expected": "Ore Vein" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.0.glyph", "comparator": "eq", "expected": "O" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.0.yield_item_id", "comparator": "eq", "expected": "RawOre" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.1.node_id", "comparator": "eq", "expected": "WreckageDebris" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.1.glyph", "comparator": "eq", "expected": "W" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.1.yield_item_id", "comparator": "eq", "expected": "Scrap" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.2.node_id", "comparator": "eq", "expected": "FuelDepositNode" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.2.glyph", "comparator": "eq", "expected": "F" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.2.yield_item_id", "comparator": "eq", "expected": "FuelDeposit" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.3.node_id", "comparator": "eq", "expected": "BiomassPatch" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.3.glyph", "comparator": "eq", "expected": "B" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.node_types.3.yield_item_id", "comparator": "eq", "expected": "Biomass" },
+    { "op": "quit" }
+  ]
+}

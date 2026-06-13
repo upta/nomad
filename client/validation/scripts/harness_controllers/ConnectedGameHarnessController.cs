@@ -127,6 +127,15 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_disable_fuel_burn"] = conn => conn.Reducers.SetFuelBurn(0, 0),
         ["test_fast_fuel_burn"] = conn => conn.Reducers.SetFuelBurn(1, 500),
         ["test_slow_fuel_burn"] = conn => conn.Reducers.SetFuelBurn(1, 120000),
+        // Spawn clear of the seeded east-corridor nodes and the dev items.
+        ["test_spawn_ore_node"] = conn =>
+            conn.Reducers.SpawnResourceNode(
+                SpacetimeDB.Types.ResourceNodeTypeId.OreVein,
+                0,
+                -200,
+                5
+            ),
+        ["test_clear_nodes"] = conn => conn.Reducers.ClearResourceNodes(),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -214,6 +223,7 @@ public partial class ConnectedGameHarnessController : Node2D
             ["vitals"] = BuildVitalsState(),
             ["stores"] = BuildStoresState(),
             ["items"] = BuildItemsState(),
+            ["nodes"] = BuildNodesState(),
         };
 
         if (_puppet is { } puppet)
@@ -442,6 +452,10 @@ public partial class ConnectedGameHarnessController : Node2D
         // WorldItem instances are direct children of Main's ItemSpawner node
         // (lands in 3.1.3 — this reads 0 until then).
         state["world_item_nodes"] = _main?.GetNodeOrNull<Node>("ItemSpawner")?.GetChildCount() ?? 0;
+
+        // ResourceNode instances are direct children of Main's ResourceNodeSpawner.
+        state["resource_node_nodes"] =
+            _main?.GetNodeOrNull<Node>("ResourceNodeSpawner")?.GetChildCount() ?? 0;
         if (shipGrid is not null)
             state["grid"] = shipGrid.GetObservedRoomState();
 
@@ -665,6 +679,44 @@ public partial class ConnectedGameHarnessController : Node2D
             state["biomass"] = stores.Biomass;
             state["fuel"] = stores.Fuel;
         }
+
+        return state;
+    }
+
+    private Godot.Collections.Dictionary BuildNodesState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["count"] = 0,
+            ["list"] = new Godot.Collections.Array(),
+        };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        var rows = new List<SpacetimeDB.Types.ResourceNode>();
+        foreach (var node in conn.Db.ResourceNodes.Iter())
+            rows.Add(node);
+
+        state["count"] = rows.Count;
+
+        // Stable NodeId order so scenarios can address nodes.0.type etc.
+        var list = new Godot.Collections.Array();
+        foreach (var node in rows.OrderBy(n => n.NodeId))
+        {
+            list.Add(
+                new Godot.Collections.Dictionary
+                {
+                    ["node_id"] = node.NodeId,
+                    ["type"] = node.ResourceNodeTypeId.ToString(),
+                    ["yield_remaining"] = node.YieldRemaining,
+                    ["yield_max"] = node.YieldMax,
+                    ["x"] = node.Position.X,
+                    ["y"] = node.Position.Y,
+                }
+            );
+        }
+        state["list"] = list;
 
         return state;
     }

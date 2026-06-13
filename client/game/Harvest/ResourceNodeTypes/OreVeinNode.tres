@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ResourceNodeType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/Harvest/ResourceNodeType.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+NodeId = "OreVein"
+Label = "Ore Vein"
+Color = Color(0.62, 0.51, 0.38, 1)
+Glyph = "O"
+YieldItemId = "RawOre"

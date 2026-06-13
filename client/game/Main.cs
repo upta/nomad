@@ -14,7 +14,8 @@ using Ui;
     typeof(IProvide<Ship.PowerGridService>),
     typeof(IProvide<Character.VitalsService>),
     typeof(IProvide<Items.InventoryService>),
-    typeof(IProvide<Items.ItemTypeRegistry>)
+    typeof(IProvide<Items.ItemTypeRegistry>),
+    typeof(IProvide<Harvest.HarvestService>)
 )]
 public partial class Main
     : Node2D,
@@ -22,8 +23,10 @@ public partial class Main
         IProvide<Ship.PowerGridService>,
         IProvide<Character.VitalsService>,
         IProvide<Items.InventoryService>,
-        IProvide<Items.ItemTypeRegistry>
+        IProvide<Items.ItemTypeRegistry>,
+        IProvide<Harvest.HarvestService>
 {
+    private readonly Harvest.HarvestService _harvestService = new();
     private readonly InteractionService _interactionService = new();
     private readonly Items.InventoryService _inventoryService = new();
     private readonly Ship.PowerGridService _powerGridService = new();
@@ -58,6 +61,12 @@ public partial class Main
     public PackedScene RemoteEntityScene { get; set; } = null!;
 
     [Node]
+    public Harvest.ResourceNodeSpawner ResourceNodeSpawner { get; set; } = default!;
+
+    [Node]
+    public Harvest.ResourceNodeTypeRegistry ResourceNodeTypeRegistry { get; set; } = default!;
+
+    [Node]
     public Ship.RoomTypeRegistry RoomTypeRegistry { get; set; } = default!;
 
     [Node]
@@ -75,6 +84,7 @@ public partial class Main
         // registries are handed over here instead of in Main.tscn.
         ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
         ItemSpawner.Registry = ItemTypeRegistry;
+        ResourceNodeSpawner.Registry = ResourceNodeTypeRegistry;
         HotbarHud.Registry = ItemTypeRegistry;
         ShipGrid.TerminalInteracted += OnTerminalInteracted;
         ShipGrid.BreakerInteracted += OnBreakerInteracted;
@@ -100,6 +110,8 @@ public partial class Main
 
     Items.ItemTypeRegistry IProvide<Items.ItemTypeRegistry>.Value() => ItemTypeRegistry;
 
+    Harvest.HarvestService IProvide<Harvest.HarvestService>.Value() => _harvestService;
+
     public void InstantiatePlayer(Db.DbManager dbManager)
     {
         _dbManager = dbManager;
@@ -108,6 +120,7 @@ public partial class Main
         _powerGridService.BindConnection(dbManager.Connection);
         _vitalsService.BindConnection(dbManager.Connection);
         _inventoryService.BindConnection(dbManager.Connection);
+        _harvestService.BindConnection(dbManager.Connection);
 
         var conn = dbManager.Connection;
 
@@ -152,6 +165,7 @@ public partial class Main
         _powerGridService.Unbind();
         _vitalsService.Unbind();
         _inventoryService.Unbind();
+        _harvestService.Unbind();
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
         {

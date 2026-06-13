@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ResourceNodeType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/Harvest/ResourceNodeType.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+NodeId = "WreckageDebris"
+Label = "Wreckage Debris"
+Color = Color(0.5, 0.52, 0.55, 1)
+Glyph = "W"
+YieldItemId = "Scrap"
