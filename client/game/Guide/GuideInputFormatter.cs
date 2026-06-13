@@ -17,8 +17,13 @@ public class GuideInputFormatter
 
     // Renders the input currently bound to an action ("[E]" on keyboard, a
     // pad glyph name on controller), tracking active contexts and device.
+    // Headless display servers can't resolve physical key labels (GUIDE's
+    // formatter raises an engine error), so consumers get "" and fall back
+    // to their bare label.
     public string ActionAsText(GuideActionBinding action) =>
-        _formatter.Call("action_as_text", action.Action).AsString();
+        DisplayServer.GetName() == "headless"
+            ? ""
+            : _formatter.Call("action_as_text", action.Action).AsString();
 
     public static GuideInputFormatter ForActiveContexts(
         GDScript formatterScript,
