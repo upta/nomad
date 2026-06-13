@@ -1,0 +1,30 @@
+{
+  "scenario_id": "player_spawns_at_last_known_position",
+  "version": 3,
+  "description": "After moving right, reloading the client (Main rebuilt on the same connection, the way closing and reopening the game would) spawns the local player node at the server entity's stored position, not the scene origin: distance_to_node stays ~0 and the node keeps its moved x rather than snapping back to ship-center.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "press_action", "action": "move_right" },
+    { "op": "wait_until", "path": "harness_state.connection.local_entity.x", "comparator": "gte", "expected": 300, "timeout_frames": 600 },
+    { "op": "release_action", "action": "move_right" },
+    { "op": "wait_frames", "frames": 20 },
+    { "op": "checkpoint", "name": "before_reload" },
+    { "op": "assert_value", "checkpoint": "before_reload", "path": "harness_state.connection.local_entity.distance_to_node", "comparator": "lte", "expected": 5 },
+    { "op": "assert_value", "checkpoint": "before_reload", "path": "harness_state.connection.local_entity.x", "comparator": "gte", "expected": 250 },
+    { "op": "press_action", "action": "test_reload_main" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_reload_main" },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "wait_until", "path": "harness_state.connection.local_entity.distance_to_node", "comparator": "lte", "expected": 5, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "after_reload" },
+    { "op": "assert_value", "checkpoint": "after_reload", "path": "harness_state.connection.local_entity.distance_to_node", "comparator": "lte", "expected": 5 },
+    { "op": "assert_value", "checkpoint": "after_reload", "path": "harness_state.connection.local_entity.x", "comparator": "gte", "expected": 250 },
+    { "op": "assert_value", "checkpoint": "after_reload", "path": "harness_state.game.player.x", "comparator": "gte", "expected": 250 },
+    { "op": "quit" }
+  ]
+}

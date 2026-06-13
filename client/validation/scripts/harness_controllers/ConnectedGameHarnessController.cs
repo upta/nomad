@@ -131,6 +131,11 @@ public partial class ConnectedGameHarnessController : Node2D
 
     private readonly Dictionary<string, bool> _bridgeState = [];
     private readonly Dictionary<string, bool> _testActionState = [];
+
+    // Node-level test actions (not reducer calls) — wired in _Ready once the
+    // DbManager exists.
+    private readonly Dictionary<string, System.Action> _nodeActions = [];
+    private readonly Dictionary<string, bool> _nodeActionState = [];
     private bool _connectionFailed;
     private bool _dataReady;
     private DbManager _dbManager = null!;
@@ -160,6 +165,7 @@ public partial class ConnectedGameHarnessController : Node2D
         // The driver presses/releases across physics frames that can share a
         // single idle frame — _Process polling would miss the whole window.
         ProcessTestReducerActions();
+        ProcessNodeActions();
     }
 
     public override void _Process(double delta)
@@ -169,13 +175,23 @@ public partial class ConnectedGameHarnessController : Node2D
 
     public override void _Ready()
     {
-        foreach (var action in TestReducerActions.Keys.Concat(ActionKeyBridge.Keys))
+        _dbManager = new DbManager();
+
+        // Simulates a client reload: tear down Main and rebuild it on the
+        // same live connection (the server keeps the entity's position), the
+        // way a player closing and reopening the game would.
+        _nodeActions["test_reload_main"] = ReloadMain;
+
+        foreach (
+            var action in TestReducerActions
+                .Keys.Concat(ActionKeyBridge.Keys)
+                .Concat(_nodeActions.Keys)
+        )
         {
             if (!InputMap.HasAction(action))
                 InputMap.AddAction(action);
         }
 
-        _dbManager = new DbManager();
         _dbManager.OnDataReady += OnServerDataReady;
         _dbManager.OnConnectionFailed += OnServerConnectionFailed;
         AddChild(_dbManager);
@@ -257,6 +273,50 @@ public partial class ConnectedGameHarnessController : Node2D
                 call(conn);
             }
         }
+    }
+
+    private void ProcessNodeActions()
+    {
+        foreach (var (action, run) in _nodeActions)
+        {
+            var pressed = Input.IsActionPressed(action);
+            var wasPressed = _nodeActionState.TryGetValue(action, out var prior) && prior;
+            _nodeActionState[action] = pressed;
+
+            if (pressed && !wasPressed)
+            {
+                GD.Print($"[Harness] Node action '{action}' fired.");
+                run();
+            }
+        }
+    }
+
+    private void InstantiateMain()
+    {
+        _main = MainScene.Instantiate<Main>();
+        AddChild(_main);
+        _main.InstantiatePlayer(_dbManager);
+    }
+
+    private void ReloadMain()
+    {
+        if (_main is null)
+            return;
+
+        _main.Free();
+        _main = null;
+
+        // Drop cached references so observed state re-resolves against the
+        // rebuilt Main (and recaptures the new node's spawn position).
+        _playerNode = null;
+        _initialNodePosition = null;
+        _remoteNode = null;
+
+        InstantiateMain();
+
+        // Resolve the rebuilt node eagerly — otherwise the next observation
+        // computes distance_to_node against a null node (−1) for one tick.
+        _playerNode = _main?.GetNodeOrNull<Node2D>("Player");
     }
 
     private static int? FindFirstStoredItemId(SpacetimeDB.Types.DbConnection conn)
@@ -617,8 +677,6 @@ public partial class ConnectedGameHarnessController : Node2D
     private void OnServerDataReady()
     {
         _dataReady = true;
-        _main = MainScene.Instantiate<Main>();
-        AddChild(_main);
-        _main.InstantiatePlayer(_dbManager);
+        InstantiateMain();
     }
 }

@@ -111,15 +111,24 @@ public partial class Player : CharacterBody2D
 
         if (Server is { } svr)
         {
+            if (svr.Identity is { } identity && svr.Db.Players.Identity.Find(identity) is { } p)
+            {
+                _entityId = p.PlayerEntityId;
+
+                // Adopt the server entity's stored position on spawn so a
+                // reconnecting player starts at their last location. Without
+                // this the node sits at the scene origin (ship-center) and the
+                // first movement update warps the entity there on every other
+                // client.
+                if (svr.Db.Entities.EntityId.Find(_entityId) is { } entity)
+                {
+                    GlobalPosition = new Vector2(entity.Position.X, entity.Position.Y);
+                    ResetPhysicsInterpolation();
+                }
+            }
+
             _networkSync = new MovementNetworkSync(svr);
             _networkSync.Initialize(GlobalPosition);
-
-            if (svr.Identity is { } identity)
-            {
-                var playerRow = svr.Db.Players.Identity.Find(identity);
-                if (playerRow is { } p)
-                    _entityId = p.PlayerEntityId;
-            }
 
             svr.Db.Players.OnUpdate += OnPlayerUpdated;
         }
