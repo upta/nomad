@@ -1,0 +1,10 @@
+# Godot writes its text resources with LF line endings. With core.autocrlf=true
+# (the default here) git expects CRLF in the working tree, so every editor save
+# shows up as a phantom "modified" diff that vanishes on stage. Pin Godot-authored
+# text files to LF so the on-disk form matches what Godot writes — no false diffs,
+# and a genuine resource strip is no longer hidden in line-ending noise.
+*.tres   text eol=lf
+*.tscn   text eol=lf
+*.godot  text eol=lf
+*.import text eol=lf
+*.cfg    text eol=lf
