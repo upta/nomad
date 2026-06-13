@@ -109,7 +109,11 @@ public partial class CraftHarnessController
 
         _testActions = new Dictionary<string, Action>
         {
-            ["test_open_fabricator"] = OpenFabricator,
+            ["test_open_fabricator"] = () => OpenFabricator(true),
+            ["test_open_fabricator_unpowered"] = () => OpenFabricator(false),
+            // Direct close (no bridged Esc) so reopen-after-power scenarios don't
+            // ride the flaky modal-key path.
+            ["test_close_modal"] = () => _modalHost.Close(),
             ["test_clear"] = () =>
             {
                 _inventoryService.ClearTestItems();
@@ -214,12 +218,12 @@ public partial class CraftHarnessController
         return zone;
     }
 
-    private void OpenFabricator() =>
+    private void OpenFabricator(bool powered) =>
         _modalHost.Open(
             new RoomModalInfo(
                 "Workshop",
                 TerminalType.Fabricator,
-                true,
+                powered,
                 true,
                 WorkshopSlot,
                 "Workshop"

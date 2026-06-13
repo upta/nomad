@@ -33,7 +33,10 @@ public partial class InteractionHarnessController : Node2D, IProvide<Interaction
 
     public override void _Notification(int what) => this.Notify(what);
 
-    public override void _Process(double delta)
+    // Bridge in _PhysicsProcess, not _Process: under full-suite load a slow idle
+    // frame can straddle a whole press→release window and drop the synthetic key
+    // event (the modal-key navigation flake, gotcha #7).
+    public override void _PhysicsProcess(double delta)
     {
         BridgeInputActionsToKeys();
     }

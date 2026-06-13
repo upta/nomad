@@ -59,11 +59,17 @@ public partial class InventoryHarnessController
 
     public override void _Notification(int what) => this.Notify(what);
 
-    // Test actions poll in _PhysicsProcess with manual edge detection — the
-    // driver's press/release window spans physics frames that can share a
-    // single idle frame, so _Process polling can miss it entirely.
+    // Test actions AND the key bridge poll in _PhysicsProcess with manual edge
+    // detection. The bridge must NOT run in _Process: under full-suite load a
+    // slow render frame can straddle a whole press→release window, so the idle
+    // bridge samples pressed==pressed at both ends and silently drops the
+    // synthetic key event — the modal-key navigation flake (gotcha #7, fixed in
+    // Power/Connected harnesses; this harness was missed and its modal scenarios
+    // flaked: cloning/storage/hotbar_inert).
     public override void _PhysicsProcess(double delta)
     {
+        BridgeInputActionsToKeys();
+
         foreach (var (action, run) in _testActions)
         {
             var pressed = Input.IsActionPressed(action);
@@ -76,11 +82,6 @@ public partial class InventoryHarnessController
                 run();
             }
         }
-    }
-
-    public override void _Process(double delta)
-    {
-        BridgeInputActionsToKeys();
     }
 
     public override void _Ready()

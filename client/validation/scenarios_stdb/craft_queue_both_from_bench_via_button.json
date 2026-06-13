@@ -1,0 +1,52 @@
+{
+  "scenario_id": "craft_queue_both_from_bench_via_button",
+  "version": 1,
+  "description": "Reproduces the exact reported state: both Fuel Cell ingredients sit in the Workshop bench input (not the hotbar), and the player presses the real focused Queue button. The button must source both ingredients from the bench input, consume them, and create an active job.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_disable_fuel_burn" },
+    { "op": "wait_until", "path": "harness_state.power.fuel_per_burn", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_until", "path": "harness_state.connection.local_entity.x", "comparator": "lte", "expected": -280, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_load_fueldeposit_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_load_fueldeposit_to_workshop" },
+    { "op": "press_action", "action": "test_load_ore_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_load_ore_to_workshop" },
+    { "op": "wait_until", "path": "harness_state.crafting.benches.4.input_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "loaded" },
+    { "op": "assert_value", "checkpoint": "loaded", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "press_action", "action": "test_open_workshop_fabricator" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_open_workshop_fabricator" },
+    { "op": "wait_until", "path": "harness_state.game.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 15 },
+
+    { "op": "press_action", "action": "modal_accept" },
+    { "op": "wait_frames", "frames": 12 },
+    { "op": "release_action", "action": "modal_accept" },
+    { "op": "wait_until", "path": "harness_state.crafting.job_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "queued" },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.crafting.benches.4.active", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "queued", "path": "harness_state.crafting.benches.4.input_count", "comparator": "eq", "expected": 0 },
+
+    { "op": "quit" }
+  ]
+}

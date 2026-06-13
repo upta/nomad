@@ -21,6 +21,7 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
     private readonly List<int> _inputItemIds = [];
     private readonly List<int> _outputItemIds = [];
     private readonly List<RecipeRow> _recipeRows = [];
+    private bool _powered = true;
     private bool _ringActive;
     private string _roomId = "";
     private int _roomSlotIndex = -1;
@@ -44,6 +45,9 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
 
     [Node]
     public ItemSlotGrid InputGrid { get; set; } = default!;
+
+    [Node]
+    public ILabel NoPowerLabel { get; set; } = default!;
 
     [Node]
     public ItemSlotGrid OutputGrid { get; set; } = default!;
@@ -89,6 +93,8 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
             ["ring_visible"] = ProgressRing.Visible,
             ["active"] = _ringActive,
             ["active_progress"] = Crafting.ActiveJobAt(_roomSlotIndex)?.Progress ?? 0f,
+            ["powered"] = _powered,
+            ["no_power_visible"] = NoPowerLabel.Visible,
         };
     }
 
@@ -104,7 +110,12 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
     {
         _roomId = info.RoomId;
         _roomSlotIndex = info.SlotIndex;
+        // Power is a snapshot at open (the codebase's modal convention) — reopen
+        // the bench after restoring power. An unpowered bench can't craft, so
+        // the queue gates on it regardless of ingredients.
+        _powered = info.IsPowered;
         TitleLabel.Text = info.Label;
+        NoPowerLabel.Visible = !_powered;
         ProgressRing.Visible = false;
         BuildRecipeRows();
         Sync();
@@ -144,7 +155,9 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
 
     private void FocusFirst()
     {
-        if (_recipeRows.Count > 0)
+        // A disabled Queue button (unpowered, or missing ingredients) can't take
+        // focus usefully — fall back to the hotbar so deposit/withdraw still works.
+        if (_powered && _recipeRows.Count > 0)
             _recipeRows[0].FocusQueue();
         else
             HotbarGrid.FocusFirstOccupied();
@@ -273,7 +286,10 @@ public partial class FabricatorModal : PanelContainer, IRoomModal
         for (var i = 0; i < _recipeRows.Count && i < recipes.Count; i++)
         {
             var recipe = recipes[i];
-            _recipeRows[i].Update(recipe.Label, IngredientSummary(recipe), CanQueue(recipe));
+            // Queue requires power AND ingredients — an unpowered bench rejects
+            // QueueCraft server-side, so disable rather than silently fail.
+            _recipeRows[i]
+                .Update(recipe.Label, IngredientSummary(recipe), _powered && CanQueue(recipe));
         }
     }
 

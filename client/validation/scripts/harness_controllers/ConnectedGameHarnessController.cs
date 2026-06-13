@@ -224,6 +224,11 @@ public partial class ConnectedGameHarnessController : Node2D
             conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.FuelDeposit, 0);
             conn.Reducers.LoadItem(0, 4);
         },
+        ["test_load_ore_to_workshop"] = conn =>
+        {
+            conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.RawOre, 0);
+            conn.Reducers.LoadItem(0, 4);
+        },
         // Deposit a non-ingredient (Scrap) into the Workshop — bench rejects it.
         ["test_load_scrap_to_workshop"] = conn =>
         {
@@ -313,16 +318,22 @@ public partial class ConnectedGameHarnessController : Node2D
         // button — the modal→RequestQueueCraft→reducer path that direct reducer
         // probes never exercise.
         _nodeActions["test_open_workshop_fabricator"] = () =>
+        {
+            // Reflect the real Workshop power state so an opened-during-blackout
+            // modal shows unpowered, exactly as the live terminal would.
+            var powered =
+                _dbManager?.Connection?.Db.RoomAssignments.SlotIndex.Find(4)?.IsPowered ?? true;
             _main?.ModalHost.Open(
                 new Nomad.Game.Ui.RoomModalInfo(
                     "Workshop",
                     Nomad.Game.Ship.TerminalType.Fabricator,
-                    true,
+                    powered,
                     true,
                     4,
                     "Workshop"
                 )
             );
+        };
 
         foreach (
             var action in TestReducerActions
@@ -651,11 +662,17 @@ public partial class ConnectedGameHarnessController : Node2D
             state["hotbar"] = hotbarHud.GetObservedState();
 
         var modalHost = _main?.GetNodeOrNull<Nomad.Game.Ui.ModalHost>("ModalHost");
-        state["modal"] = new Godot.Collections.Dictionary
+        var modalState = new Godot.Collections.Dictionary
         {
             ["open"] = modalHost?.IsOpen ?? false,
             ["title"] = modalHost?.CurrentTitle ?? "",
         };
+        if (modalHost?.CurrentModal is Nomad.Game.Ui.FabricatorModal fabricator)
+        {
+            foreach (var (key, value) in fabricator.GetObservedState())
+                modalState[key] = value;
+        }
+        state["modal"] = modalState;
 
         if (_puppet is { EntityId: > 0 } puppet && _main is not null)
         {

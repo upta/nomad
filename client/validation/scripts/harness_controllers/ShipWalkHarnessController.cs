@@ -28,7 +28,10 @@ public partial class ShipWalkHarnessController : Node2D, IProvide<InteractionSer
     private ShipGrid _shipGrid = null!;
     private Vector2 _spawnPosition;
 
-    public override void _Process(double delta)
+    // Bridge in _PhysicsProcess, not _Process: under full-suite load a slow idle
+    // frame can straddle a whole press→release window and drop the synthetic key
+    // event (the modal-key navigation flake, gotcha #7).
+    public override void _PhysicsProcess(double delta)
     {
         BridgeInputActionsToKeys();
     }

@@ -1,0 +1,49 @@
+{
+  "scenario_id": "craft_unpowered_bench_disables_queue",
+  "version": 1,
+  "description": "The reported real-game bug: a dry reactor blacks out the ship, so the Workshop is unpowered. Opening its Fabricator with both ingredients in hand must show the 'No power' label and a disabled Queue button rather than silently rejecting QueueCraft on click.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.terminal_count", "comparator": "gte", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_clear_items" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_items" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "press_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_until", "path": "harness_state.items.hotbar_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_workshop" },
+    { "op": "wait_until", "path": "harness_state.connection.local_entity.x", "comparator": "lte", "expected": -280, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_short_grace" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_short_grace" },
+    { "op": "press_action", "action": "test_set_fuel_zero" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_fuel_zero" },
+    { "op": "wait_until", "path": "harness_state.power.rooms.4.is_powered", "comparator": "eq", "expected": false, "timeout_frames": 600 },
+
+    { "op": "press_action", "action": "test_open_workshop_fabricator" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_open_workshop_fabricator" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "unpowered_bench" },
+    { "op": "assert_value", "checkpoint": "unpowered_bench", "path": "harness_state.game.modal.open", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "unpowered_bench", "path": "harness_state.game.modal.powered", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "unpowered_bench", "path": "harness_state.game.modal.no_power_visible", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "unpowered_bench", "path": "harness_state.game.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": false },
+
+    { "op": "quit" }
+  ]
+}

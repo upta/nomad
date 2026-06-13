@@ -1,0 +1,45 @@
+{
+  "scenario_id": "fabricator_unpowered_disables_queue",
+  "version": 1,
+  "description": "An unpowered bench shows a 'No power' label and disables the Queue button even when the player has every ingredient, so the queue never silently rejects server-side. Reopening the same bench once powered hides the label and re-enables Queue.",
+  "harness_scene": "res://validation/harnesses/CraftHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/CraftHarness.tscn" },
+    { "op": "wait_frames", "frames": 10 },
+
+    { "op": "press_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_give_fueldeposit_slot0" },
+    { "op": "press_action", "action": "test_give_ore_slot1" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_give_ore_slot1" },
+
+    { "op": "press_action", "action": "test_open_fabricator_unpowered" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_open_fabricator_unpowered" },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "checkpoint", "name": "unpowered" },
+    { "op": "assert_value", "checkpoint": "unpowered", "path": "harness_state.modal.open", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "unpowered", "path": "harness_state.modal.powered", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "unpowered", "path": "harness_state.modal.no_power_visible", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "unpowered", "path": "harness_state.modal.hotbar_count", "comparator": "eq", "expected": 2 },
+    { "op": "assert_value", "checkpoint": "unpowered", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": false },
+
+    { "op": "press_action", "action": "test_close_modal" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_close_modal" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": false, "timeout_frames": 120 },
+
+    { "op": "press_action", "action": "test_open_fabricator" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "release_action", "action": "test_open_fabricator" },
+    { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "powered" },
+    { "op": "assert_value", "checkpoint": "powered", "path": "harness_state.modal.powered", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "powered", "path": "harness_state.modal.no_power_visible", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "powered", "path": "harness_state.modal.recipes.0.queue_enabled", "comparator": "eq", "expected": true },
+
+    { "op": "quit" }
+  ]
+}
