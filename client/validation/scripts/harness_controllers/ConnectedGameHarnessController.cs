@@ -173,13 +173,14 @@ public partial class ConnectedGameHarnessController : Node2D
     {
         // The driver presses/releases across physics frames that can share a
         // single idle frame — _Process polling would miss the whole window.
+        // The key bridge belongs here for the same reason: a slow render frame
+        // can straddle a whole press→release window, so _Process sampling sees
+        // no net change and silently drops the synthetic key event (the
+        // bridged modal-key navigation flake). Polling per physics frame
+        // observes every frame the driver holds the action.
+        BridgeInputActionsToKeys();
         ProcessTestReducerActions();
         ProcessNodeActions();
-    }
-
-    public override void _Process(double delta)
-    {
-        BridgeInputActionsToKeys();
     }
 
     public override void _Ready()

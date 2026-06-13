@@ -56,11 +56,19 @@ public partial class PowerHarnessController
 
     public override void _Notification(int what) => this.Notify(what);
 
-    // Test actions poll in _PhysicsProcess with manual edge detection — the
-    // driver's press/release window spans physics frames that can share a
-    // single idle frame, so _Process polling can miss it entirely.
+    // Everything that samples driver input state polls in _PhysicsProcess with
+    // manual edge detection. The driver holds each press for a fixed number of
+    // *physics* frames (wait_frames awaits get_tree().physics_frame), so a
+    // physics-frame poll observes the held state on every frame of that window
+    // and can never miss a press or release edge. In _Process (idle) a single
+    // slow render frame can straddle the whole press→release window — the
+    // bridge then samples pressed==pressed at both ends, sees no net change,
+    // and silently drops the synthetic key event. That dropped-edge race was
+    // the root cause of the bridged modal-key navigation flakes.
     public override void _PhysicsProcess(double delta)
     {
+        BridgeInputActionsToKeys();
+
         foreach (var (action, run) in _testActions)
         {
             var pressed = Input.IsActionPressed(action);
@@ -73,11 +81,6 @@ public partial class PowerHarnessController
                 run();
             }
         }
-    }
-
-    public override void _Process(double delta)
-    {
-        BridgeInputActionsToKeys();
     }
 
     public override void _Ready()

@@ -18,7 +18,7 @@
     { "op": "checkpoint", "name": "at_terminal" },
     { "op": "assert_value", "checkpoint": "at_terminal", "path": "harness_state.modal.open", "comparator": "eq", "expected": false },
     { "op": "press_action", "action": "interact" },
-    { "op": "wait_frames", "frames": 5 },
+    { "op": "wait_frames", "frames": 10 },
     { "op": "release_action", "action": "interact" },
     { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": true, "timeout_frames": 120 },
     { "op": "wait_frames", "frames": 10 },
@@ -26,7 +26,7 @@
     { "op": "assert_value", "checkpoint": "modal_pressure_lost", "path": "harness_state.modal.title", "comparator": "eq", "expected": "Kitchen" },
     { "op": "assert_value", "checkpoint": "modal_pressure_lost", "path": "harness_state.modal.pressure_nominal", "comparator": "eq", "expected": false },
     { "op": "press_action", "action": "ui_cancel_modal" },
-    { "op": "wait_frames", "frames": 5 },
+    { "op": "wait_frames", "frames": 10 },
     { "op": "release_action", "action": "ui_cancel_modal" },
     { "op": "wait_until", "path": "harness_state.modal.open", "comparator": "eq", "expected": false, "timeout_frames": 120 },
     { "op": "quit" }
