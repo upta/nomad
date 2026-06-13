@@ -597,21 +597,25 @@ Design notes (user-confirmed):
 ## Subtask 3.4.5: DoD sweep — Scope: S ✅
 - [x] `validate_all.ps1` both suites green (35 pure / 28 stdb); boot clean zero ERROR (connected + subscribed, Init seeds fuel + burn timer); builds + csharpier both sides; import pass (DepositRow uid staged); plan/todo checked; push
 
-# Task 3.5: Cargo Bay storage (store/withdraw)
+# Task 3.5: Cargo Bay storage (store/withdraw) ✅ DONE
 
-## Subtask 3.5.1: Server — storage branch + WithdrawItem — Scope: M
-- [ ] `AcceptsStorage` + `FindFreeStoreSlot` (CargoCapacity); `LoadItem` storage branch (any type, capacity-checked)
-- [ ] `WithdrawItem(itemId)` (Stored + reach + free hotbar slot); reducer-only publish; death-drop ignores Stored (why-comment)
+## Subtask 3.5.1: Server — storage branch + WithdrawItem — Scope: M ✅
+- [x] `AcceptsStorage` (CargoBay; rooms opt in here) + `FindFreeStoreSlot` (vs `InventoryConfig.CargoCapacity`); `LoadItem` storage branch — room accepts storage → UPDATE to Stored at the free store slot (any type, capacity-checked); tank branch unchanged
+- [x] `WithdrawItem(itemId)` — alive + Stored + reach vs `SlotCenter(item.RoomSlotIndex)` within `LoadRadius` + `FindFreeHotbarSlot` → UPDATE to Hotbar; reducer-only publish + generate + builds; death-drop already only iterates Hotbar rows so Stored items stay the ship's
 
-## Subtask 3.5.2: stdb validation — Scope: M
-- [ ] `cargo_store_withdraw_round_trip.json` + `cargo_store_rejections.json` (reach / non-storage room / full store / full hotbar) red first
+## Subtask 3.5.2: stdb validation — Scope: M ✅
+- [x] Harness: `items.stored` (room → slot-ordered {item_id,type,slot}) + `stored_count` + `config.cargo_capacity` observed; test actions `test_store_slot0_to_cargo`/`test_load_slot0_to_kitchen`/`test_withdraw_first_stored`/`test_fill_cargo` (12× give+store pairs ride per-connection reducer ordering)
+- [x] `cargo_store_withdraw_round_trip.json` — first run red (door overshoot: wait_until polls the lagging server x, player wall-clamped right of the CargoBay door); fixed with the overshoot-then-down+left wall-slide (mirror of the Reactor entry); store empties hotbar, withdraw restores RawOre
+- [x] `cargo_store_rejections.json` — out-of-reach store from spawn, ore→Kitchen (accepts neither storage nor that tank item), 13th store into a full cargo (12/12 stays), withdraw with full hotbar (item stays Stored)
 
-## Subtask 3.5.3: Client — StorageModal (untrailed dual-grid, improved) — Scope: M
-- [ ] `ItemSlotGrid.tscn` (focusable buttons wrapping `ItemSlotPanel`, in-place updates); `StorageModal.tscn` dual grid (hotbar press→deposit, cargo press→withdraw, focus-navigable)
-- [ ] `CargoBayRoom.tres` TerminalType → Storage; ModalHost Storage export slot; InventoryService `StoredIn`/`RequestWithdraw`/seeder
+## Subtask 3.5.3: Client — StorageModal (untrailed dual-grid, improved) — Scope: M ✅
+- [x] `ItemSlotButton.tscn`/`.cs` (focusable Button wrapping the shared `ItemSlotPanel`; selection ring on focus; empty slots leave focus navigation) + `ItemSlotGrid.tscn`/`.cs` (`SetSlots` in-place — fixed counts per grid mean no rebuild, focus survives; `SlotPressed(index)`)
+- [x] `StorageModal.tscn`/`.cs` — title "Cargo Storage (N/12)", hotbar + cargo grids, hotbar press → `RequestStore`, cargo press → `RequestWithdraw`, first-occupied focus on open, focus re-homes when the focused slot empties, empty-cargo label
+- [x] `CargoBayRoom.tres` TerminalType Info→Storage (the behavioral switch — left for last as the pure scenario's red lever); ModalHost `Storage` export + route; InventoryService `StoredIn`/`RequestStore`/`RequestWithdraw`/`SeedTestStoredItem`/`CargoCapacity` + Stored eviction in `Apply`; Main + InventoryHarness provide `ItemTypeRegistry` (modal resolves type colors/glyphs via `[Dependency]`)
 
-## Subtask 3.5.4: Pure validation + multiplayer checkpoint — Scope: M
-- [ ] `storage_modal_store_withdraw.json` red first; `scenarios_stdb/items_multiplayer_visibility.json` (puppet sees drops/stores)
+## Subtask 3.5.4: Pure validation + multiplayer checkpoint — Scope: M ✅
+- [x] `storage_modal_store_withdraw.json` red first (storage_title missing — Info modal opened on the unflipped .tres), green after the flip; deposit updates title 0/12→1/12 + both grids in place, modal_down + accept withdraws, Esc closes; screenshots reviewed (focus ring, dual grid, HUD hotbar mirror)
+- [x] `scenarios_stdb/items_multiplayer_visibility.json` — PuppetClient exposes its own table view (`world_item_count`/`stored_item_count`); puppet sees the main client's drop become World and store become Stored — the **Checkpoint: Inventory** second-client proof
 
-## Subtask 3.5.5: DoD sweep + Phase 3 checkpoint — Scope: S
-- [ ] Full `validate_all.ps1`, boot clean, builds + format, plan/todo checked incl. **Checkpoint: Inventory**, push
+## Subtask 3.5.5: DoD sweep + Phase 3 checkpoint — Scope: S ✅
+- [x] Full `validate_all.ps1` both suites green (36 pure + 31 stdb); boot clean zero ERROR; builds + csharpier both sides; uids imported; plan/todo checked incl. **Checkpoint: Inventory**; push

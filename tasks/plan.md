@@ -219,14 +219,14 @@ Full plan: `C:\Users\upta\.claude\plans\polished-watching-liskov.md`. One `Item`
     - [x] 3.4.4: Pure validation — modal deposit scenarios for both terminals. **Scope: M**
     - [x] 3.4.5: DoD sweep. **Scope: S**
 
-- [ ] **Task 3.5: Cargo Bay storage (store/withdraw)** — The Cargo Bay holds a capacity-limited generic store ("haul back to cargo bay storage", GDD §4): deposit any item from the hotbar, withdraw later. Same `LoadItem` deposit verb (storage branch) + `WithdrawItem`; `StorageModal` on the Cargo Bay terminal is an untrailed-`WagonInventoryUI`-inspired dual slot grid (hotbar ↔ cargo), improved: service-fed, scene-styled, in-place updates, focus-navigable. Stored items are the ship's — unaffected by death. **Scope: M**
-    - [ ] 3.5.1: Server — `AcceptsStorage` + `FindFreeStoreSlot`, `LoadItem` storage branch, `WithdrawItem` reducer (reducer-only publish). **Scope: M**
-    - [ ] 3.5.2: stdb validation — store/withdraw round trip + rejection matrix (reach, non-storage room, full store, full hotbar). **Scope: M**
-    - [ ] 3.5.3: Client — `ItemSlotGrid` + `StorageModal` dual grid, CargoBay terminal type → Storage, ModalHost slot. **Scope: M**
-    - [ ] 3.5.4: Pure validation + `scenarios_stdb/items_multiplayer_visibility.json` (puppet client sees drops/stores — checkpoint proof). **Scope: M**
-    - [ ] 3.5.5: DoD sweep + Phase 3 checkpoint. **Scope: S**
+- [x] **Task 3.5: Cargo Bay storage (store/withdraw)** — The Cargo Bay holds a capacity-limited generic store ("haul back to cargo bay storage", GDD §4): deposit any item from the hotbar, withdraw later. Same `LoadItem` deposit verb (storage branch) + `WithdrawItem`; `StorageModal` on the Cargo Bay terminal is an untrailed-`WagonInventoryUI`-inspired dual slot grid (hotbar ↔ cargo), improved: service-fed, scene-styled, in-place updates, focus-navigable. Stored items are the ship's — unaffected by death. **Scope: M**
+    - [x] 3.5.1: Server — `AcceptsStorage` + `FindFreeStoreSlot`, `LoadItem` storage branch, `WithdrawItem` reducer (reducer-only publish). **Scope: M**
+    - [x] 3.5.2: stdb validation — store/withdraw round trip + rejection matrix (reach, non-storage room, full store, full hotbar). **Scope: M**
+    - [x] 3.5.3: Client — `ItemSlotGrid` + `StorageModal` dual grid, CargoBay terminal type → Storage, ModalHost slot. **Scope: M**
+    - [x] 3.5.4: Pure validation + `scenarios_stdb/items_multiplayer_visibility.json` (puppet client sees drops/stores — checkpoint proof). **Scope: M**
+    - [x] 3.5.5: DoD sweep + Phase 3 checkpoint. **Scope: S**
 
-**Checkpoint: Inventory** — Full pickup→carry→deposit loop works multiplayer.
+**Checkpoint: Inventory** ✅ — Full pickup→carry→deposit loop works multiplayer. Phase 3 complete (36 pure + 31 stdb scenarios green).
 
 ### Phase 4: Resource Economy
 
