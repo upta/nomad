@@ -23,6 +23,7 @@ public static partial class Module
         DeleteAllCraftingJobs(ctx);
         DeleteAllActiveHarvests(ctx);
         DeleteAllHazards(ctx);
+        DeleteAllCreatures(ctx);
 
         ReseedRooms(ctx);
         ResetShipStoresToSeed(ctx);

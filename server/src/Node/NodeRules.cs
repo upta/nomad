@@ -19,6 +19,7 @@ public static partial class Module
     private static void ClearTransientNodeState(ReducerContext ctx)
     {
         DeleteAllResourceNodes(ctx);
+        DeleteAllCreatures(ctx);
     }
 
     // Seeds the arrived node's transient content. Each node task fills in its
@@ -34,6 +35,7 @@ public static partial class Module
                 break;
             case NodeKind.Planetside:
                 SeedPlanetsideNodes(ctx);
+                SeedPlanetsideCreatures(ctx);
                 break;
             // Wreck (5.3), TradingPost (5.4), DefenseEvent (5.5) seed their own
             // surface nodes / creatures / catalog here.

@@ -27,6 +27,11 @@ public static partial class Module
         GetNodeActivity(ctx);
         RescheduleHazardTick(ctx, GetHazardConfig(ctx).TickMillis);
 
+        // Creates the CreatureConfig row and starts the repeating creature tick
+        // (chase/patrol + contact damage). No-ops until creatures are seeded at
+        // an exterior node (Planetside).
+        RescheduleCreatureTick(ctx, GetCreatureConfig(ctx).TickMillis);
+
         // Seeds the ship's shared stores (biomass = three respawns).
         GetShipStores(ctx);
 
