@@ -51,6 +51,25 @@ public static partial class Module
         );
     }
 
+    // Inserts a loose World item (no holder) at a world position — the shared
+    // path for scattered loot (wreck salvage) and the SpawnWorldItem debug
+    // reducer.
+    private static void SeedWorldItem(ReducerContext ctx, ItemTypeId itemTypeId, float x, float y)
+    {
+        ctx.Db.Items.Insert(
+            new Item
+            {
+                ItemId = 0,
+                ItemTypeId = itemTypeId,
+                LocationKind = ItemLocationKind.World,
+                Position = new DbVector2 { X = x, Y = y },
+                Holder = default,
+                SlotIndex = 0,
+                RoomSlotIndex = -1,
+            }
+        );
+    }
+
     private static void SeedResourceNode(
         ReducerContext ctx,
         ResourceNodeTypeId nodeType,
@@ -79,6 +98,33 @@ public static partial class Module
         foreach (var item in ctx.Db.Items.Iter())
         {
             stale.Add(item.ItemId);
+        }
+
+        foreach (var itemId in stale)
+        {
+            ctx.Db.Items.ItemId.Delete(itemId);
+        }
+    }
+
+    // Clears loose World items that sit outside the hull — transient salvage
+    // and surface drops that belong to the node, not the ship. Floor drops
+    // inside a room or the corridor (SlotForCell >= 0) are on the ship and
+    // survive a jump; hotbar and stored items (other LocationKinds) are never
+    // touched. Used by ClearTransientNodeState on every node switch.
+    private static void DeleteExteriorWorldItems(ReducerContext ctx)
+    {
+        var stale = new System.Collections.Generic.List<int>();
+        foreach (var item in ctx.Db.Items.Iter())
+        {
+            if (item.LocationKind != ItemLocationKind.World)
+            {
+                continue;
+            }
+
+            if (SlotForCell(WorldToCell(item.Position)) < 0)
+            {
+                stale.Add(item.ItemId);
+            }
         }
 
         foreach (var itemId in stale)

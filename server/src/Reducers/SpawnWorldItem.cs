@@ -15,17 +15,6 @@ public static partial class Module
             throw new System.ArgumentException("Cannot spawn an item of type None.");
         }
 
-        ctx.Db.Items.Insert(
-            new Item
-            {
-                ItemId = 0,
-                ItemTypeId = itemTypeId,
-                LocationKind = ItemLocationKind.World,
-                Position = new DbVector2 { X = x, Y = y },
-                Holder = default,
-                SlotIndex = 0,
-                RoomSlotIndex = -1,
-            }
-        );
+        SeedWorldItem(ctx, itemTypeId, x, y);
     }
 }

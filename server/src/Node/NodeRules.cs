@@ -20,6 +20,10 @@ public static partial class Module
     {
         DeleteAllResourceNodes(ctx);
         DeleteAllCreatures(ctx);
+        // Uncollected salvage left on an exterior grid (wreck loot, surface
+        // drops) belongs to the node, not the ship — it doesn't follow a jump.
+        // Interior floor drops (inside the hull) are on the ship and persist.
+        DeleteExteriorWorldItems(ctx);
     }
 
     // Seeds the arrived node's transient content. Each node task fills in its
@@ -34,8 +38,13 @@ public static partial class Module
                 SeedPlanetsideNodes(ctx);
                 SeedPlanetsideCreatures(ctx);
                 break;
-            // Quiet seeds nothing. Wreck (5.3), TradingPost (5.4), DefenseEvent
-            // (5.5) seed their own surface nodes / creatures / catalog here.
+            case NodeKind.Wreck:
+                SeedWreckLoot(ctx);
+                SeedWreckNodes(ctx);
+                SeedWreckCreatures(ctx);
+                break;
+            // Quiet seeds nothing. TradingPost (5.4), DefenseEvent (5.5) seed
+            // their own surface nodes / creatures / catalog here.
             default:
                 break;
         }
@@ -54,5 +63,27 @@ public static partial class Module
         SeedResourceNode(ctx, ResourceNodeTypeId.OreVein, 880f, 96f, 5);
         SeedResourceNode(ctx, ResourceNodeTypeId.FuelDepositNode, 1040f, -32f, 5);
         SeedResourceNode(ctx, ResourceNodeTypeId.BiomassPatch, 1180f, 80f, 5);
+    }
+
+    // Salvage debris fields on the wreck exterior — the WreckageDebris
+    // ResourceNode rows harvested for Scrap, scattered around the derelict to
+    // the right of the dock (position-agnostic per the 4.1 decision). Cleared
+    // like any transient node content on departure.
+    private static void SeedWreckNodes(ReducerContext ctx)
+    {
+        SeedResourceNode(ctx, ResourceNodeTypeId.WreckageDebris, 780f, 120f, 5);
+        SeedResourceNode(ctx, ResourceNodeTypeId.WreckageDebris, 1120f, -80f, 5);
+    }
+
+    // Loose salvage scattered across the wreck — World items the crew picks up
+    // and hauls back to the Cargo Bay. Mostly Scrap, with a rarer Components
+    // drop. No holder (LocationKind.World); DeleteExteriorWorldItems clears any
+    // uncollected loot when the ship jumps away. Shared with the SpawnSalvageLoot
+    // debug reducer so a playtester can re-scatter loot without re-jumping.
+    private static void SeedWreckLoot(ReducerContext ctx)
+    {
+        SeedWorldItem(ctx, ItemTypeId.Scrap, 700f, -96f);
+        SeedWorldItem(ctx, ItemTypeId.Scrap, 1000f, 96f);
+        SeedWorldItem(ctx, ItemTypeId.Components, 860f, -32f);
     }
 }

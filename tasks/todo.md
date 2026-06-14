@@ -875,17 +875,23 @@ Builds the reusable exterior-grid + airlock-transition system on the 5.1 MapHost
 
 Reuses 5.2's airlock/exterior-grid; new hand-crafted derelict layout; salvage = scattered World items + WreckageDebris nodes (exist) hauled back to cargo (exists); reuses 5.1 fire + 5.2 creatures as wreck hazards. Rare `Components` drops (item exists).
 
-### Subtask 5.3.1: Server — wreck node seeding + salvage loot — Scope: M
-- [ ] `NodeRules.SeedNode(Wreck)` — seed wreck loot (World items: Components/Scrap) + WreckageDebris nodes + optional fire/creature hazards; `SpawnSalvageLoot` debug; publish/generate/builds
+### Subtask 5.3.1: Server — wreck node seeding + salvage loot — Scope: M ✅
+- [x] `NodeRules.SeedNode(Wreck)` — seeds 2 `WreckageDebris` ResourceNodes + 3 scattered World loot items (2 Scrap + 1 rarer Components, shared `SeedWreckLoot`) + 2 `SeedWreckCreatures` crawlers (the wreck hazard). `NodeHasExterior(Wreck)` → true (airlock crosses onto the derelict). `ClearTransientNodeState` gains `DeleteExteriorWorldItems` (clears uncollected loot/surface drops outside the hull via `SlotForCell(WorldToCell(pos)) < 0`; interior floor drops + hotbar/stored survive). `SpawnSalvageLoot` debug reducer re-scatters loot. `SeedWorldItem` helper extracted in WorldRules (shared by `SpawnWorldItem`). publish `--delete-data=always` + generate + builds clean.
+- Fire deliberately NOT auto-seeded at the wreck: fire is a *ship* hazard that persists across jumps (architecture), so seeding it would leak fires every visit. Fire reuse at the wreck is proven by the pure harness instead.
 
-### Subtask 5.3.2: stdb validation — salvage + haul-back — Scope: S
-- [ ] `wreck_seeds_loot_and_hazards.json`, `wreck_salvage_haul_to_cargo.json` (pick up loot in wreck → cross back to ship → store in CargoBay; puppet sees the store)
+### Subtask 5.3.2: stdb validation — salvage + haul-back — Scope: S ✅
+- [x] Harness actions: `test_set_node_wreck`, `test_spawn_components_at_player` (spawn-at-player), `test_teleport_to_cargo` (CargoBay slot-6 center 304,144).
+- [x] `wreck_seeds_loot_and_hazards.json` — Quiet (no nodes/creatures/loot) → Wreck seeds 2 WreckageDebris (x>600) + 3 World loot (by_type Scrap 2 / Components 1) + 2 crawlers → Quiet clears every transient incl. the uncollected exterior loot.
+- [x] `wreck_salvage_haul_to_cargo.json` (puppet harness) — at Wreck, cross the airlock onto the derelict (zone.in_exterior, current_slot -1), pick a Components off the surface into the hotbar, cross back in, teleport to the Cargo Bay and store it; stored_count 1 + stored.6.0 == Components + hotbar empty, and the puppet client sees stored_item_count 1.
 
-### Subtask 5.3.3: Client — WreckMap — Scope: M
-- [ ] `WreckMap.tscn` (derelict HullTemplate-like layout, dim/vacuum aesthetic) placing the Ship + dock airlock; reuse item/node/fire/creature spawners
+### Subtask 5.3.3: Client — WreckMap — Scope: M ✅
+- [x] `WreckMap.tscn` — `GameMap` base + dark void backdrop + dim cold-blue `TerrainGrid` (GroundColor 0.16/0.18/0.22 — blue>red, distinct from Planetside's warm brown) + the docked `ShipBody` (carries the always-present airlock). Visual polish (broken-hull structure) deferred to Phase 7; the dim cold palette + scattered salvage read as "derelict" for the prototype.
+- [x] Main MapHost: `WreckMapScene` `[Export]` (wired in Main.tscn), `SceneForNode(Wreck)` → WreckMap, `OnAirlockUsed`/`CurrentNodeHasExterior` + `AirlockLabel` ("Exit to wreck") extended, DebugHud "Toggle Node" now cycles Quiet→Planetside→Wreck (full node selector still lands in 5.6). Item/node/fire/creature spawners are already Main-owned, so they render on the wreck map unchanged.
 
-### Subtask 5.3.4: Pure validation + DoD sweep — Scope: S
-- [ ] `wreck_renders.json` + fire/creature reuse in wreck context; both suites green; boot clean; builds+format; screenshots; plan/todo; push
+### Subtask 5.3.4: Pure validation + DoD sweep — Scope: S ✅
+- [x] `WreckHarness.tscn` + `WreckHarnessController.cs` — instances the real WreckMap, wires its ShipGrid registry + seeds the 8 rooms, and seeds a fire (ship interior) + a crawler (derelict terrain) through the reused services. `wreck_renders.json` asserts the docked ship (7 terminals) + airlock render, the terrain is dim/cold (ground_r < 0.25, ground_b − ground_r > 0), and fire + creature render on the wreck.
+- [x] `./scripts/validate_all.ps1` — both suites green: **52 pure + 61 stdb**, no regressions; screenshots reviewed (pure wreck map with fire inside the ship + crawler on the cold terrain; connected real-game wreck with the player crossed out onto the derelict, O2 draining).
+- [x] Game boots clean ≥13s, zero `ERROR:` lines (DbManager connected, subscription applied, all registries loaded). `dotnet build` + csharpier (client), `spacetime build` + format (server). uids generated (`--import`). plan/todo checked off; `git push origin`.
 
 ---
 

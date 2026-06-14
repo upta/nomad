@@ -1,0 +1,43 @@
+{
+  "scenario_id": "wreck_renders",
+  "version": 3,
+  "description": "The WreckMap (the derelict-salvage map the MapHost loads at the Wreck node) renders the docked ship with its 7 room terminals and airlock, over a dim, cold exterior terrain (distinct from Planetside's warm ground: blue dominates red). The reused fire (5.1) and creature (5.2) stacks render on top of the wreck map unchanged — a fire burning inside the docked ship and a crawler roaming the derelict terrain.",
+  "harness_scene": "res://validation/harnesses/WreckHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/WreckHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.terminal_count", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "wreck_map" },
+    { "op": "assert_value", "checkpoint": "wreck_map", "path": "harness_state.ship_present", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "wreck_map", "path": "harness_state.airlock_present", "comparator": "eq", "expected": true },
+    { "op": "assert_value", "checkpoint": "wreck_map", "path": "harness_state.terminal_count", "comparator": "eq", "expected": 7 },
+    { "op": "assert_value", "checkpoint": "wreck_map", "path": "harness_state.hazard_type_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "wreck_map", "path": "harness_state.creature_type_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "wreck_map", "path": "harness_state.terrain.ground_r", "comparator": "lt", "expected": 0.25 },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "ground_r": { "kind": "checkpoint", "checkpoint": "wreck_map", "path": "harness_state.terrain.ground_r" },
+        "ground_b": { "kind": "checkpoint", "checkpoint": "wreck_map", "path": "harness_state.terrain.ground_b" }
+      },
+      "pipeline": [
+        { "op": "subtract", "inputs": ["ground_b", "ground_r"], "as": "cold_shift" }
+      ],
+      "assert": { "actual": "cold_shift", "comparator": "gt", "expected": 0.0 }
+    },
+
+    { "op": "press_action", "action": "test_seed_fire" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "test_seed_fire" },
+    { "op": "wait_until", "path": "harness_state.fire_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_seed_creature" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "test_seed_creature" },
+    { "op": "wait_until", "path": "harness_state.creature_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+
+    { "op": "checkpoint", "name": "hazards_render" },
+    { "op": "assert_value", "checkpoint": "hazards_render", "path": "harness_state.fire_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "hazards_render", "path": "harness_state.creature_count", "comparator": "eq", "expected": 1 },
+    { "op": "quit" }
+  ]
+}

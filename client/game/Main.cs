@@ -97,6 +97,9 @@ public partial class Main
     public PackedScene PlanetsideMapScene { get; set; } = null!;
 
     [Export]
+    public PackedScene WreckMapScene { get; set; } = null!;
+
+    [Export]
     public PackedScene RemoteEntityScene { get; set; } = null!;
 
     [Node]
@@ -208,10 +211,16 @@ public partial class Main
         SwitchMap(SceneForNode(kind));
     }
 
-    // Wreck/TradingPost/DefenseEvent reuse the Quiet ship-in-space view until
-    // their maps land in 5.3+; Planetside is the one exterior map today.
+    // TradingPost/DefenseEvent reuse the Quiet ship-in-space view until their
+    // maps land in 5.4+; Planetside and the abandoned Wreck are the exterior
+    // maps today.
     private PackedScene SceneForNode(SpacetimeDB.Types.NodeKind kind) =>
-        kind == SpacetimeDB.Types.NodeKind.Planetside ? PlanetsideMapScene : QuietMapScene;
+        kind switch
+        {
+            SpacetimeDB.Types.NodeKind.Planetside => PlanetsideMapScene,
+            SpacetimeDB.Types.NodeKind.Wreck => WreckMapScene,
+            _ => QuietMapScene,
+        };
 
     // Airlock walk-up → server verb, chosen from the player's current zone: a
     // single door steps you out when inside (at an exterior node) and back in
@@ -224,14 +233,26 @@ public partial class Main
             return;
         if (_localInExterior)
             conn.Reducers.EnterInterior();
-        else if (_currentNodeKind == SpacetimeDB.Types.NodeKind.Planetside)
+        else if (CurrentNodeHasExterior())
             conn.Reducers.EnterExterior();
     }
 
     private string AirlockLabel() =>
-        _localInExterior ? "Enter ship"
-        : _currentNodeKind == SpacetimeDB.Types.NodeKind.Planetside ? "Exit to surface"
-        : "Airlock";
+        _localInExterior
+            ? "Enter ship"
+            : _currentNodeKind switch
+            {
+                SpacetimeDB.Types.NodeKind.Planetside => "Exit to surface",
+                SpacetimeDB.Types.NodeKind.Wreck => "Exit to wreck",
+                _ => "Airlock",
+            };
+
+    // Client mirror of the server's NodeHasExterior gate (AirlockGeometry): the
+    // door only steps you out at a node that presents an exterior grid.
+    private bool CurrentNodeHasExterior() =>
+        _currentNodeKind
+            is SpacetimeDB.Types.NodeKind.Planetside
+                or SpacetimeDB.Types.NodeKind.Wreck;
 
     InteractionService IProvide<InteractionService>.Value() => _interactionService;
 
@@ -398,16 +419,19 @@ public partial class Main
 
     private void OnDebugResetRequested() => _dbManager?.Connection?.Reducers.ResetWorld();
 
-    // Debug node switch — flip between Quiet (ship in space) and Planetside
-    // (surface) so the airlock + exterior map are reachable before the Star
-    // Chart / Jump verbs land in Phase 6. The map swap follows the
-    // NodeActivities subscription.
+    // Debug node switch — cycle Quiet (ship in space) → Planetside (surface) →
+    // Wreck (derelict salvage) → Quiet, so each node's map + airlock is
+    // reachable before the Star Chart / Jump verbs land in Phase 6. The full
+    // node selector lands in 5.6. The map swap follows the NodeActivities
+    // subscription.
     private void OnDebugNodeToggleRequested()
     {
-        var next =
-            _currentNodeKind == SpacetimeDB.Types.NodeKind.Planetside
-                ? SpacetimeDB.Types.NodeKind.Quiet
-                : SpacetimeDB.Types.NodeKind.Planetside;
+        var next = _currentNodeKind switch
+        {
+            SpacetimeDB.Types.NodeKind.Quiet => SpacetimeDB.Types.NodeKind.Planetside,
+            SpacetimeDB.Types.NodeKind.Planetside => SpacetimeDB.Types.NodeKind.Wreck,
+            _ => SpacetimeDB.Types.NodeKind.Quiet,
+        };
         _dbManager?.Connection?.Reducers.SetActiveNode(next);
     }
 

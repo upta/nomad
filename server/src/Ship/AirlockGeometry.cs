@@ -27,9 +27,10 @@ public static partial class Module
     // radii; the server checks it regardless of the client's InteractTarget.
     private const float AirlockReach = 96f;
 
-    // Which nodes present an exterior grid to cross onto. Planetside now;
-    // Wreck (5.3) and TradingPost (5.4) append here as they land.
-    private static bool NodeHasExterior(NodeKind kind) => kind == NodeKind.Planetside;
+    // Which nodes present an exterior grid to cross onto. Planetside and the
+    // abandoned Wreck (5.3) now; TradingPost (5.4) appends here as it lands.
+    private static bool NodeHasExterior(NodeKind kind) =>
+        kind == NodeKind.Planetside || kind == NodeKind.Wreck;
 
     private static bool WithinAirlockReach(DbVector2 from, DbVector2 airlock)
     {

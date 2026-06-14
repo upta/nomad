@@ -349,6 +349,31 @@ public partial class ConnectedGameHarnessController : Node2D
             conn.Reducers.SetActiveNode(SpacetimeDB.Types.NodeKind.Planetside),
         ["test_set_node_quiet"] = conn =>
             conn.Reducers.SetActiveNode(SpacetimeDB.Types.NodeKind.Quiet),
+        // Wreck salvage node (Task 5.3) — seeds debris nodes + scattered World
+        // loot (Scrap/Components) + crawlers; has an exterior to cross onto.
+        ["test_set_node_wreck"] = conn =>
+            conn.Reducers.SetActiveNode(SpacetimeDB.Types.NodeKind.Wreck),
+        // Drop a Components salvage item on the player's own cell so the
+        // nearest-item pickup grabs it without flaky navigation — the wreck
+        // haul-back loot pickup.
+        ["test_spawn_components_at_player"] = conn =>
+        {
+            if (PlayerEntityPos(conn) is { } pos)
+                conn.Reducers.SpawnWorldItem(SpacetimeDB.Types.ItemTypeId.Components, pos.X, pos.Y);
+        },
+        // CargoBay slot-6 center (HullGeometry SlotCenter(6) = (304, 144)) so a
+        // storage Load passes the reach check without navigation.
+        ["test_teleport_to_cargo"] = conn =>
+        {
+            if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } player)
+                conn.Reducers.MoveEntity(
+                    player.PlayerEntityId,
+                    new SpacetimeDB.Types.DbVector2(304, 144),
+                    new SpacetimeDB.Types.DbVector2(0, 0),
+                    0f,
+                    0.0
+                );
+        },
         // Airlock + creatures (Task 5.2). Teleport onto the ship airlock
         // (AirlockGeometry ShipAirlock = (464, 0)) so EnterExterior's reach
         // check passes without navigation, then cross out / back.

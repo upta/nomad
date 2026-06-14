@@ -11,9 +11,10 @@ using Godot;
 // Floating dev affordances (top-right): "Reset World" wipes run state to the
 // Init seed; "Ignite Fire" starts a fire on the local player so the hazard
 // system is playable before in-game ignition sources (events/breaches) land;
-// "Toggle Node" debug-switches between the Quiet ship-in-space node and the
-// Planetside surface (the eventual jump target in Phase 6). Main owns the
-// reducer calls — this scene only surfaces the requests as events.
+// "Toggle Node" debug-cycles the active node (Quiet → Planetside → Wreck) so
+// each node's map + airlock is reachable before the Star Chart / Jump verbs
+// land in Phase 6. Main owns the reducer calls — this scene only surfaces the
+// requests as events.
 [Meta(typeof(IAutoNode))]
 public partial class DebugHud : CanvasLayer
 {

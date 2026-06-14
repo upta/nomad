@@ -109,6 +109,14 @@ public static partial class Module
         SpawnCreatureAt(ctx, CreatureTypeId.Crawler, new DbVector2 { X = 1040f, Y = 160f }, 3);
     }
 
+    // The derelict's denizens — a couple of crawlers prowling the wreck
+    // exterior (the salvage hazard), offset to opposite waypoints.
+    private static void SeedWreckCreatures(ReducerContext ctx)
+    {
+        SpawnCreatureAt(ctx, CreatureTypeId.Crawler, new DbVector2 { X = 820f, Y = -120f }, 1);
+        SpawnCreatureAt(ctx, CreatureTypeId.Crawler, new DbVector2 { X = 1060f, Y = 120f }, 3);
+    }
+
     // One tick: every creature chases the nearest in-range exterior player
     // (deterministic — nearest by squared distance, ties by table order), else
     // walks its patrol ring. A creature that closes to contact range damages
