@@ -865,6 +865,8 @@ Builds the reusable exterior-grid + airlock-transition system on the 5.1 MapHost
 
 **Task 5.2 complete** ✅ — Reusable exterior-grid + airlock system on the MapHost seam: airlock zones (`Player.InExterior`), `SeedNode(Planetside)` (surface nodes + crawlers), deterministic creatures (`CreatureTick` chase/patrol + `DamageType.Creature` contact), node-switching MapHost (QuietMap↔PlanetsideMap) with DebugHud "Toggle Node", `TerrainGrid`/`Airlock` fixtures, and client creature rendering. 51 pure + 57 stdb green.
 
+**Addendum (post-5.2 play-test feedback):** (1) Creatures were too fast → `DefaultCreatureMoveSpeed` 24→12 px/tick. (2) The airlock felt like a node-specific two-ended teleporter → reworked to **one always-present ship door** (`ShipBody` carries the `Airlock`; `PlanetsideMap` dropped its two pads; `Main.OnAirlockUsed` picks exit-vs-enter from the tracked `_localInExterior`; contextual prompt via `Airlock.LabelProvider`; terrain abuts the ship; `EnterInterior` reach-checks the same door). (3) **"Couldn't reclone" bug** → `RequestRespawn` revived a surface-death still flagged `InExterior`, so the clone kept suffocating and surface creatures hunted it through the hull; respawn now clears `InExterior` + sets `CurrentSlotIndex` to the Cloning Bay. Repro `surface_death_respawn_returns_inside.json` (red→green); 51 pure + 58 stdb green.
+
 ---
 
 ## Task 5.3: Abandoned wreck salvage (reuse exterior system) — Scope: M–L

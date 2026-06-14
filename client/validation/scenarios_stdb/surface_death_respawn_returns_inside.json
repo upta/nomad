@@ -1,0 +1,43 @@
+{
+  "scenario_id": "surface_death_respawn_returns_inside",
+  "version": 3,
+  "description": "Dying on the surface and cloning brings you back INSIDE the ship, not still flagged exterior. Repro of the play-test 'couldn't reclone' bug: the player crosses onto the Planetside surface (InExterior true), is killed there, and ghosts; RequestRespawn revives them at the Cloning Bay — which must clear the exterior flag (CurrentSlotIndex back to the bay slot) so they stop suffocating and surface creatures stop hunting them across the hull. Before the fix the flag persisted (in_exterior stayed true after respawn).",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_set_node_planetside" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_node_planetside" },
+    { "op": "wait_until", "path": "harness_state.node.kind", "comparator": "eq", "expected": "Planetside", "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_airlock" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_airlock" },
+    { "op": "press_action", "action": "test_enter_exterior" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_enter_exterior" },
+    { "op": "wait_until", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_damage_kill" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_damage_kill" },
+    { "op": "wait_until", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "dead_on_surface" },
+    { "op": "assert_value", "checkpoint": "dead_on_surface", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": true },
+
+    { "op": "press_action", "action": "test_request_respawn" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_request_respawn" },
+    { "op": "wait_until", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "recloned" },
+    { "op": "assert_value", "checkpoint": "recloned", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "recloned", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": 2 },
+    { "op": "assert_value", "checkpoint": "recloned", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": false },
+    { "op": "quit" }
+  ]
+}

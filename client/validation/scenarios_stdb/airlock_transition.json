@@ -1,7 +1,7 @@
 {
   "scenario_id": "airlock_transition",
   "version": 3,
-  "description": "The full client airlock loop in the real game. Switching to the Planetside node swaps the client to the exterior map (active_node follows). The crew walks up to the ship airlock, interacts ('Exit to surface'), and EnterExterior crosses them out — the body snaps to the surface landing pad (in_exterior true, player x>500). Walking up to the landing-pad airlock and interacting ('Enter ship') brings them back inside (in_exterior false, player x<500).",
+  "description": "The full client airlock loop in the real game with a single always-present ship door. Switching to the Planetside node swaps the client to the exterior map (active_node follows). The crew walks up to the ship airlock, interacts ('Exit to surface'), and EnterExterior crosses them out — the body snaps just outside onto the surface (in_exterior true, player x>500). Walking back to the SAME door and interacting (now labelled 'Enter ship') brings them back inside (in_exterior false, player x<500).",
   "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
   "steps": [
     { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
@@ -32,11 +32,13 @@
     { "op": "assert_value", "checkpoint": "on_surface", "path": "harness_state.game.player.x", "comparator": "gt", "expected": 500 },
     { "op": "assert_value", "checkpoint": "on_surface", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": -1 },
 
-    { "op": "wait_until", "path": "harness_state.game.focused_label", "comparator": "contains", "expected": "Enter ship", "timeout_frames": 300 },
+    { "op": "press_action", "action": "move_left" },
+    { "op": "wait_until", "path": "harness_state.game.focused_label", "comparator": "contains", "expected": "Enter ship", "timeout_frames": 600 },
     { "op": "press_action", "action": "interact" },
     { "op": "wait_frames", "frames": 6 },
     { "op": "release_action", "action": "interact" },
     { "op": "wait_until", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "release_action", "action": "move_left" },
     { "op": "wait_frames", "frames": 10 },
     { "op": "checkpoint", "name": "back_inside" },
     { "op": "assert_value", "checkpoint": "back_inside", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": false },

@@ -75,18 +75,31 @@ public static partial class Module
             }
         );
 
-        if (
-            ctx.Db.Players.Identity.Find(target) is { } targetPlayer
-            && ctx.Db.Entities.EntityId.Find(targetPlayer.PlayerEntityId) is { } entity
-        )
+        if (ctx.Db.Players.Identity.Find(target) is { } targetPlayer)
         {
-            ctx.Db.Entities.EntityId.Update(
-                entity with
+            // The clone regrows inside the ship's Cloning Bay, so clear the
+            // exterior flag (the target may have died out on the surface) and
+            // set the room to the bay. Otherwise the revived body keeps
+            // suffocating in phantom vacuum and surface creatures keep hunting
+            // it across the hull — the "couldn't reclone" play-test bug.
+            ctx.Db.Players.Identity.Update(
+                targetPlayer with
                 {
-                    Position = SlotCenter(bay.SlotIndex),
-                    Velocity = new DbVector2 { X = 0, Y = 0 },
+                    InExterior = false,
+                    CurrentSlotIndex = bay.SlotIndex,
                 }
             );
+
+            if (ctx.Db.Entities.EntityId.Find(targetPlayer.PlayerEntityId) is { } entity)
+            {
+                ctx.Db.Entities.EntityId.Update(
+                    entity with
+                    {
+                        Position = SlotCenter(bay.SlotIndex),
+                        Velocity = new DbVector2 { X = 0, Y = 0 },
+                    }
+                );
+            }
         }
     }
 

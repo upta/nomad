@@ -50,6 +50,7 @@ public partial class Main
     private GameMap _activeMap = null!;
     private ShipGrid _shipGrid = null!;
     private SpacetimeDB.Types.NodeKind _currentNodeKind = SpacetimeDB.Types.NodeKind.Quiet;
+    private bool _localInExterior;
 
     public override void _Notification(int what) => this.Notify(what);
 
@@ -169,6 +170,10 @@ public partial class Main
         _shipGrid.BreakerInteracted += OnBreakerInteracted;
         _shipGrid.SuitRackInteracted += OnSuitRackInteracted;
 
+        // The ship's airlock prompt reflects what interacting will do, given
+        // the live zone + node (the door itself is direction-agnostic).
+        _activeMap.Ship.Airlock.LabelProvider = AirlockLabel;
+
         // The initial load runs before the connection is up (InstantiatePlayer
         // binds it); a live swap must re-bind the new grid and restore the
         // ship's current suit-rack visual itself.
@@ -208,18 +213,25 @@ public partial class Main
     private PackedScene SceneForNode(SpacetimeDB.Types.NodeKind kind) =>
         kind == SpacetimeDB.Types.NodeKind.Planetside ? PlanetsideMapScene : QuietMapScene;
 
-    // Airlock walk-up → server verb. The server validates reach + zone and
-    // teleports the body; the local node snaps when the InExterior flag flips
-    // (OnPlayerRowUpdated).
-    private void OnAirlockUsed(bool exits)
+    // Airlock walk-up → server verb, chosen from the player's current zone: a
+    // single door steps you out when inside (at an exterior node) and back in
+    // when outside. The server validates reach + zone and teleports the body;
+    // the local node snaps when the InExterior flag flips (OnPlayerRowUpdated).
+    // At a node with no exterior the door is sealed (no-op).
+    private void OnAirlockUsed()
     {
         if (_dbManager?.Connection is not { } conn)
             return;
-        if (exits)
-            conn.Reducers.EnterExterior();
-        else
+        if (_localInExterior)
             conn.Reducers.EnterInterior();
+        else if (_currentNodeKind == SpacetimeDB.Types.NodeKind.Planetside)
+            conn.Reducers.EnterExterior();
     }
+
+    private string AirlockLabel() =>
+        _localInExterior ? "Enter ship"
+        : _currentNodeKind == SpacetimeDB.Types.NodeKind.Planetside ? "Exit to surface"
+        : "Airlock";
 
     InteractionService IProvide<InteractionService>.Value() => _interactionService;
 
@@ -281,6 +293,9 @@ public partial class Main
         if (conn.Db.NodeActivities.Id.Find(0) is { } node)
             ApplyNodeKind(node.Kind);
 
+        if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } selfPlayer)
+            _localInExterior = selfPlayer.InExterior;
+
         foreach (var entity in conn.Db.Entities.Iter())
         {
             TryCreateRemoteNode(entity);
@@ -308,7 +323,10 @@ public partial class Main
         if (_dbManager?.Connection is not { } conn || conn.Identity != newPlayer.Identity)
             return;
         if (newPlayer.InExterior != oldPlayer.InExterior)
+        {
+            _localInExterior = newPlayer.InExterior;
             SnapLocalPlayerToServerEntity();
+        }
     }
 
     // Physics tick, not _Process: with physics interpolation enabled the camera

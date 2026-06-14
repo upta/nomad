@@ -2,9 +2,10 @@ public static partial class Module
 {
     private const int DefaultCreatureTickMillis = 200;
 
-    // Movement per tick (px). At the default 200ms tick that's ~120px/s —
-    // slower than a player so the crew can outrun them (avoid/flee, no combat).
-    private const float DefaultCreatureMoveSpeed = 24f;
+    // Movement per tick (px). At the default 200ms tick that's ~60px/s — well
+    // under the crew's run speed so they comfortably outrun and observe them
+    // (avoid/flee, no combat). Tunable via SetCreatureConfig.
+    private const float DefaultCreatureMoveSpeed = 12f;
 
     // Chase any exterior player whose body is within this radius; otherwise
     // patrol. ~12 tiles.

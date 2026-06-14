@@ -3,19 +3,21 @@ public static partial class Module
     // Airlock world geometry, mirroring the client scene layout the same way
     // HullGeometry mirrors the hull. The Ship component sits at map origin in
     // every map (so the interior's world coordinates — and fire — stay valid
-    // across nodes), and its AirlockMount marker is at the ship's right edge.
-    // The exterior grid extends to the right; a player crosses out to the
-    // landing pad and back. If the client markers move, these must move with
-    // them.
+    // across nodes), and a single Airlock door rides the ship at its right edge.
+    // It is one physical door used from both sides:
+    // interacting from inside steps you out onto the surface, from outside steps
+    // you back in. The exterior grid abuts the ship to the right. If the client
+    // door moves, ShipAirlock must move with it.
     //
-    //   interior corridor ──[ ShipAirlock ]── gap ──[ ExteriorLanding ]── surface
-    //        (-464..464)        (464,0)                  (560,0)            (600+)
+    //   interior corridor ──[ ShipAirlock door ]── surface
+    //        (-464..464)         (464,0)      (ExteriorLanding 540,0 ... 1300)
 
     private static readonly DbVector2 ShipAirlock = new() { X = 464f, Y = 0f };
 
-    // Where an exiting player lands on the surface — also where the exterior
-    // airlock fixture sits, so a returning player reaches the door from here.
-    private static readonly DbVector2 ExteriorLanding = new() { X = 560f, Y = 0f };
+    // Where an exiting player lands on the surface — just outside the door, far
+    // enough that the door isn't still in interact range (you step onto the
+    // surface, then walk back to the door to re-enter).
+    private static readonly DbVector2 ExteriorLanding = new() { X = 540f, Y = 0f };
 
     // Where a returning player lands inside: one tile in from the airlock, on
     // the main corridor floor (cell 27,8 → corridor slot).

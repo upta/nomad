@@ -1,11 +1,11 @@
 public static partial class Module
 {
-    // Cross back through the exterior airlock into the ship. Sender must be a
-    // known, living player standing within reach of the landing-pad airlock.
-    // Teleports the body to the interior landing cell and clears the exterior
-    // flag; CurrentSlotIndex picks up the corridor slot the landing sits in so
-    // the vitals tick refills oxygen again immediately (the client's RoomLocator
-    // keeps it accurate as they walk on).
+    // Cross back through the ship airlock into the interior. Sender must be a
+    // known, living player standing within reach of the same airlock door (from
+    // the surface side). Teleports the body to the interior landing cell and
+    // clears the exterior flag; CurrentSlotIndex picks up the corridor slot the
+    // landing sits in so the vitals tick refills oxygen again immediately (the
+    // client's RoomLocator keeps it accurate as they walk on).
     [SpacetimeDB.Reducer]
     public static void EnterInterior(ReducerContext ctx)
     {
@@ -24,7 +24,7 @@ public static partial class Module
             throw new System.InvalidOperationException("Player has no body entity.");
         }
 
-        if (!WithinAirlockReach(entity.Position, ExteriorLanding))
+        if (!WithinAirlockReach(entity.Position, ShipAirlock))
         {
             throw new System.InvalidOperationException("Too far from the airlock.");
         }

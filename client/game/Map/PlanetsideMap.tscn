@@ -1,9 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/Map/GameMap.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ship/ShipBody.tscn" id="2"]
 [ext_resource type="Script" path="res://game/Map/TerrainGrid.cs" id="3"]
-[ext_resource type="PackedScene" path="res://game/Map/Airlock/Airlock.tscn" id="4"]
 
 [node name="PlanetsideMap" type="Node2D"]
 script = ExtResource("1")
@@ -17,20 +16,12 @@ anchor_bottom = 1.0
 color = Color(0.12, 0.08, 0.07, 1)
 
 [node name="TerrainGrid" type="Node2D" parent="."]
-position = Vector2(512, -304)
+position = Vector2(464, -304)
 script = ExtResource("3")
+Columns = 26
+Rows = 19
 GroundColor = Color(0.28, 0.22, 0.18, 1)
 GridLineColor = Color(0.34, 0.27, 0.22, 1)
 
 [node name="Ship" parent="." instance=ExtResource("2")]
 unique_name_in_owner = true
-
-[node name="ShipAirlock" parent="." instance=ExtResource("4")]
-position = Vector2(464, 0)
-Exits = true
-Label = "Exit to surface"
-
-[node name="SurfaceAirlock" parent="." instance=ExtResource("4")]
-position = Vector2(560, 0)
-Exits = false
-Label = "Enter ship"

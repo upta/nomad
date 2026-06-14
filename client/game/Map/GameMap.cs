@@ -17,11 +17,11 @@ public partial class GameMap : Node2D
 {
     public override void _Notification(int what) => this.Notify(what);
 
-    // Raised when a player uses one of the map's airlocks: true = exit to the
-    // surface (EnterExterior), false = enter the ship (EnterInterior). The base
-    // map has no airlocks and never raises it; exterior maps wire their
-    // Airlock fixtures to RaiseAirlockUsed. MapHost owns the reducer call.
-    public event Action<bool>? AirlockUsed;
+    // Raised when a player uses the ship's airlock door. The direction (exit vs
+    // enter) is decided by MapHost from the player's current zone; the map just
+    // forwards the interaction. Auto-wired from any Airlock the map (or its
+    // ShipBody) declares.
+    public event Action? AirlockUsed;
 
     [Node]
     public Nomad.Game.Ship.ShipBody Ship { get; set; } = default!;
@@ -44,5 +44,5 @@ public partial class GameMap : Node2D
         }
     }
 
-    private void RaiseAirlockUsed(bool exits) => AirlockUsed?.Invoke(exits);
+    private void RaiseAirlockUsed() => AirlockUsed?.Invoke();
 }

@@ -9,24 +9,26 @@ using Chickensoft.Introspection;
 using Godot;
 using Nomad.Game.Interaction;
 
-// A walk-up airlock door placed on an exterior map. The ship-side airlock
-// (Exits = true) reads "Exit to surface" and crosses the crew out; the
-// landing-pad airlock (Exits = false) reads "Enter ship" and brings them back.
-// Raises Interacted with its direction; the owning map forwards it to MapHost,
-// which calls EnterExterior / EnterInterior (the server validates reach + zone).
+// A single walk-up airlock door, part of the ship (present on every map). It is
+// used from both sides: interacting from inside steps you out onto the surface,
+// from outside steps you back in. Raises Interacted (no direction); MapHost
+// decides the verb from the player's current zone and the server validates
+// reach + that the node actually has an exterior. The prompt reflects what the
+// interaction will do via LabelProvider (set by MapHost), falling back to a
+// static Label.
 [Meta(typeof(IAutoNode))]
 public partial class Airlock : Node2D
 {
     public override void _Notification(int what) => this.Notify(what);
 
-    // true = exit to surface (EnterExterior); false = enter ship (EnterInterior).
-    public event Action<bool>? Interacted;
+    public event Action? Interacted;
 
     [Export]
-    public bool Exits { get; set; } = true;
+    public string Label { get; set; } = "Airlock";
 
-    [Export]
-    public string Label { get; set; } = "Exit to surface";
+    // Set by MapHost to render a context-aware prompt ("Exit to surface" /
+    // "Enter ship" / sealed). Null falls back to the static Label.
+    public Func<string>? LabelProvider { get; set; }
 
     [Node]
     public InteractTarget Target { get; set; } = default!;
@@ -35,8 +37,8 @@ public partial class Airlock : Node2D
     {
         Target.Registration = new CallbackInteractionRegistration(
             () => GlobalPosition,
-            () => Label,
-            _ => Interacted?.Invoke(Exits)
+            () => LabelProvider?.Invoke() ?? Label,
+            _ => Interacted?.Invoke()
         );
     }
 }
