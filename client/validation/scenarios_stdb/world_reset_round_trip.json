@@ -36,7 +36,7 @@
     { "op": "wait_frames", "frames": 10 },
     { "op": "release_action", "action": "test_spawn_ore_node" },
 
-    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 5, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
     { "op": "wait_until", "path": "harness_state.power.rooms.5.is_pressurized", "comparator": "eq", "expected": false, "timeout_frames": 300 },
     { "op": "wait_until", "path": "harness_state.power.rooms.2.is_powered", "comparator": "eq", "expected": false, "timeout_frames": 300 },
     { "op": "wait_until", "path": "harness_state.stores.biomass", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
@@ -51,13 +51,13 @@
     { "op": "assert_value", "checkpoint": "dirtied", "path": "harness_state.power.rooms.2.breaker_on", "comparator": "eq", "expected": false },
     { "op": "assert_value", "checkpoint": "dirtied", "path": "harness_state.power.rooms.2.is_powered", "comparator": "eq", "expected": false },
     { "op": "assert_value", "checkpoint": "dirtied", "path": "harness_state.power.rooms.5.is_pressurized", "comparator": "eq", "expected": false },
-    { "op": "assert_value", "checkpoint": "dirtied", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 5 },
+    { "op": "assert_value", "checkpoint": "dirtied", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 1 },
 
     { "op": "press_action", "action": "test_press_debug_reset" },
     { "op": "wait_frames", "frames": 10 },
     { "op": "release_action", "action": "test_press_debug_reset" },
 
-    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 4, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
     { "op": "wait_until", "path": "harness_state.items.world_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
     { "op": "wait_until", "path": "harness_state.stores.biomass", "comparator": "eq", "expected": 3, "timeout_frames": 300 },
     { "op": "wait_until", "path": "harness_state.power.rooms.2.is_powered", "comparator": "eq", "expected": true, "timeout_frames": 300 },
@@ -78,8 +78,7 @@
     { "op": "assert_value", "checkpoint": "reset", "path": "harness_state.power.rooms.2.is_powered", "comparator": "eq", "expected": true },
     { "op": "assert_value", "checkpoint": "reset", "path": "harness_state.power.rooms.5.is_pressurized", "comparator": "eq", "expected": true },
     { "op": "assert_value", "checkpoint": "reset", "path": "harness_state.power.rooms.7.is_pressurized", "comparator": "eq", "expected": true },
-    { "op": "assert_value", "checkpoint": "reset", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 4 },
-    { "op": "assert_value", "checkpoint": "reset", "path": "harness_state.nodes.list.0.yield_remaining", "comparator": "eq", "expected": 5 },
+    { "op": "assert_value", "checkpoint": "reset", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0 },
     { "op": "quit" }
   ]
 }

@@ -1,16 +1,16 @@
 {
   "scenario_id": "planetside_seeds_surface_nodes",
   "version": 3,
-  "description": "Switching to the Planetside node relocates harvestable nodes from the ship interior out onto the exterior surface grid (position-agnostic ResourceNode rows per the 4.1 decision) and seeds patrolling creatures. Starting at Quiet (4 interior nodes near the origin), SetActiveNode(Planetside) clears them and seeds 4 surface nodes far to the right of the landing pad (x>600) plus 2 crawlers; switching back to Quiet restores the interior nodes (x near origin) and clears the creatures.",
+  "description": "Harvestable nodes live on exterior grids, not inside the hull. At Quiet (ship-in-space) there are no resource nodes; SetActiveNode(Planetside) seeds 4 surface nodes far to the right of the landing pad (x>600, position-agnostic ResourceNode rows per the 4.1 decision) plus 2 crawlers; switching back to Quiet clears them.",
   "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
   "steps": [
     { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
     { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
     { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
-    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 4, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
     { "op": "checkpoint", "name": "at_quiet" },
     { "op": "assert_value", "checkpoint": "at_quiet", "path": "harness_state.node.kind", "comparator": "eq", "expected": "Quiet" },
-    { "op": "assert_value", "checkpoint": "at_quiet", "path": "harness_state.nodes.list.0.x", "comparator": "lt", "expected": 600 },
+    { "op": "assert_value", "checkpoint": "at_quiet", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0 },
     { "op": "assert_value", "checkpoint": "at_quiet", "path": "harness_state.creatures.count", "comparator": "eq", "expected": 0 },
 
     { "op": "press_action", "action": "test_set_node_planetside" },
@@ -29,9 +29,9 @@
     { "op": "wait_frames", "frames": 10 },
     { "op": "release_action", "action": "test_set_node_quiet" },
     { "op": "wait_until", "path": "harness_state.node.kind", "comparator": "eq", "expected": "Quiet", "timeout_frames": 300 },
-    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 4, "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
     { "op": "checkpoint", "name": "back_at_quiet" },
-    { "op": "assert_value", "checkpoint": "back_at_quiet", "path": "harness_state.nodes.list.0.x", "comparator": "lt", "expected": 600 },
+    { "op": "assert_value", "checkpoint": "back_at_quiet", "path": "harness_state.nodes.count", "comparator": "eq", "expected": 0 },
     { "op": "assert_value", "checkpoint": "back_at_quiet", "path": "harness_state.creatures.count", "comparator": "eq", "expected": 0 },
     { "op": "quit" }
   ]

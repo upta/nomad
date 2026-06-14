@@ -23,22 +23,19 @@ public static partial class Module
     }
 
     // Seeds the arrived node's transient content. Each node task fills in its
-    // case as it lands; Quiet (the ship-in-space default and maintenance home)
-    // re-seeds the placeholder harvest nodes that currently sit on the ship
-    // interior.
+    // case as it lands. Quiet (the ship-in-space default and maintenance home)
+    // has nothing transient — harvestable nodes live on exterior grids now, not
+    // inside the hull (the 4.1 placeholders were relocated to Planetside in 5.2).
     private static void SeedNode(ReducerContext ctx, NodeKind kind)
     {
         switch (kind)
         {
-            case NodeKind.Quiet:
-                ReseedResourceNodes(ctx);
-                break;
             case NodeKind.Planetside:
                 SeedPlanetsideNodes(ctx);
                 SeedPlanetsideCreatures(ctx);
                 break;
-            // Wreck (5.3), TradingPost (5.4), DefenseEvent (5.5) seed their own
-            // surface nodes / creatures / catalog here.
+            // Quiet seeds nothing. Wreck (5.3), TradingPost (5.4), DefenseEvent
+            // (5.5) seed their own surface nodes / creatures / catalog here.
             default:
                 break;
         }

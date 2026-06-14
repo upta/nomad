@@ -30,7 +30,9 @@ public static partial class Module
         ResetPowerGridToSeed(ctx);
         // Re-settle powered state against the freshly reseeded rooms + grid.
         RecomputePowerGrid(ctx);
-        ReseedResourceNodes(ctx);
+        // Back to Quiet means no harvestable nodes inside the hull — clear any
+        // (exterior nodes are seeded only when a node has them).
+        DeleteAllResourceNodes(ctx);
         ResetAllVitals(ctx);
         ReturnPlayersToInterior(ctx);
 

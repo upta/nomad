@@ -39,9 +39,11 @@ public static partial class Module
     }
 
     // Brings every exterior player back inside on a node switch: the surface
-    // they were standing on no longer exists. Zone flags only — entity
-    // positions are client-authoritative, and the client re-seats the body when
-    // it reloads the map for the new node.
+    // they were standing on no longer exists. Clears the zone flag AND teleports
+    // the body to the interior landing — otherwise the map flips to the new node
+    // while the body keeps its old surface position, leaving the player floating
+    // outside the hull (the play-test oddity). The client snaps to the new
+    // server position on the InExterior flip.
     private static void ReturnPlayersToInterior(ReducerContext ctx)
     {
         var exterior = new System.Collections.Generic.List<Player>();
@@ -63,6 +65,17 @@ public static partial class Module
                     CurrentSlotIndex = interiorSlot,
                 }
             );
+
+            if (ctx.Db.Entities.EntityId.Find(player.PlayerEntityId) is { } entity)
+            {
+                ctx.Db.Entities.EntityId.Update(
+                    entity with
+                    {
+                        Position = InteriorLanding,
+                        Velocity = new DbVector2 { X = 0, Y = 0 },
+                    }
+                );
+            }
         }
     }
 }

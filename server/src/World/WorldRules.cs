@@ -36,19 +36,6 @@ public static partial class Module
         SeedRoom(ctx, 7, RoomTypeId.Corridor);
     }
 
-    private static void ReseedResourceNodes(ReducerContext ctx)
-    {
-        DeleteAllResourceNodes(ctx);
-
-        // Placeholder harvestable nodes on the open east corridor floor, clear
-        // of door lanes and the dev items. Position-agnostic — Phase 5.2 moves
-        // node spawning to exterior grids unchanged.
-        SeedResourceNode(ctx, ResourceNodeTypeId.OreVein, 96f, 0f, 5);
-        SeedResourceNode(ctx, ResourceNodeTypeId.WreckageDebris, 192f, 0f, 5);
-        SeedResourceNode(ctx, ResourceNodeTypeId.FuelDepositNode, 256f, 0f, 5);
-        SeedResourceNode(ctx, ResourceNodeTypeId.BiomassPatch, 384f, 0f, 5);
-    }
-
     private static void SeedRoom(ReducerContext ctx, int slotIndex, RoomTypeId roomTypeId)
     {
         ctx.Db.RoomAssignments.Insert(

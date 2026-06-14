@@ -1,0 +1,38 @@
+{
+  "scenario_id": "node_switch_reseats_exterior_player",
+  "version": 3,
+  "description": "Switching nodes while a player is out on the surface brings them back inside the ship, not left floating in space. Repro of the play-test oddity: crossing to the Planetside surface (body at the exterior landing, x>464) then switching back to Quiet must re-seat the body at the interior landing (x<464) and clear the exterior flag — otherwise the map flips to space but the player keeps the old surface position outside the hull.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_set_node_planetside" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_node_planetside" },
+    { "op": "wait_until", "path": "harness_state.node.kind", "comparator": "eq", "expected": "Planetside", "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_airlock" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_airlock" },
+    { "op": "press_action", "action": "test_enter_exterior" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_enter_exterior" },
+    { "op": "wait_until", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "outside" },
+    { "op": "assert_value", "checkpoint": "outside", "path": "harness_state.connection.local_entity.x", "comparator": "gt", "expected": 464 },
+
+    { "op": "press_action", "action": "test_set_node_quiet" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_node_quiet" },
+    { "op": "wait_until", "path": "harness_state.node.kind", "comparator": "eq", "expected": "Quiet", "timeout_frames": 300 },
+    { "op": "wait_until", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": false, "timeout_frames": 300 },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "checkpoint", "name": "back_inside" },
+    { "op": "assert_value", "checkpoint": "back_inside", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "back_inside", "path": "harness_state.connection.local_entity.x", "comparator": "lt", "expected": 464 },
+    { "op": "quit" }
+  ]
+}
