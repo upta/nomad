@@ -1,4 +1,4 @@
-[gd_scene load_steps=49 format=3]
+[gd_scene load_steps=54 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/HotbarHud.tscn" id="10_hotbar_hud"]
@@ -48,6 +48,11 @@
 [ext_resource type="Script" path="res://game/Hazard/FireSpawner.cs" id="hz_spawner"]
 [ext_resource type="PackedScene" path="res://game/Hazard/Fire.tscn" id="hz_fire_scene"]
 [ext_resource type="Resource" path="res://game/Hazard/HazardTypes/FireHazard.tres" id="hz0"]
+[ext_resource type="Script" path="res://game/Creatures/CreatureTypeRegistry.cs" id="cre_registry"]
+[ext_resource type="Script" path="res://game/Creatures/CreatureType.cs" id="cre_script"]
+[ext_resource type="Script" path="res://game/Creatures/CreatureSpawner.cs" id="cre_spawner"]
+[ext_resource type="PackedScene" path="res://game/Creatures/Creature.tscn" id="cre_creature_scene"]
+[ext_resource type="Resource" path="res://game/Creatures/CreatureTypes/CrawlerCreature.tres" id="cre0"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -98,6 +103,16 @@ HazardTypes = Array[ExtResource("hz_script")]([ExtResource("hz0")])
 unique_name_in_owner = true
 script = ExtResource("hz_spawner")
 FireScene = ExtResource("hz_fire_scene")
+
+[node name="CreatureTypeRegistry" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("cre_registry")
+CreatureTypes = Array[ExtResource("cre_script")]([ExtResource("cre0")])
+
+[node name="CreatureSpawner" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("cre_spawner")
+CreatureScene = ExtResource("cre_creature_scene")
 
 [node name="Camera" type="Camera2D" parent="."]
 unique_name_in_owner = true

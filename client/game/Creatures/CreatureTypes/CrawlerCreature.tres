@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CreatureType" format=3]
+
+[ext_resource type="Script" path="res://game/Creatures/CreatureType.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Color = Color(0.72, 0.24, 0.3, 1)
+Glyph = ""
+Label = "Crawler"
+CreatureId = "Crawler"

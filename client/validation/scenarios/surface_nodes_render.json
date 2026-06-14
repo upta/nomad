@@ -1,0 +1,24 @@
+{
+  "scenario_id": "surface_nodes_render",
+  "version": 3,
+  "description": "Harvestable resource nodes render on the exterior surface grid at their world positions — the position-agnostic ResourceNode rendering the 4.1 decision promised, now driven from exterior (Planetside) coordinates. Two surface nodes seeded out on the TerrainGrid render through the ResourceNodeSpawner at the seeded positions; clearing them removes the nodes.",
+  "harness_scene": "res://validation/harnesses/CreatureHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/CreatureHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.type_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_seed_surface_nodes" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "test_seed_surface_nodes" },
+    { "op": "wait_until", "path": "harness_state.node_count", "comparator": "eq", "expected": 2, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "seeded" },
+    { "op": "assert_value", "checkpoint": "seeded", "path": "harness_state.nodes.0.x", "comparator": "gt", "expected": 150 },
+    { "op": "assert_value", "checkpoint": "seeded", "path": "harness_state.nodes.1.x", "comparator": "gt", "expected": 150 },
+
+    { "op": "press_action", "action": "test_clear_nodes" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "test_clear_nodes" },
+    { "op": "wait_until", "path": "harness_state.node_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "quit" }
+  ]
+}

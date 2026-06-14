@@ -1,0 +1,32 @@
+{
+  "scenario_id": "creature_chases_and_contacts",
+  "version": 3,
+  "description": "Client creature rendering + position-following. A crawler seeded out on the surface renders through the CreatureSpawner (one Creature node, the type's red color). Retargeting it onto the player (the connected CreatureTick's chase) glides the node toward the player's cell — proving the spawner follows server position updates. The chase/contact LOGIC is server-authoritative and proven by the stdb creature_contact_damages_player scenario; this is the rendering half.",
+  "harness_scene": "res://validation/harnesses/CreatureHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/CreatureHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.type_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_seed_creature" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "test_seed_creature" },
+    { "op": "wait_until", "path": "harness_state.creature_count", "comparator": "eq", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "spawned" },
+    { "op": "assert_value", "checkpoint": "spawned", "path": "harness_state.creatures.0.color_r", "comparator": "gt", "expected": 0.6 },
+    { "op": "assert_value", "checkpoint": "spawned", "path": "harness_state.creatures.0.x", "comparator": "gt", "expected": 150 },
+
+    { "op": "press_action", "action": "test_move_creature_to_player" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "test_move_creature_to_player" },
+    { "op": "wait_until", "path": "harness_state.creatures.0.x", "comparator": "lt", "expected": 40, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "chased" },
+    { "op": "assert_value", "checkpoint": "chased", "path": "harness_state.creatures.0.x", "comparator": "lt", "expected": 40 },
+    { "op": "assert_value", "checkpoint": "chased", "path": "harness_state.creature_count", "comparator": "eq", "expected": 1 },
+
+    { "op": "press_action", "action": "test_clear_creatures" },
+    { "op": "wait_frames", "frames": 6 },
+    { "op": "release_action", "action": "test_clear_creatures" },
+    { "op": "wait_until", "path": "harness_state.creature_count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+    { "op": "quit" }
+  ]
+}

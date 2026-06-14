@@ -17,6 +17,7 @@ using Ui;
     typeof(IProvide<Items.ItemTypeRegistry>),
     typeof(IProvide<Harvest.HarvestService>),
     typeof(IProvide<Hazard.HazardService>),
+    typeof(IProvide<Creatures.CreatureService>),
     typeof(IProvide<Crafting.CraftingService>),
     typeof(IProvide<Crafting.RecipeRegistry>)
 )]
@@ -29,10 +30,12 @@ public partial class Main
         IProvide<Items.ItemTypeRegistry>,
         IProvide<Harvest.HarvestService>,
         IProvide<Hazard.HazardService>,
+        IProvide<Creatures.CreatureService>,
         IProvide<Crafting.CraftingService>,
         IProvide<Crafting.RecipeRegistry>
 {
     private readonly Crafting.CraftingService _craftingService = new();
+    private readonly Creatures.CreatureService _creatureService = new();
     private readonly Harvest.HarvestService _harvestService = new();
     private readonly Hazard.HazardService _hazardService = new();
     private readonly InteractionService _interactionService = new();
@@ -55,6 +58,12 @@ public partial class Main
 
     [Node]
     public DebugHud DebugHud { get; set; } = default!;
+
+    [Node]
+    public Creatures.CreatureSpawner CreatureSpawner { get; set; } = default!;
+
+    [Node]
+    public Creatures.CreatureTypeRegistry CreatureTypeRegistry { get; set; } = default!;
 
     [Node]
     public Hazard.FireSpawner FireSpawner { get; set; } = default!;
@@ -126,6 +135,7 @@ public partial class Main
         ItemSpawner.Registry = ItemTypeRegistry;
         ResourceNodeSpawner.Registry = ResourceNodeTypeRegistry;
         FireSpawner.Registry = HazardTypeRegistry;
+        CreatureSpawner.Registry = CreatureTypeRegistry;
         HotbarHud.Registry = ItemTypeRegistry;
         ItemSpawner.Interacted += OnWorldItemInteracted;
         ResourceNodeSpawner.Interacted += OnResourceNodeInteracted;
@@ -225,6 +235,8 @@ public partial class Main
 
     Hazard.HazardService IProvide<Hazard.HazardService>.Value() => _hazardService;
 
+    Creatures.CreatureService IProvide<Creatures.CreatureService>.Value() => _creatureService;
+
     Crafting.CraftingService IProvide<Crafting.CraftingService>.Value() => _craftingService;
 
     Crafting.RecipeRegistry IProvide<Crafting.RecipeRegistry>.Value() => RecipeRegistry;
@@ -239,6 +251,7 @@ public partial class Main
         _inventoryService.BindConnection(dbManager.Connection);
         _harvestService.BindConnection(dbManager.Connection);
         _hazardService.BindConnection(dbManager.Connection);
+        _creatureService.BindConnection(dbManager.Connection);
         _craftingService.BindConnection(dbManager.Connection);
 
         var conn = dbManager.Connection;
@@ -327,6 +340,7 @@ public partial class Main
         _inventoryService.Unbind();
         _harvestService.Unbind();
         _hazardService.Unbind();
+        _creatureService.Unbind();
         _craftingService.Unbind();
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
