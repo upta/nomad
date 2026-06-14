@@ -825,9 +825,12 @@ The foundation. Establishes node state, the ship-as-component / map-host seam, a
 - [x] `fire_renders_and_spreads.json` (ignite → 1 warm Fire, ramp intensity → scale grows, spread → 2 fires, clear → freed), `fire_extinguish_interact.json` (ignite on player cell → "[E] Extinguish Fire" prompt → interact → fire gone + focus cleared)
 - [x] Both green; screenshot shows the orange flame + extinguish prompt over the focused fire
 
-### Subtask 5.1.6: DoD sweep — Scope: S
-- [ ] `./scripts/validate_all.ps1` both suites green, no regressions; screenshots reviewed (fire over a room, post-extinguish clear)
-- [ ] Game boots clean ≥13s zero ERROR; builds + csharpier both sides; plan/todo ticked; `git push origin`
+### Subtask 5.1.6: DoD sweep — Scope: S ✅
+- [x] Both suites green, no regressions: **49 pure + 51 stdb**. (Mid-sweep, timing-sensitive modal-navigation scenarios — `suit_equip_round_trip`, `load_biomass_modal_round_trip` — flaked under a long-lived spacetime server; both pass 3/3 in isolation and the failure moved between scenarios. A fresh server restart → clean 51/51 parallel. The flake was server-state accumulation, not the HazardTick: a no-op idle tick over an empty Hazards table.)
+- [x] Game boots clean ≥13s zero ERROR (DbManager connected, subscription applied, HazardTypeRegistry loaded 1 type); fire screenshots reviewed (orange flame + "[E] Extinguish Fire" prompt; HP dropping from server-side fire)
+- [x] Builds + csharpier both sides; plan/todo ticked; `git push origin`
+
+**Task 5.1 complete** ✅ — Ship-as-component (`ShipBody`) + `MapHost` seam (regression-gated), `NodeActivity`/`SetActiveNode` + `NodeRules.SeedNode` dispatcher, and the hazard framework with **fire** whole: deterministic grow/spread, proximity damage via `DamageType.Fire`, walk-up extinguish, full client rendering. 49 pure + 51 stdb green.
 
 ---
 
