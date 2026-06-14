@@ -1,0 +1,58 @@
+{
+  "scenario_id": "surface_requires_suit",
+  "version": 3,
+  "description": "The Planetside surface is vacuum, so the suit-required rule falls out of the existing oxygen model: crossing the airlock onto the surface flips the player exterior (CurrentSlotIndex -1 = no room), and the vitals tick drains their tank with nowhere to refill. Equipping the suit doubles tank capacity (the surface-survival affordance). Player teleported onto the ship airlock, EnterExterior crosses out; seeded creatures cleared so only oxygen moves.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_set_node_planetside" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_set_node_planetside" },
+    { "op": "wait_until", "path": "harness_state.node.kind", "comparator": "eq", "expected": "Planetside", "timeout_frames": 300 },
+    { "op": "press_action", "action": "test_clear_creatures" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_creatures" },
+    { "op": "wait_until", "path": "harness_state.creatures.count", "comparator": "eq", "expected": 0, "timeout_frames": 300 },
+
+    { "op": "press_action", "action": "test_teleport_to_airlock" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_teleport_to_airlock" },
+    { "op": "press_action", "action": "test_enter_exterior" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_enter_exterior" },
+    { "op": "wait_until", "path": "harness_state.zone.in_exterior", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "on_surface" },
+    { "op": "assert_value", "checkpoint": "on_surface", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": -1 },
+    { "op": "assert_value", "checkpoint": "on_surface", "path": "harness_state.vitals.suit_equipped", "comparator": "eq", "expected": false },
+    { "op": "assert_value", "checkpoint": "on_surface", "path": "harness_state.vitals.max_oxygen", "comparator": "eq", "expected": 100 },
+
+    { "op": "press_action", "action": "test_fast_vitals" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_fast_vitals" },
+    { "op": "checkpoint", "name": "drain_start" },
+    { "op": "wait_until", "path": "harness_state.vitals.oxygen", "comparator": "lt", "expected": 85, "timeout_frames": 600 },
+    { "op": "checkpoint", "name": "drained" },
+    { "op": "assert_value", "checkpoint": "drained", "path": "harness_state.vitals.is_dead", "comparator": "eq", "expected": false },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "o0": { "kind": "checkpoint", "checkpoint": "drain_start", "path": "harness_state.vitals.oxygen" },
+        "o1": { "kind": "checkpoint", "checkpoint": "drained", "path": "harness_state.vitals.oxygen" }
+      },
+      "pipeline": [{ "op": "subtract", "inputs": ["o1", "o0"], "as": "delta" }],
+      "assert": { "actual": "delta", "comparator": "lt", "expected": 0 }
+    },
+
+    { "op": "press_action", "action": "test_equip_suit" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_equip_suit" },
+    { "op": "wait_until", "path": "harness_state.vitals.suit_equipped", "comparator": "eq", "expected": true, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "suited" },
+    { "op": "assert_value", "checkpoint": "suited", "path": "harness_state.vitals.max_oxygen", "comparator": "eq", "expected": 200 },
+    { "op": "quit" }
+  ]
+}

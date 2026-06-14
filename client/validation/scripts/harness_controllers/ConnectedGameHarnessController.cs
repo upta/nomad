@@ -349,6 +349,34 @@ public partial class ConnectedGameHarnessController : Node2D
             conn.Reducers.SetActiveNode(SpacetimeDB.Types.NodeKind.Planetside),
         ["test_set_node_quiet"] = conn =>
             conn.Reducers.SetActiveNode(SpacetimeDB.Types.NodeKind.Quiet),
+        // Airlock + creatures (Task 5.2). Teleport onto the ship airlock
+        // (AirlockGeometry ShipAirlock = (464, 0)) so EnterExterior's reach
+        // check passes without navigation, then cross out / back.
+        ["test_teleport_to_airlock"] = conn =>
+        {
+            if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } player)
+                conn.Reducers.MoveEntity(
+                    player.PlayerEntityId,
+                    new SpacetimeDB.Types.DbVector2(464, 0),
+                    new SpacetimeDB.Types.DbVector2(0, 0),
+                    0f,
+                    0.0
+                );
+        },
+        ["test_enter_exterior"] = conn => conn.Reducers.EnterExterior(),
+        ["test_enter_interior"] = conn => conn.Reducers.EnterInterior(),
+        // Fast creatures: short tick + wide contact radius so the contact-damage
+        // test bites quickly. Other tunables stay at their seed values.
+        ["test_fast_creatures"] = conn =>
+            conn.Reducers.SetCreatureConfig(150, 24f, 384f, 48f, 6f, 30f),
+        // Spawn a creature on the player's own cell (spawn-at-player pattern) so
+        // it's in contact range without chasing across the map.
+        ["test_spawn_creature_at_player"] = conn =>
+        {
+            if (PlayerEntityPos(conn) is { } pos)
+                conn.Reducers.SpawnCreature(SpacetimeDB.Types.CreatureTypeId.Crawler, pos.X, pos.Y);
+        },
+        ["test_clear_creatures"] = conn => conn.Reducers.ClearCreatures(),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -480,6 +508,8 @@ public partial class ConnectedGameHarnessController : Node2D
             ["crafting"] = BuildCraftingState(),
             ["hazards"] = BuildHazardsState(),
             ["node"] = BuildNodeState(),
+            ["zone"] = BuildZoneState(),
+            ["creatures"] = BuildCreaturesState(),
         };
 
         if (_puppet is { } puppet)
@@ -1201,6 +1231,57 @@ public partial class ConnectedGameHarnessController : Node2D
 
         if (conn.Db.NodeActivities.Id.Find(0) is { } node)
             state["kind"] = node.Kind.ToString();
+
+        return state;
+    }
+
+    // The local player's airlock zone — true once they've crossed onto an
+    // exterior grid (the surface is vacuum, so vitals.current_slot reads -1).
+    private Godot.Collections.Dictionary BuildZoneState()
+    {
+        var state = new Godot.Collections.Dictionary { ["in_exterior"] = false };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        if (conn.Identity is { } me && conn.Db.Players.Identity.Find(me) is { } player)
+            state["in_exterior"] = player.InExterior;
+
+        return state;
+    }
+
+    private Godot.Collections.Dictionary BuildCreaturesState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["count"] = 0,
+            ["list"] = new Godot.Collections.Array(),
+        };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        var rows = new List<SpacetimeDB.Types.Creature>();
+        foreach (var creature in conn.Db.Creatures.Iter())
+            rows.Add(creature);
+
+        state["count"] = rows.Count;
+
+        var list = new Godot.Collections.Array();
+        foreach (var creature in rows.OrderBy(c => c.CreatureId))
+        {
+            list.Add(
+                new Godot.Collections.Dictionary
+                {
+                    ["creature_id"] = creature.CreatureId,
+                    ["type"] = creature.CreatureTypeId.ToString(),
+                    ["health"] = creature.Health,
+                    ["x"] = creature.Position.X,
+                    ["y"] = creature.Position.Y,
+                }
+            );
+        }
+        state["list"] = list;
 
         return state;
     }
