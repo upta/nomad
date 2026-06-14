@@ -814,14 +814,16 @@ The foundation. Establishes node state, the ship-as-component / map-host seam, a
 - [x] `scenarios_stdb/node_switch_clears_transient.json` — Quiet (4 nodes + fire) → Planetside clears resource nodes + fire persists → Quiet reseeds 4 nodes + fire still persists
 - [x] All 3 green; full suite **47 pure + 51 stdb**, no regressions; screenshots reviewed (ship intact, HP dropping from server-side fire, O2 held in corridor — fire *visual* lands in 5.1.4)
 
-### Subtask 5.1.4: Client — fire rendering + extinguish — Scope: M
-- [ ] `client/game/Hazard/HazardType.cs` (`[GlobalClass]`: Color/Glyph/Label/HazardId) + `.tres` + `HazardTypeRegistry` (`[Export]` array, wired Main + harness scenes)
-- [ ] `Fire.tscn` (flicker visual + Area2D + InteractTarget "Extinguish", GhostAccessible false) + `FireSpawner` (ResourceNodeSpawner pattern, update-in-place on intensity, free on delete)
-- [ ] `_Service/HazardService.cs` (subscribe `Hazards`, `Changed`, entries + test seeders); Main provides HazardService + binds connection; extinguish interact → `ExtinguishHazard`
+### Subtask 5.1.4: Client — fire rendering + extinguish — Scope: M ✅
+- [x] `client/game/Hazard/HazardType.cs` (`[GlobalClass]`: Color/Glyph/Label/HazardId) + `HazardTypes/FireHazard.tres` + `HazardTypeRegistry` (`[Export]` array, wired in Main.tscn + FireHarness.tscn)
+- [x] `Fire.tscn` + `Fire.cs` (warm Sprite + Glyph + Area2D InteractTarget "Extinguish {Label}", GhostAccessible left false → ghosts can't; `_Process` flicker, scale grows with intensity) + `FireSpawner.cs` (ResourceNodeSpawner pattern: one Fire per Hazard row, intensity update-in-place, free on delete, `Interacted` event)
+- [x] `_Service/HazardService.cs` (subscribe `Hazards`, `Changed`, entries + test seeders, `HazardEntry` record); Main provides `HazardService` + binds connection in InstantiatePlayer; `FireSpawner.Interacted` → `ExtinguishHazard` reducer
+- [x] Build clean; the connected stdb fire scenarios now also render fire (screenshot reviewed)
 
-### Subtask 5.1.5: Pure validation — fire — Scope: S
-- [ ] `FireHarness.tscn` + controller (provides Hazard + Interaction services; seeders)
-- [ ] `fire_renders_and_spreads.json` (ignite → fire node + intensity ramp → spread spawns adjacent → extinguish frees), `fire_extinguish_interact.json` (walk-up → "Extinguish" prompt → interact → fire gone)
+### Subtask 5.1.5: Pure validation — fire — Scope: S ✅
+- [x] `FireHarness.tscn` + `FireHarnessController` (provides Hazard + Interaction services; seeds hazards directly, routes extinguish interact → `RemoveTestHazard`)
+- [x] `fire_renders_and_spreads.json` (ignite → 1 warm Fire, ramp intensity → scale grows, spread → 2 fires, clear → freed), `fire_extinguish_interact.json` (ignite on player cell → "[E] Extinguish Fire" prompt → interact → fire gone + focus cleared)
+- [x] Both green; screenshot shows the orange flame + extinguish prompt over the focused fire
 
 ### Subtask 5.1.6: DoD sweep — Scope: S
 - [ ] `./scripts/validate_all.ps1` both suites green, no regressions; screenshots reviewed (fire over a room, post-extinguish clear)

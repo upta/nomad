@@ -1,0 +1,28 @@
+{
+  "scenario_id": "fire_extinguish_interact",
+  "version": 3,
+  "description": "Walk-up extinguish: a fire ignited on the player's cell registers as a focused interactable showing the '[E] Extinguish Fire' prompt; pressing interact puts the fire out and clears the focus.",
+  "harness_scene": "res://validation/harnesses/FireHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/FireHarness.tscn" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "press_action", "action": "test_ignite_at_origin" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_ignite_at_origin" },
+    { "op": "wait_until", "path": "harness_state.fire_count", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.interaction.focused_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "near_fire" },
+    { "op": "assert_value", "checkpoint": "near_fire", "path": "harness_state.interaction.focused_label", "comparator": "eq", "expected": "Extinguish Fire" },
+    { "op": "assert_value", "checkpoint": "near_fire", "path": "harness_state.interaction.prompt_visible", "comparator": "eq", "expected": true },
+    { "op": "press_action", "action": "interact" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "interact" },
+    { "op": "wait_until", "path": "harness_state.fire_count", "comparator": "eq", "expected": 0, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "extinguished" },
+    { "op": "assert_value", "checkpoint": "extinguished", "path": "harness_state.fire_count", "comparator": "eq", "expected": 0 },
+    { "op": "assert_value", "checkpoint": "extinguished", "path": "harness_state.interaction.focused_exists", "comparator": "eq", "expected": false },
+    { "op": "quit" }
+  ]
+}

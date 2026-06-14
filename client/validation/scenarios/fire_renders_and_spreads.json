@@ -1,0 +1,57 @@
+{
+  "scenario_id": "fire_renders_and_spreads",
+  "version": 3,
+  "description": "Fire renders from Hazard rows: igniting seeds one warm-colored Fire scene, ramping its intensity grows the flame (scale increases), seeding an adjacent cell renders a second fire (the spread visual), and clearing frees them all.",
+  "harness_scene": "res://validation/harnesses/FireHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/FireHarness.tscn" },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "empty" },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.type_count", "comparator": "eq", "expected": 1 },
+    { "op": "assert_value", "checkpoint": "empty", "path": "harness_state.fire_count", "comparator": "eq", "expected": 0 },
+    { "op": "press_action", "action": "test_ignite_at_origin" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_ignite_at_origin" },
+    { "op": "wait_until", "path": "harness_state.fire_count", "comparator": "eq", "expected": 1, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "seeded" },
+    { "op": "assert_value", "checkpoint": "seeded", "path": "harness_state.fires.0.intensity", "comparator": "gt", "expected": 0 },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "r": { "kind": "checkpoint", "checkpoint": "seeded", "path": "harness_state.fires.0.color_r" },
+        "b": { "kind": "checkpoint", "checkpoint": "seeded", "path": "harness_state.fires.0.color_b" }
+      },
+      "pipeline": [{ "op": "subtract", "inputs": ["r", "b"], "as": "warm" }],
+      "assert": { "actual": "warm", "comparator": "gt", "expected": 0 }
+    },
+    { "op": "press_action", "action": "test_ramp_intensity" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_ramp_intensity" },
+    { "op": "wait_until", "path": "harness_state.fires.0.intensity", "comparator": "gt", "expected": 0.9, "timeout_frames": 120 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "checkpoint", "name": "ramped" },
+    {
+      "op": "assert_pipeline",
+      "sources": {
+        "seeded_scale": { "kind": "checkpoint", "checkpoint": "seeded", "path": "harness_state.fires.0.scale" },
+        "ramped_scale": { "kind": "checkpoint", "checkpoint": "ramped", "path": "harness_state.fires.0.scale" }
+      },
+      "pipeline": [{ "op": "subtract", "inputs": ["ramped_scale", "seeded_scale"], "as": "grow" }],
+      "assert": { "actual": "grow", "comparator": "gt", "expected": 0 }
+    },
+    { "op": "press_action", "action": "test_spread_adjacent" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_spread_adjacent" },
+    { "op": "wait_until", "path": "harness_state.fire_count", "comparator": "eq", "expected": 2, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "spread" },
+    { "op": "assert_value", "checkpoint": "spread", "path": "harness_state.fire_count", "comparator": "eq", "expected": 2 },
+    { "op": "press_action", "action": "test_clear_fires" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_clear_fires" },
+    { "op": "wait_until", "path": "harness_state.fire_count", "comparator": "eq", "expected": 0, "timeout_frames": 120 },
+    { "op": "checkpoint", "name": "cleared" },
+    { "op": "assert_value", "checkpoint": "cleared", "path": "harness_state.fire_count", "comparator": "eq", "expected": 0 },
+    { "op": "quit" }
+  ]
+}

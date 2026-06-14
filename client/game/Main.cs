@@ -16,6 +16,7 @@ using Ui;
     typeof(IProvide<Items.InventoryService>),
     typeof(IProvide<Items.ItemTypeRegistry>),
     typeof(IProvide<Harvest.HarvestService>),
+    typeof(IProvide<Hazard.HazardService>),
     typeof(IProvide<Crafting.CraftingService>),
     typeof(IProvide<Crafting.RecipeRegistry>)
 )]
@@ -27,11 +28,13 @@ public partial class Main
         IProvide<Items.InventoryService>,
         IProvide<Items.ItemTypeRegistry>,
         IProvide<Harvest.HarvestService>,
+        IProvide<Hazard.HazardService>,
         IProvide<Crafting.CraftingService>,
         IProvide<Crafting.RecipeRegistry>
 {
     private readonly Crafting.CraftingService _craftingService = new();
     private readonly Harvest.HarvestService _harvestService = new();
+    private readonly Hazard.HazardService _hazardService = new();
     private readonly InteractionService _interactionService = new();
     private readonly Items.InventoryService _inventoryService = new();
     private readonly Ship.PowerGridService _powerGridService = new();
@@ -51,6 +54,12 @@ public partial class Main
 
     [Node]
     public DebugHud DebugHud { get; set; } = default!;
+
+    [Node]
+    public Hazard.FireSpawner FireSpawner { get; set; } = default!;
+
+    [Node]
+    public Hazard.HazardTypeRegistry HazardTypeRegistry { get; set; } = default!;
 
     [Node]
     public Items.ItemSpawner ItemSpawner { get; set; } = default!;
@@ -107,9 +116,11 @@ public partial class Main
         // registries are handed over here instead of in Main.tscn.
         ItemSpawner.Registry = ItemTypeRegistry;
         ResourceNodeSpawner.Registry = ResourceNodeTypeRegistry;
+        FireSpawner.Registry = HazardTypeRegistry;
         HotbarHud.Registry = ItemTypeRegistry;
         ItemSpawner.Interacted += OnWorldItemInteracted;
         ResourceNodeSpawner.Interacted += OnResourceNodeInteracted;
+        FireSpawner.Interacted += OnFireInteracted;
         HotbarHud.DropRequested += OnHotbarDropRequested;
         HotbarHud.UseRequested += OnHotbarUseRequested;
         DebugHud.ResetRequested += OnDebugResetRequested;
@@ -149,6 +160,8 @@ public partial class Main
 
     Harvest.HarvestService IProvide<Harvest.HarvestService>.Value() => _harvestService;
 
+    Hazard.HazardService IProvide<Hazard.HazardService>.Value() => _hazardService;
+
     Crafting.CraftingService IProvide<Crafting.CraftingService>.Value() => _craftingService;
 
     Crafting.RecipeRegistry IProvide<Crafting.RecipeRegistry>.Value() => RecipeRegistry;
@@ -162,6 +175,7 @@ public partial class Main
         _vitalsService.BindConnection(dbManager.Connection);
         _inventoryService.BindConnection(dbManager.Connection);
         _harvestService.BindConnection(dbManager.Connection);
+        _hazardService.BindConnection(dbManager.Connection);
         _craftingService.BindConnection(dbManager.Connection);
 
         var conn = dbManager.Connection;
@@ -204,6 +218,7 @@ public partial class Main
         ShipGrid.SuitRackInteracted -= OnSuitRackInteracted;
         ItemSpawner.Interacted -= OnWorldItemInteracted;
         ResourceNodeSpawner.Interacted -= OnResourceNodeInteracted;
+        FireSpawner.Interacted -= OnFireInteracted;
         HotbarHud.DropRequested -= OnHotbarDropRequested;
         HotbarHud.UseRequested -= OnHotbarUseRequested;
         DebugHud.ResetRequested -= OnDebugResetRequested;
@@ -212,6 +227,7 @@ public partial class Main
         _vitalsService.Unbind();
         _inventoryService.Unbind();
         _harvestService.Unbind();
+        _hazardService.Unbind();
         _craftingService.Unbind();
 
         if (_dbManager?.Connection?.Db?.Entities is { } entities)
@@ -257,6 +273,9 @@ public partial class Main
 
     private void OnResourceNodeInteracted(int nodeId) =>
         _harvestService.RequestStartHarvest(nodeId);
+
+    private void OnFireInteracted(int hazardId) =>
+        _dbManager?.Connection?.Reducers.ExtinguishHazard(hazardId);
 
     private void OnSuitRackInteracted(Ship.SuitRack rack) =>
         _dbManager?.Connection?.Reducers.SetSuitEquipped(!_vitalsService.SuitEquipped);
