@@ -810,6 +810,7 @@ public partial class ConnectedGameHarnessController : Node2D
 
         state["focused_label"] = _main?.Interaction.Focused?.Label ?? "";
         state["remote_count"] = _main?.RemoteEntityCount ?? 0;
+        state["active_node"] = _main?.ActiveNodeKind.ToString() ?? "";
 
         var shipGrid = _main?.ShipGrid;
         state["terminal_count"] = shipGrid?.TerminalCount ?? 0;

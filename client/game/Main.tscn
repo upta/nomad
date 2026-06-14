@@ -1,4 +1,4 @@
-[gd_scene load_steps=48 format=3]
+[gd_scene load_steps=49 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/HotbarHud.tscn" id="10_hotbar_hud"]
@@ -21,6 +21,7 @@
 [ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://game/Ship/RoomTypeRegistry.cs" id="4_registry"]
 [ext_resource type="PackedScene" path="res://game/Map/QuietMap.tscn" id="map_quiet"]
+[ext_resource type="PackedScene" path="res://game/Map/PlanetsideMap.tscn" id="map_planetside"]
 [ext_resource type="Script" path="res://game/Ship/RoomType.cs" id="rt_script"]
 [ext_resource type="Resource" path="res://game/Ship/RoomTypes/ReactorRoom.tres" id="rt0"]
 [ext_resource type="Resource" path="res://game/Ship/RoomTypes/BridgeRoom.tres" id="rt1"]
@@ -52,6 +53,7 @@
 script = ExtResource("1")
 PlayerScene = ExtResource("3_player")
 QuietMapScene = ExtResource("map_quiet")
+PlanetsideMapScene = ExtResource("map_planetside")
 RemoteEntityScene = ExtResource("2_remote")
 
 [node name="RoomTypeRegistry" type="Node" parent="."]

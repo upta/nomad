@@ -46,6 +46,7 @@ public partial class Main
     private bool _wasDead;
     private GameMap _activeMap = null!;
     private ShipGrid _shipGrid = null!;
+    private SpacetimeDB.Types.NodeKind _currentNodeKind = SpacetimeDB.Types.NodeKind.Quiet;
 
     public override void _Notification(int what) => this.Notify(what);
 
@@ -83,6 +84,9 @@ public partial class Main
     public PackedScene QuietMapScene { get; set; } = null!;
 
     [Export]
+    public PackedScene PlanetsideMapScene { get; set; } = null!;
+
+    [Export]
     public PackedScene RemoteEntityScene { get; set; } = null!;
 
     [Node]
@@ -101,6 +105,11 @@ public partial class Main
     // observation and the gameplay wiring below reach the grid through here so
     // the node can move maps without touching every call site.
     public ShipGrid ShipGrid => _shipGrid;
+
+    // The node the client currently has a map loaded for — lets validation
+    // confirm the client actually swapped maps on a node change, not just the
+    // server's NodeActivity row.
+    public SpacetimeDB.Types.NodeKind ActiveNodeKind => _currentNodeKind;
 
     public InteractionService Interaction => _interactionService;
 
@@ -125,6 +134,7 @@ public partial class Main
         HotbarHud.UseRequested += OnHotbarUseRequested;
         DebugHud.ResetRequested += OnDebugResetRequested;
         DebugHud.IgniteFireRequested += OnDebugIgniteFireRequested;
+        DebugHud.NodeToggleRequested += OnDebugNodeToggleRequested;
         _vitalsService.Changed += OnVitalsChanged;
 
         _powerGridService.SetRoomCatalog(RoomTypeRegistry.All);
@@ -134,19 +144,71 @@ public partial class Main
         this.Provide();
     }
 
-    // Instantiates the map for the current node and wires its ShipGrid. Only the
-    // Quiet map exists today; exterior maps (5.2+) reuse this seam, so the grid
-    // wiring lives here rather than inline in OnReady.
+    // Instantiates the map for the current node and wires its ShipGrid + any
+    // airlocks. The same Ship component rides every map, so on a live node swap
+    // the fresh ShipGrid re-subscribes to the (unchanged) server ship state.
     private void LoadMap(PackedScene scene)
     {
         _activeMap = scene.Instantiate<GameMap>();
         MapMount.AddChild(_activeMap);
+        _activeMap.AirlockUsed += OnAirlockUsed;
 
         _shipGrid = _activeMap.Ship.ShipGrid;
         _shipGrid.RoomTypeRegistry = RoomTypeRegistry;
         _shipGrid.TerminalInteracted += OnTerminalInteracted;
         _shipGrid.BreakerInteracted += OnBreakerInteracted;
         _shipGrid.SuitRackInteracted += OnSuitRackInteracted;
+
+        // The initial load runs before the connection is up (InstantiatePlayer
+        // binds it); a live swap must re-bind the new grid and restore the
+        // ship's current suit-rack visual itself.
+        if (_dbManager is not null)
+        {
+            _shipGrid.BindToServer(_dbManager);
+            _shipGrid.SetSuitRackState(_vitalsService.SuitEquipped);
+        }
+    }
+
+    // Swaps the active map (node change). Tears down the old map's wiring,
+    // frees it, and loads the new one. Spawners/HUDs/camera/services live on
+    // Main, so only the map's ship-interior grid + exterior grid/airlocks swap;
+    // fire, surface nodes, creatures, and items persist (they render from Main).
+    private void SwitchMap(PackedScene scene)
+    {
+        _activeMap.AirlockUsed -= OnAirlockUsed;
+        _shipGrid.TerminalInteracted -= OnTerminalInteracted;
+        _shipGrid.BreakerInteracted -= OnBreakerInteracted;
+        _shipGrid.SuitRackInteracted -= OnSuitRackInteracted;
+        MapMount.RemoveChild(_activeMap);
+        _activeMap.QueueFree();
+
+        LoadMap(scene);
+    }
+
+    private void ApplyNodeKind(SpacetimeDB.Types.NodeKind kind)
+    {
+        if (kind == _currentNodeKind)
+            return;
+        _currentNodeKind = kind;
+        SwitchMap(SceneForNode(kind));
+    }
+
+    // Wreck/TradingPost/DefenseEvent reuse the Quiet ship-in-space view until
+    // their maps land in 5.3+; Planetside is the one exterior map today.
+    private PackedScene SceneForNode(SpacetimeDB.Types.NodeKind kind) =>
+        kind == SpacetimeDB.Types.NodeKind.Planetside ? PlanetsideMapScene : QuietMapScene;
+
+    // Airlock walk-up → server verb. The server validates reach + zone and
+    // teleports the body; the local node snaps when the InExterior flag flips
+    // (OnPlayerRowUpdated).
+    private void OnAirlockUsed(bool exits)
+    {
+        if (_dbManager?.Connection is not { } conn)
+            return;
+        if (exits)
+            conn.Reducers.EnterExterior();
+        else
+            conn.Reducers.EnterInterior();
     }
 
     InteractionService IProvide<InteractionService>.Value() => _interactionService;
@@ -197,11 +259,43 @@ public partial class Main
         conn.Db.Entities.OnDelete += OnEntityDeleted;
         conn.Db.VitalsRows.OnInsert += OnRemoteVitalsRow;
         conn.Db.VitalsRows.OnUpdate += OnRemoteVitalsUpdated;
+        conn.Db.NodeActivities.OnInsert += OnNodeActivityRow;
+        conn.Db.NodeActivities.OnUpdate += OnNodeActivityUpdated;
+        conn.Db.Players.OnUpdate += OnPlayerRowUpdated;
+
+        // Match the map to whatever node the ship is already anchored at (a
+        // late-joining client may arrive mid-Planetside).
+        if (conn.Db.NodeActivities.Id.Find(0) is { } node)
+            ApplyNodeKind(node.Kind);
 
         foreach (var entity in conn.Db.Entities.Iter())
         {
             TryCreateRemoteNode(entity);
         }
+    }
+
+    private void OnNodeActivityRow(EventContext ctx, SpacetimeDB.Types.NodeActivity node) =>
+        ApplyNodeKind(node.Kind);
+
+    private void OnNodeActivityUpdated(
+        EventContext ctx,
+        SpacetimeDB.Types.NodeActivity oldNode,
+        SpacetimeDB.Types.NodeActivity newNode
+    ) => ApplyNodeKind(newNode.Kind);
+
+    // The body is normally client-authoritative; crossing an airlock is a
+    // server-placed teleport (like respawn), so snap the local node to the
+    // server entity when the InExterior flag flips for us.
+    private void OnPlayerRowUpdated(
+        EventContext ctx,
+        SpacetimeDB.Types.Player oldPlayer,
+        SpacetimeDB.Types.Player newPlayer
+    )
+    {
+        if (_dbManager?.Connection is not { } conn || conn.Identity != newPlayer.Identity)
+            return;
+        if (newPlayer.InExterior != oldPlayer.InExterior)
+            SnapLocalPlayerToServerEntity();
     }
 
     // Physics tick, not _Process: with physics interpolation enabled the camera
@@ -217,6 +311,8 @@ public partial class Main
         ShipGrid.TerminalInteracted -= OnTerminalInteracted;
         ShipGrid.BreakerInteracted -= OnBreakerInteracted;
         ShipGrid.SuitRackInteracted -= OnSuitRackInteracted;
+        if (_activeMap is not null)
+            _activeMap.AirlockUsed -= OnAirlockUsed;
         ItemSpawner.Interacted -= OnWorldItemInteracted;
         ResourceNodeSpawner.Interacted -= OnResourceNodeInteracted;
         FireSpawner.Interacted -= OnFireInteracted;
@@ -224,6 +320,7 @@ public partial class Main
         HotbarHud.UseRequested -= OnHotbarUseRequested;
         DebugHud.ResetRequested -= OnDebugResetRequested;
         DebugHud.IgniteFireRequested -= OnDebugIgniteFireRequested;
+        DebugHud.NodeToggleRequested -= OnDebugNodeToggleRequested;
         _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
         _vitalsService.Unbind();
@@ -244,6 +341,13 @@ public partial class Main
             vitalsRows.OnInsert -= OnRemoteVitalsRow;
             vitalsRows.OnUpdate -= OnRemoteVitalsUpdated;
         }
+
+        if (_dbManager?.Connection?.Db is { } db)
+        {
+            db.NodeActivities.OnInsert -= OnNodeActivityRow;
+            db.NodeActivities.OnUpdate -= OnNodeActivityUpdated;
+            db.Players.OnUpdate -= OnPlayerRowUpdated;
+        }
     }
 
     private static int GetLocalEntityId(DbConnection conn)
@@ -261,6 +365,19 @@ public partial class Main
         _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
 
     private void OnDebugResetRequested() => _dbManager?.Connection?.Reducers.ResetWorld();
+
+    // Debug node switch — flip between Quiet (ship in space) and Planetside
+    // (surface) so the airlock + exterior map are reachable before the Star
+    // Chart / Jump verbs land in Phase 6. The map swap follows the
+    // NodeActivities subscription.
+    private void OnDebugNodeToggleRequested()
+    {
+        var next =
+            _currentNodeKind == SpacetimeDB.Types.NodeKind.Planetside
+                ? SpacetimeDB.Types.NodeKind.Quiet
+                : SpacetimeDB.Types.NodeKind.Planetside;
+        _dbManager?.Connection?.Reducers.SetActiveNode(next);
+    }
 
     // Debug demo: ignite a fire on the local player's cell so the hazard system
     // is playable before in-game ignition sources (events, breaches) land.
