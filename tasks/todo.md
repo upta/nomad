@@ -840,30 +840,30 @@ The foundation. Establishes node state, the ship-as-component / map-host seam, a
 
 Builds the reusable exterior-grid + airlock-transition system on the 5.1 MapHost seam. Suit-required-on-surface falls out of existing oxygen rules (exterior = no room → `CurrentSlotIndex = -1` → oxygen depletes). Creatures move **server-authoritatively** (deterministic chase-nearest/patrol, no RNG), interpolated client-side like remote players; contact damage via the already-declared `DamageType.Creature`. (5.2.1 is large — split into an airlock/zone slice and a creature slice if it exceeds one focused session.)
 
-### Subtask 5.2.1: Server — zones + airlock + planetside seeding — Scope: M
-- [ ] `Player.InExterior bool` (or `Zone` enum); `EnterExterior`/`EnterInterior` reducers (known-player + alive + reach vs airlock position; flips zone + teleports the player's Entity to the exterior/interior landing point)
-- [ ] `NodeRules.SeedNode(Planetside)` — seed exterior resource nodes (relocate `ReseedResourceNodes` to exterior coords; `ResourceNode` is position-agnostic per the 4.1 decision — no schema change) ; clear on departure
-- [ ] publish/generate/builds; Acceptance (CLI): SetActiveNode(Planetside) seeds exterior nodes; EnterExterior flips zone + moves the entity
+### Subtask 5.2.1: Server — zones + airlock + planetside seeding — Scope: M ✅
+- [x] `Player.InExterior bool`; `EnterExterior`/`EnterInterior` reducers (known-player + alive + airlock reach; flip zone + teleport the Entity to the surface/interior landing). `AirlockGeometry` mirrors the client scene (ship at map origin, airlock at the right edge, landing pad 3 tiles out); `NodeHasExterior` gates exit; `ReturnPlayersToInterior` on every node switch / ResetWorld so exterior crew aren't stranded
+- [x] `NodeRules.SeedNode(Planetside)` — seeds 4 surface resource nodes at exterior coords (x>600, position-agnostic per 4.1); `ClearTransientNodeState` clears them on departure
+- [x] publish `--delete-data=always` + generate + builds clean; proven by the 5.2.3 stdb scenarios (debug reducers need a known player — stronger than CLI)
 
-### Subtask 5.2.2: Server — creatures + CreatureTick — Scope: M
-- [ ] `Types/CreatureTypeId.cs`, `Tables/Creature.cs` (CreatureId PK AutoInc, CreatureTypeId, Position/Velocity, `float Health`, `Identity Target`), `Tables/CreatureConfig.cs`, `Tables/CreatureTickTimer.cs` (scheduled)
-- [ ] `Creature/CreatureRules.cs` — deterministic movement (chase nearest exterior player in range, else patrol fixed waypoints), contact damage (`distance² < contactRadius²` → `ApplyDamage` Creature); `SpawnCreature`/`ClearCreatures` debug reducers; `SeedNode(Planetside)` also seeds creatures
-- [ ] publish/generate/builds; Acceptance (CLI): creature tick moves toward an exterior player; contact damages
+### Subtask 5.2.2: Server — creatures + CreatureTick — Scope: M ✅
+- [x] `Types/CreatureTypeId.cs` (None, Crawler), `Tables/Creature.cs` (CreatureId PK, CreatureTypeId, Position/Velocity, Health, PatrolIndex), `Tables/CreatureConfig.cs`, `Tables/CreatureTickTimer.cs` (scheduled; started in Init)
+- [x] `Creature/CreatureRules.cs` — deterministic `TickCreatures` (chase nearest in-range exterior player by squared distance, else walk a fixed patrol ring; `distance² < contactRadius²` → `ApplyDamage` Creature); `SpawnCreature`/`ClearCreatures`/`SetCreatureConfig` debug reducers; `SeedNode(Planetside)` seeds 2 crawlers; cleared on departure + ResetWorld
+- [x] publish `--delete-data=always` + generate + builds clean
 
-### Subtask 5.2.3: stdb validation — surface loop + creature + oxygen — Scope: M
-- [ ] Harness: `node`/`zone`/`creatures` observed + `test_enter_exterior`/`test_spawn_creature_at_player`/`test_move_creature` actions
-- [ ] `planetside_seeds_surface_nodes.json`, `creature_contact_damages_player.json` (spawn at player → health falls Creature → teleport away → holds), `surface_requires_suit.json` (exterior → oxygen depletes without suit → suit holds), `planetside_harvest_on_surface.json`
+### Subtask 5.2.3: stdb validation — surface loop + creature + oxygen — Scope: M ✅
+- [x] Harness: `zone`/`creatures` observed + `game.active_node` (client map) + `test_teleport_to_airlock`/`test_enter_exterior`/`test_enter_interior`/`test_fast_creatures`/`test_spawn_creature_at_player`/`test_clear_creatures` actions
+- [x] `planetside_seeds_surface_nodes.json` (interior→surface swap + 2 crawlers), `creature_contact_damages_player.json` (spawn-at-player → Creature damage → flee out of range → holds), `surface_requires_suit.json` (exterior current_slot -1 → oxygen drains → suit doubles the tank), `planetside_harvest_on_surface.json`; all 4 green. Relies on the local-node-stays-put insight: server teleport + CurrentSlotIndex -1 persist when the client doesn't move (MovementNetworkSync sends only on movement; RoomLocator only on a slot transition)
 
-### Subtask 5.2.4: Client — PlanetsideMap + exterior grid + airlock — Scope: M
-- [ ] Generalize grid rendering (extract a shared renderer from ShipGrid or a simpler `TerrainGrid`); `PlanetsideMap.tscn` (exterior grid + placed Ship + landing pad)
-- [ ] `Airlock.tscn` (InteractTarget "Exit to surface"/"Enter ship") → Enter/Exit reducer + MapHost reposition + RoomLocator swap (interior vs none); camera follows across
+### Subtask 5.2.4: Client — PlanetsideMap + exterior grid + airlock — Scope: M ✅
+- [x] `TerrainGrid` exterior renderer; `PlanetsideMap.tscn` (ship at origin + terrain + 2 `Airlock` fixtures); MapHost (Main) swaps QuietMap↔PlanetsideMap on the `NodeActivities` row, snaps the local body when InExterior flips; `GameMap.AirlockUsed` auto-wired (no subclass); DebugHud "Toggle Node" button. Proven by the connected `airlock_transition.json` (switch node → client map swaps → walk out to the surface → walk back in)
 
-### Subtask 5.2.5: Client — creatures + surface nodes — Scope: M
-- [ ] `Creature.tscn` + `CreatureSpawner` (server-driven, interpolated via the RemoteEntity/EntityMover pattern) + `CreatureTypeRegistry`; resource nodes render on the exterior grid (spawner already position-driven)
+### Subtask 5.2.5: Client — creatures + surface nodes — Scope: M ✅
+- [x] `CreatureService`/`CreatureSpawner`/`CreatureType`/`CreatureTypeRegistry` + `Creature.tscn` mirror the hazard stack (one node per row, lerps toward the server position); wired into Main as a provided service + spawner; surface resource nodes already render position-driven. Pure `CreatureHarness` + `creature_chases_and_contacts.json` (renders + follows a retarget) + `surface_nodes_render.json`
 
-### Subtask 5.2.6: Pure validation + DoD sweep — Scope: M
-- [ ] Exterior/airlock harness (new) + `CreatureHarness`; `airlock_transition.json`, `creature_chases_and_contacts.json`, `surface_nodes_render.json`
-- [ ] `validate_all.ps1` both suites green; boot clean; builds+format; screenshots (surface, suited player, creature near player); plan/todo; push
+### Subtask 5.2.6: Pure validation + DoD sweep — Scope: M ✅
+- [x] `validate_all.ps1` both suites green — **51 pure + 57 stdb**, no regressions (`node_switch_clears_transient` updated to the new swap semantics: interior↔surface nodes + creature seed, fire persists); game boots clean ≥13s zero ERROR (DbManager connected, subscription applied, CreatureTypeRegistry loaded Crawler); builds + csharpier both sides; screenshots reviewed (surface with airlock + surface OreVein + suited HUD; red crawler on the terrain); plan/todo; `git push origin`
+
+**Task 5.2 complete** ✅ — Reusable exterior-grid + airlock system on the MapHost seam: airlock zones (`Player.InExterior`), `SeedNode(Planetside)` (surface nodes + crawlers), deterministic creatures (`CreatureTick` chase/patrol + `DamageType.Creature` contact), node-switching MapHost (QuietMap↔PlanetsideMap) with DebugHud "Toggle Node", `TerrainGrid`/`Airlock` fixtures, and client creature rendering. 51 pure + 57 stdb green.
 
 ---
 
