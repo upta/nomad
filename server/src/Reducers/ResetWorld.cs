@@ -31,6 +31,7 @@ public static partial class Module
         RecomputePowerGrid(ctx);
         ReseedResourceNodes(ctx);
         ResetAllVitals(ctx);
+        ReturnPlayersToInterior(ctx);
 
         // Back to the Quiet node (a clean run starts ship-in-space).
         var node = GetNodeActivity(ctx);

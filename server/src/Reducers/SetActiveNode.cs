@@ -15,6 +15,10 @@ public static partial class Module
         var node = GetNodeActivity(ctx);
         ctx.Db.NodeActivities.Id.Update(node with { Kind = kind, ArrivedAt = ctx.Timestamp });
 
+        // The surface a player was standing on no longer exists after a switch —
+        // pull anyone outside back into the ship before seeding the new node.
+        ReturnPlayersToInterior(ctx);
+
         ClearTransientNodeState(ctx);
         SeedNode(ctx, kind);
     }

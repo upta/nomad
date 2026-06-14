@@ -32,10 +32,28 @@ public static partial class Module
             case NodeKind.Quiet:
                 ReseedResourceNodes(ctx);
                 break;
-            // Planetside (5.2), Wreck (5.3), TradingPost (5.4), DefenseEvent
-            // (5.5) seed their own surface nodes / creatures / catalog here.
+            case NodeKind.Planetside:
+                SeedPlanetsideNodes(ctx);
+                break;
+            // Wreck (5.3), TradingPost (5.4), DefenseEvent (5.5) seed their own
+            // surface nodes / creatures / catalog here.
             default:
                 break;
         }
+    }
+
+    // Harvestable nodes on the Planetside surface — the exact same
+    // ResourceNode rows the Quiet ship interior uses (position-agnostic per the
+    // 4.1 decision), placed out on the exterior grid to the right of the
+    // landing pad (ExteriorLanding sits at x=560). Cleared like any transient
+    // node content on departure.
+    private static void SeedPlanetsideNodes(ReducerContext ctx)
+    {
+        DeleteAllResourceNodes(ctx);
+
+        SeedResourceNode(ctx, ResourceNodeTypeId.OreVein, 720f, -64f, 5);
+        SeedResourceNode(ctx, ResourceNodeTypeId.OreVein, 880f, 96f, 5);
+        SeedResourceNode(ctx, ResourceNodeTypeId.FuelDepositNode, 1040f, -32f, 5);
+        SeedResourceNode(ctx, ResourceNodeTypeId.BiomassPatch, 1180f, 80f, 5);
     }
 }
