@@ -41,6 +41,8 @@ public partial class Main
     private Player.Player? _localPlayer;
     private int _localEntityId;
     private bool _wasDead;
+    private GameMap _activeMap = null!;
+    private ShipGrid _shipGrid = null!;
 
     public override void _Notification(int what) => this.Notify(what);
 
@@ -60,10 +62,16 @@ public partial class Main
     public HotbarHud HotbarHud { get; set; } = default!;
 
     [Node]
+    public Node2D MapMount { get; set; } = default!;
+
+    [Node]
     public ModalHost ModalHost { get; set; } = default!;
 
     [Export]
     public PackedScene PlayerScene { get; set; } = null!;
+
+    [Export]
+    public PackedScene QuietMapScene { get; set; } = null!;
 
     [Export]
     public PackedScene RemoteEntityScene { get; set; } = null!;
@@ -80,8 +88,10 @@ public partial class Main
     [Node]
     public Ship.RoomTypeRegistry RoomTypeRegistry { get; set; } = default!;
 
-    [Node]
-    public ShipGrid ShipGrid { get; set; } = default!;
+    // The active map owns the Ship component (and its ShipGrid); harness
+    // observation and the gameplay wiring below reach the grid through here so
+    // the node can move maps without touching every call site.
+    public ShipGrid ShipGrid => _shipGrid;
 
     public InteractionService Interaction => _interactionService;
 
@@ -91,15 +101,13 @@ public partial class Main
 
     public void OnReady()
     {
+        LoadMap(QuietMapScene);
+
         // Node exports don't survive the scene-instance boundary, so the
         // registries are handed over here instead of in Main.tscn.
-        ShipGrid.RoomTypeRegistry = RoomTypeRegistry;
         ItemSpawner.Registry = ItemTypeRegistry;
         ResourceNodeSpawner.Registry = ResourceNodeTypeRegistry;
         HotbarHud.Registry = ItemTypeRegistry;
-        ShipGrid.TerminalInteracted += OnTerminalInteracted;
-        ShipGrid.BreakerInteracted += OnBreakerInteracted;
-        ShipGrid.SuitRackInteracted += OnSuitRackInteracted;
         ItemSpawner.Interacted += OnWorldItemInteracted;
         ResourceNodeSpawner.Interacted += OnResourceNodeInteracted;
         HotbarHud.DropRequested += OnHotbarDropRequested;
@@ -112,6 +120,21 @@ public partial class Main
         Camera.MakeCurrent();
 
         this.Provide();
+    }
+
+    // Instantiates the map for the current node and wires its ShipGrid. Only the
+    // Quiet map exists today; exterior maps (5.2+) reuse this seam, so the grid
+    // wiring lives here rather than inline in OnReady.
+    private void LoadMap(PackedScene scene)
+    {
+        _activeMap = scene.Instantiate<GameMap>();
+        MapMount.AddChild(_activeMap);
+
+        _shipGrid = _activeMap.Ship.ShipGrid;
+        _shipGrid.RoomTypeRegistry = RoomTypeRegistry;
+        _shipGrid.TerminalInteracted += OnTerminalInteracted;
+        _shipGrid.BreakerInteracted += OnBreakerInteracted;
+        _shipGrid.SuitRackInteracted += OnSuitRackInteracted;
     }
 
     InteractionService IProvide<InteractionService>.Value() => _interactionService;

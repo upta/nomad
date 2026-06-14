@@ -723,7 +723,7 @@ public partial class ConnectedGameHarnessController : Node2D
         state["focused_label"] = _main?.Interaction.Focused?.Label ?? "";
         state["remote_count"] = _main?.RemoteEntityCount ?? 0;
 
-        var shipGrid = _main?.GetNodeOrNull<Nomad.Game.Map.ShipGrid>("ShipGrid");
+        var shipGrid = _main?.ShipGrid;
         state["terminal_count"] = shipGrid?.TerminalCount ?? 0;
 
         // WorldItem instances are direct children of Main's ItemSpawner node

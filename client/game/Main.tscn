@@ -1,4 +1,4 @@
-[gd_scene load_steps=44 format=3]
+[gd_scene load_steps=43 format=3]
 
 [ext_resource type="Script" path="res://game/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://game/Ui/HotbarHud.tscn" id="10_hotbar_hud"]
@@ -20,8 +20,7 @@
 [ext_resource type="PackedScene" path="res://game/Entities/RemoteEntity.tscn" id="2_remote"]
 [ext_resource type="PackedScene" path="res://game/Player/Player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://game/Ship/RoomTypeRegistry.cs" id="4_registry"]
-[ext_resource type="PackedScene" path="res://game/Map/ShipGrid.tscn" id="5_shipgrid"]
-[ext_resource type="Resource" path="res://game/Ship/CorvetteHull.tres" id="6_hull"]
+[ext_resource type="PackedScene" path="res://game/Map/QuietMap.tscn" id="map_quiet"]
 [ext_resource type="Script" path="res://game/Ship/RoomType.cs" id="rt_script"]
 [ext_resource type="Resource" path="res://game/Ship/RoomTypes/ReactorRoom.tres" id="rt0"]
 [ext_resource type="Resource" path="res://game/Ship/RoomTypes/BridgeRoom.tres" id="rt1"]
@@ -47,6 +46,7 @@
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
 PlayerScene = ExtResource("3_player")
+QuietMapScene = ExtResource("map_quiet")
 RemoteEntityScene = ExtResource("2_remote")
 
 [node name="RoomTypeRegistry" type="Node" parent="."]
@@ -69,9 +69,8 @@ unique_name_in_owner = true
 script = ExtResource("cr_registry")
 Recipes = Array[ExtResource("cr_script")]([ExtResource("cr0"), ExtResource("cr1")])
 
-[node name="ShipGrid" parent="." instance=ExtResource("5_shipgrid")]
+[node name="MapMount" type="Node2D" parent="."]
 unique_name_in_owner = true
-HullTemplate = ExtResource("6_hull")
 
 [node name="ItemSpawner" type="Node2D" parent="."]
 unique_name_in_owner = true

@@ -752,3 +752,197 @@ Design notes (user-confirmed 2026-06-12):
 - [x] `scenarios_stdb/economy_loop_end_to_end.json` (MultiplayerGameHarness): harvest RawOre + FuelDeposit → Fuel Cell at Workshop → withdraw → Load Reactor (fuel up); harvest Biomass → Meal at Kitchen → withdraw → eat (hunger up). Puppet client asserts it observes node depletion (`total_node_yield` 5→4, new on PuppetClient) + the Fuel Cell bench-output item (`stored_item_count`). Screenshot shows FOOD 60/100 after the loop
 - [x] **Cleanup:** removed the 3 dev world-item seeds + `SeedWorldItem` helper from `Init.cs`; deleted `world_items_seeded_on_init.json` (the only scenario asserting them — every other item scenario clears items first, so the 0-baseline is unaffected); publish `--delete-data=always`
 - [x] Both suites green (47 pure + 47 stdb); game boots clean 13s (zero ERROR, DbManager connected + subscription, 7 item types incl. Meal, 2 recipes); `dotnet build` + csharpier (client), `spacetime build` + format (server); **Checkpoint: Economy** marked; push
+
+---
+
+# Phase 5: Node Activities 🔄 PLANNED
+
+Plan authored 2026-06-13 (`/agent-skills:plan phase 5`). Phase 5 introduces the **Node Activity** layer — the ship anchors at a node, and each node type presents distinct activities/hazards. Navigation (Star Chart, Jump, Stellar Night) lands in Phase 6; until then nodes are **debug-switched** via a `SetActiveNode` reducer (the eventual jump target) wired to a DebugHud node selector (mirrors the existing top-right Reset World button from commit df20e20).
+
+## Architecture (user-confirmed 2026-06-13)
+
+- **Ship-as-component / map host:** the ship interior becomes a reusable `Ship.tscn` component placed into `Map` scenes. `Main` becomes a `MapHost` that loads the map matching the active node's `NodeKind`, places the `Ship` component, and re-seats the player. Default node = `Quiet` → `QuietMap` (the current world, ship in space). Exterior maps (`PlanetsideMap`, `WreckMap`, `TradingStationMap`) place the same Ship component beside their exterior grid, reached via airlock; defense/maintenance are ship-side node states (no separate map). Spawners/interaction/HUDs/camera are already grid-decoupled (confirmed by exploration) — they survive the refactor untouched, so the extraction is **regression-gated** (all existing scenarios stay green).
+- **Node state model:** a single-row `NodeActivity` table (`Kind`, `ArrivedAt`) is the source of truth. `SetActiveNode(kind)` clears prior **transient** node state (exterior resource nodes, creatures, threats, trade availability) and seeds the new node's via a `NodeRules.SeedNode` dispatcher each node task extends. **Persistent** ship state (rooms, power, pressure, vitals, stores, hotbar+cargo items) and **ship hazards** (fire, hull breaches — they don't vanish on a jump) survive node changes.
+- **Hazard framework (fire first):** positioned `Hazard` entities carry intensity; a `HazardTick` scheduled reducer (VitalsTick/ChannelTick pattern) grows intensity, spreads **deterministically** (lowest-index un-ignited adjacent floor cell — no RNG in reducers), and applies proximity damage via the **already-declared** `DamageType.Fire`. `DamageType.Creature` (also already declared) is the 5.2 hook. Proximity = iterate hazards × connected-alive player entities, `distance² < radius²` (the established reach pattern; no spatial index needed at ≤8 players).
+- **Per-weapon ammo (5.5):** weapons are ship fixtures with their own ammo counter, powered via their room's breaker; `Ammo` item + `AmmoCrate` Workshop recipe + a 4th per-weapon `LoadItem` ammo branch (the `ItemRules` "Ammo joins in 5.5" hook already comment-marked). Auto-target via `WeaponTick`; no player aiming (§8).
+- **Credits trading (5.4):** `ShipStores.Credits` + a static `TradeRules` price catalog; `BuyItem`/`SellItem` reducers gated on a TradingPost node + terminal reach.
+- **Spatial validation:** proximity features (fire, creatures, weapons↔threats) validate with the proven **spawn-at-player + `MoveEntity` teleport** pattern (dodges nav flake). New pure harnesses (Hazard/Creature/Weapon/Breach) follow the `IProvide` + `ActionKeyBridge` + `get_observed_state` + `_PhysicsProcess` edge-detection template. The exploration flagged these as the only net-new validation infra; trading reuses the modal-harness pattern.
+- **Publish ritual** every schema change: `spacetime publish nomad --delete-data=always --yes --server local --module-path ./src` + regenerate bindings + re-green stdb suite before commit. New `ItemTypeId`/`RecipeId`/enum values **append at END** to keep client-binding ordinals stable.
+
+## Dependency graph
+
+```
+5.1 Node framework (Ship component + MapHost + NodeActivity state) + hazard framework + FIRE
+    │
+    ├── 5.2 Planetside map (exterior grid + AIRLOCK system + CREATURES + relocate resource nodes)
+    │       ├── 5.3 Wreck map (reuses airlock/exterior grid; reuses fire + creatures; salvage loot)
+    │       └── 5.4 Trading station map (reuses airlock/exterior grid; Credits + TradeRules + modal)
+    │
+    ├── 5.5 Defense event (ship-side; per-weapon Ammo + Load branch + threats)   ┐ parallel after 5.1
+    └── 5.6 Maintenance + HULL BREACHES (ship-side; depressurize via 1.5 + patch) ┘
+```
+
+Order rationale: 5.1 is the foundation (highest refactor risk → first, regression-gated). 5.2 builds the novel exterior-grid+airlock system (fail-fast on the one structurally-new piece); **5.3 and 5.4 both reuse it** (wreck + trading station), so building 5.2 well pays off three times. 5.5/5.6 are ship-side, additive on proven patterns, and may be reordered/parallelized after 5.1.
+
+---
+
+## Task 5.1: Node framework + map host + hazard system (fire) — Scope: L
+
+The foundation. Establishes node state, the ship-as-component / map-host seam, and the hazard framework proven end-to-end with fire (a ship hazard that works in the default Quiet map — no exterior grid needed yet). Riskiest subtask (the refactor) goes first, fail-fast.
+
+### Subtask 5.1.1: Client refactor — Ship component + MapHost (regression-gated) — Scope: M ✅
+- [x] Extract `client/game/Ship/ShipBody.tscn` + `ShipBody.cs` wrapping ShipGrid (+ the terminal/breaker/suit-rack spawning it already owns), with exported `PlayerSpawn`/`AirlockMount` `Marker2D`s. (Class is `ShipBody`, not `Ship` — a class literally named `Ship` collides with the `Nomad.Game.Ship` namespace used module-wide as `Ship.Breaker`/`Ship.PowerGridService`/…; the scene root node is still "Ship".)
+- [x] Create `client/game/Map/QuietMap.tscn` (`GameMap.cs` base + ShipBody instance + a `CanvasLayer` space backdrop); `client/game/Main.cs` is now a MapHost that `LoadMap`s QuietMap into a scene-declared `MapMount`, wires the ShipGrid via a `ShipGrid` accessor, and keeps seating the player itself. Only ShipGrid moved out of Main — Player/spawners/UI/camera stayed, so the regression surface was tiny. (No stub second map needed: the dynamic `LoadMap(PackedScene)` seam IS the swap mechanism, exercised by the QuietMap load.)
+- [x] **Acceptance met: 47 pure + 48 stdb scenarios green, zero regressions**; game boots clean ≥13s zero ERROR (DbManager connected, subscription applied, 8 room types loaded); rooms/terminals/breakers/suit-rack render identically (screenshot reviewed) + new dark space backdrop in the void.
+- [x] Only two harnesses embed Main.tscn (`ConnectedGameHarness`, `MultiplayerGameHarness`, both via `ConnectedGameHarnessController`); the other 9 instance `ShipGrid.tscn` directly and were untouched. Sole controller change: the `GetNodeOrNull<ShipGrid>("ShipGrid")` lookup → `_main.ShipGrid` accessor.
+
+### Subtask 5.1.2: Server — NodeActivity + hazard framework + fire reducers — Scope: M
+- [ ] `Types/NodeKind.cs` (Quiet, Planetside, Wreck, TradingPost, DefenseEvent), `Types/HazardTypeId.cs` (None, Fire)
+- [ ] `Tables/NodeActivity.cs` (Id 0 singleton: `NodeKind Kind`, `Timestamp ArrivedAt`), `Tables/Hazard.cs` (HazardId PK AutoInc, HazardTypeId, `DbVector2 Position`, `float Intensity`, `int RoomSlotIndex`, Public), `Tables/HazardConfig.cs` (TickMillis, IntensityPerTick, SpreadThreshold, MaxHazards, FireDamagePerTick, FireDamageRadius), `Tables/HazardTickTimer.cs` (scheduled, VitalsTickTimer pattern)
+- [ ] `Node/NodeRules.cs` — `SeedNode(ctx, kind)` / `ClearTransientNodeState(ctx)` dispatcher (per-node seeders land with 5.2–5.6; leaves ship hazards untouched)
+- [ ] `Hazard/HazardRules.cs` — deterministic spread (next un-ignited adjacent floor cell via `HullGeometry`), proximity-damage loop, reschedule helper
+- [ ] Reducers: `SetActiveNode(NodeKind)` (debug; clear+seed), `IgniteHazard(typeId, roomSlot)` (debug/event), `ExtinguishHazard(hazardId)` (known-player + alive + reach), `HazardTick` (grow intensity → deterministic spread under MaxHazards → proximity Fire damage via `ApplyDamage`)
+- [ ] `Init.cs` seeds NodeActivity(Quiet) + HazardConfig + HazardTickTimer; publish `--delete-data=always` + generate + builds
+- [ ] Acceptance (CLI): ignite seeds a Hazard row; tick grows intensity + spawns adjacent; player in radius loses health (Fire); extinguish clears
+
+### Subtask 5.1.3: stdb validation — fire damage + node switch — Scope: S
+- [ ] `ConnectedGameHarnessController`: `hazards` observed (count + list type/intensity/pos), `node.kind` observed; test actions `test_ignite_at_player`/`test_extinguish_nearest`/`test_set_node_planetside`/`test_set_node_quiet`; fast hazard config
+- [ ] `scenarios_stdb/fire_proximity_damages_player.json` (ignite at player pos → health falls via Fire → extinguish → holds; assert_pipeline delta < 0 then == 0)
+- [ ] `scenarios_stdb/node_switch_clears_transient.json` (transient content cleared on switch; fire persists as a ship hazard across the switch)
+
+### Subtask 5.1.4: Client — fire rendering + extinguish — Scope: M
+- [ ] `client/game/Hazard/HazardType.cs` (`[GlobalClass]`: Color/Glyph/Label/HazardId) + `.tres` + `HazardTypeRegistry` (`[Export]` array, wired Main + harness scenes)
+- [ ] `Fire.tscn` (flicker visual + Area2D + InteractTarget "Extinguish", GhostAccessible false) + `FireSpawner` (ResourceNodeSpawner pattern, update-in-place on intensity, free on delete)
+- [ ] `_Service/HazardService.cs` (subscribe `Hazards`, `Changed`, entries + test seeders); Main provides HazardService + binds connection; extinguish interact → `ExtinguishHazard`
+
+### Subtask 5.1.5: Pure validation — fire — Scope: S
+- [ ] `FireHarness.tscn` + controller (provides Hazard + Interaction services; seeders)
+- [ ] `fire_renders_and_spreads.json` (ignite → fire node + intensity ramp → spread spawns adjacent → extinguish frees), `fire_extinguish_interact.json` (walk-up → "Extinguish" prompt → interact → fire gone)
+
+### Subtask 5.1.6: DoD sweep — Scope: S
+- [ ] `./scripts/validate_all.ps1` both suites green, no regressions; screenshots reviewed (fire over a room, post-extinguish clear)
+- [ ] Game boots clean ≥13s zero ERROR; builds + csharpier both sides; plan/todo ticked; `git push origin`
+
+---
+
+## Task 5.2: Planetside map + airlock system + creatures — Scope: L
+
+Builds the reusable exterior-grid + airlock-transition system on the 5.1 MapHost seam. Suit-required-on-surface falls out of existing oxygen rules (exterior = no room → `CurrentSlotIndex = -1` → oxygen depletes). Creatures move **server-authoritatively** (deterministic chase-nearest/patrol, no RNG), interpolated client-side like remote players; contact damage via the already-declared `DamageType.Creature`. (5.2.1 is large — split into an airlock/zone slice and a creature slice if it exceeds one focused session.)
+
+### Subtask 5.2.1: Server — zones + airlock + planetside seeding — Scope: M
+- [ ] `Player.InExterior bool` (or `Zone` enum); `EnterExterior`/`EnterInterior` reducers (known-player + alive + reach vs airlock position; flips zone + teleports the player's Entity to the exterior/interior landing point)
+- [ ] `NodeRules.SeedNode(Planetside)` — seed exterior resource nodes (relocate `ReseedResourceNodes` to exterior coords; `ResourceNode` is position-agnostic per the 4.1 decision — no schema change) ; clear on departure
+- [ ] publish/generate/builds; Acceptance (CLI): SetActiveNode(Planetside) seeds exterior nodes; EnterExterior flips zone + moves the entity
+
+### Subtask 5.2.2: Server — creatures + CreatureTick — Scope: M
+- [ ] `Types/CreatureTypeId.cs`, `Tables/Creature.cs` (CreatureId PK AutoInc, CreatureTypeId, Position/Velocity, `float Health`, `Identity Target`), `Tables/CreatureConfig.cs`, `Tables/CreatureTickTimer.cs` (scheduled)
+- [ ] `Creature/CreatureRules.cs` — deterministic movement (chase nearest exterior player in range, else patrol fixed waypoints), contact damage (`distance² < contactRadius²` → `ApplyDamage` Creature); `SpawnCreature`/`ClearCreatures` debug reducers; `SeedNode(Planetside)` also seeds creatures
+- [ ] publish/generate/builds; Acceptance (CLI): creature tick moves toward an exterior player; contact damages
+
+### Subtask 5.2.3: stdb validation — surface loop + creature + oxygen — Scope: M
+- [ ] Harness: `node`/`zone`/`creatures` observed + `test_enter_exterior`/`test_spawn_creature_at_player`/`test_move_creature` actions
+- [ ] `planetside_seeds_surface_nodes.json`, `creature_contact_damages_player.json` (spawn at player → health falls Creature → teleport away → holds), `surface_requires_suit.json` (exterior → oxygen depletes without suit → suit holds), `planetside_harvest_on_surface.json`
+
+### Subtask 5.2.4: Client — PlanetsideMap + exterior grid + airlock — Scope: M
+- [ ] Generalize grid rendering (extract a shared renderer from ShipGrid or a simpler `TerrainGrid`); `PlanetsideMap.tscn` (exterior grid + placed Ship + landing pad)
+- [ ] `Airlock.tscn` (InteractTarget "Exit to surface"/"Enter ship") → Enter/Exit reducer + MapHost reposition + RoomLocator swap (interior vs none); camera follows across
+
+### Subtask 5.2.5: Client — creatures + surface nodes — Scope: M
+- [ ] `Creature.tscn` + `CreatureSpawner` (server-driven, interpolated via the RemoteEntity/EntityMover pattern) + `CreatureTypeRegistry`; resource nodes render on the exterior grid (spawner already position-driven)
+
+### Subtask 5.2.6: Pure validation + DoD sweep — Scope: M
+- [ ] Exterior/airlock harness (new) + `CreatureHarness`; `airlock_transition.json`, `creature_chases_and_contacts.json`, `surface_nodes_render.json`
+- [ ] `validate_all.ps1` both suites green; boot clean; builds+format; screenshots (surface, suited player, creature near player); plan/todo; push
+
+---
+
+## Task 5.3: Abandoned wreck salvage (reuse exterior system) — Scope: M–L
+
+Reuses 5.2's airlock/exterior-grid; new hand-crafted derelict layout; salvage = scattered World items + WreckageDebris nodes (exist) hauled back to cargo (exists); reuses 5.1 fire + 5.2 creatures as wreck hazards. Rare `Components` drops (item exists).
+
+### Subtask 5.3.1: Server — wreck node seeding + salvage loot — Scope: M
+- [ ] `NodeRules.SeedNode(Wreck)` — seed wreck loot (World items: Components/Scrap) + WreckageDebris nodes + optional fire/creature hazards; `SpawnSalvageLoot` debug; publish/generate/builds
+
+### Subtask 5.3.2: stdb validation — salvage + haul-back — Scope: S
+- [ ] `wreck_seeds_loot_and_hazards.json`, `wreck_salvage_haul_to_cargo.json` (pick up loot in wreck → cross back to ship → store in CargoBay; puppet sees the store)
+
+### Subtask 5.3.3: Client — WreckMap — Scope: M
+- [ ] `WreckMap.tscn` (derelict HullTemplate-like layout, dim/vacuum aesthetic) placing the Ship + dock airlock; reuse item/node/fire/creature spawners
+
+### Subtask 5.3.4: Pure validation + DoD sweep — Scope: S
+- [ ] `wreck_renders.json` + fire/creature reuse in wreck context; both suites green; boot clean; builds+format; screenshots; plan/todo; push
+
+---
+
+## Task 5.4: Trading station (credits, docked-station map) — Scope: L · depends on 5.2
+
+Credits currency + docked-station presentation (user-confirmed 2026-06-13). The ship links with an automated depot / merchant station; players cross the 5.2 airlock onto a `TradingStationMap` to trade at the station's terminal. `ShipStores.Credits` + a static `TradeRules` buy/sell catalog (mirrors `CraftingRules`); `BuyItem`/`SellItem` gated on node==TradingPost + reach vs the station terminal. Trading mechanics are identical to a ship-side console — the delta over an M-scoped version is the station map + airlock reuse, which is exactly why this depends on 5.2's airlock/exterior-grid system.
+
+### Subtask 5.4.1: Server — Credits + TradeRules + Buy/Sell + station seeding — Scope: M
+- [ ] `ShipStores.Credits` (seed); `Trade/TradeRules.cs` (buy price + sell value per `ItemTypeId` catalog)
+- [ ] `BuyItem(itemTypeId)` (known-player + alive + credits ≥ price + free hotbar slot + node==TradingPost + reach vs station terminal), `SellItem(hotbarSlot)` (item → credits, node-gated + reach); `SetCredits` debug
+- [ ] `NodeRules.SeedNode(TradingPost)` enables the station/terminal (the airlock destination); publish/generate/builds
+
+### Subtask 5.4.2: stdb validation — buy/sell + rejections — Scope: M
+- [ ] `trade_buy_sell_round_trip.json` (cross to station → sell ore → credits up + slot empty; buy fuel → credits down + item in hotbar), `trade_rejections.json` (insufficient credits, full hotbar, not at trading node, out of reach)
+
+### Subtask 5.4.3: Client — TradingStationMap + airlock + trade terminal — Scope: M
+- [ ] `TradingStationMap.tscn` (reuses the 5.2 exterior-grid renderer; station-concourse layout placing the Ship + dock airlock + merchant terminal); MapHost loads it at a TradingPost node; airlock crosses ship ↔ station (reuses the 5.2 Enter/Exit transition)
+- [ ] `TerminalType.Trading`; the station terminal opens the trade modal
+
+### Subtask 5.4.4: Client — TradingModal + credits readout — Scope: M
+- [ ] `_Service/TradeService.cs`; `TradingModal.tscn` (buy-offers list + sell-from-hotbar grid + credits readout; Storage/Fabricator pattern, in-place updates); `ModalHost.SceneFor` route; credits also on DebugHud
+
+### Subtask 5.4.5: Pure validation + DoD sweep — Scope: M
+- [ ] `TradingHarness` (extends Inventory + the exterior/airlock harness); `trading_modal_buy_sell.json` (credits + grids update in place; focus-nav), `trading_station_airlock.json` (cross to station → terminal reachable)
+- [ ] both suites green; boot clean; builds+format; screenshots (station concourse, modal, credits); plan/todo; push
+
+---
+
+## Task 5.5: Automated defense node (per-weapon ammo + threats) — Scope: L
+
+Per-weapon ammo (user-confirmed). Weapons are ship fixtures (seeded in designated rooms), powered via their room's breaker; auto-target nearest threat via `WeaponTick`; no player aiming (§8). Ships the ammo feature **whole**: `Ammo` item, `AmmoCrate` Workshop recipe, 4th per-weapon `LoadItem` ammo branch. Threats spawn at the DefenseEvent node, track the ship, and damage it on contact (a hull breach via 5.6 if landed, else room damage).
+
+### Subtask 5.5.1: Server — Ammo item + recipe + Weapon table + Load branch — Scope: M
+- [ ] `ItemTypeId.Ammo` (append), `RecipeId.AmmoCrate` (append) + `CraftingRules` recipe (Workshop: RawOre + Scrap → Ammo) + `AllRecipes`/`RecipeFor`
+- [ ] `Tables/Weapon.cs` (WeaponId PK AutoInc, `int RoomSlotIndex`, Position, `int Ammo`, `int AmmoMax`, `bool Active`, `Timestamp LastFiredAt`); weapon seeding on the hull
+- [ ] `ItemRules.AcceptsTankDeposit` ammo case + `LoadItem` per-weapon ammo branch (the "Ammo joins in 5.5" hook → increment the weapon in that room slot); publish `--delete-data=always` + generate + builds
+
+### Subtask 5.5.2: Server — threats + WeaponTick — Scope: M
+- [ ] `Tables/Threat.cs` (ThreatId PK AutoInc, Position/Velocity, `float Health`), `Tables/ThreatTickTimer.cs`, `Tables/DefenseConfig.cs`; `ThreatTick` (deterministic move toward ship; contact → ship/room damage), `WeaponTick` (each Active+powered+Ammo>0 weapon → nearest in-range threat → fire: −1 ammo, damage/destroy threat, set LastFiredAt); `NodeRules.SeedNode(DefenseEvent)` spawns threats; publish/generate/builds
+
+### Subtask 5.5.3: stdb validation — ammo + auto-fire — Scope: M
+- [ ] `ammo_craft_and_load_weapon.json` (craft AmmoCrate at Workshop → load into weapon → weapon Ammo up), `weapon_autofires_at_threat.json` (spawn threat in range → weapon fires → threat destroyed + ammo down), `weapon_offline_unpowered_or_dry.json` (cut room power / zero ammo → no fire → threat reaches ship → damage)
+
+### Subtask 5.5.4: Client — Weapon + Threat visuals + load flow — Scope: M
+- [ ] `AmmoCrateItem.tres` + `AmmoCrateRecipe.tres` wired into every ItemTypeRegistry/RecipeRegistry scene; `Weapon.tscn` (turret + muzzle VFX firing at target) + `WeaponSpawner` + ammo readout; `Threat.tscn` + `ThreatSpawner` (server-driven, interpolated); load-ammo via the existing Load verb (interact at weapon)
+
+### Subtask 5.5.5: Pure validation — weapon + load — Scope: M
+- [ ] `WeaponHarness`; `weapon_loads_ammo.json`, `weapon_targets_threat.json` (auto-fire state on a seeded threat)
+
+### Subtask 5.5.6: DoD sweep — Scope: S
+- [ ] both suites green; boot clean; builds+format; screenshots (turret firing, ammo readout); plan/todo; push
+
+---
+
+## Task 5.6: Core maintenance node + hull breaches — Scope: M
+
+The Quiet node is the maintenance home (refine/cook/restore power already work on the ship). 5.6 owns the **hull breach** feature: a breach depressurizes its room via the 1.5 `IsPressurized` state and **persists** (ship hazard, survives node changes) until patched. `CreateBreach` is debug/event-driven now; Stellar Night overstay (6.4) + hazards become real causes later. Patch consumes a Scrap and restores pressure (if no other breach remains in the room). The vacuum tint (1.5) already renders depressurization — breach adds a rupture marker + patch interaction.
+
+### Subtask 5.6.1: Server — Breach table + Create/Patch — Scope: M
+- [ ] `Tables/Breach.cs` (BreachId PK AutoInc, `int RoomSlotIndex`, Position, `float Integrity`); `CreateBreach(roomSlot)` (depressurize room via the SetPressurization path + record breach), `PatchBreach(breachId)` (known-player + alive + reach + consume one `Scrap` from hotbar → remove breach → repressurize if last breach in room); breaches persist across `SetActiveNode`; publish/generate/builds
+
+### Subtask 5.6.2: stdb validation — breach depressurize + patch — Scope: S
+- [ ] `breach_depressurizes_room.json` (create → room vacuum + occupant oxygen drains → patch with Scrap → repressurizes → oxygen refills), `breach_persists_across_node.json`
+
+### Subtask 5.6.3: Client — breach visual + patch interaction — Scope: M
+- [ ] `Breach.tscn` (hull rupture overlay + InteractTarget "Patch breach") + `BreachSpawner`; patch consumes Scrap via `PatchBreach`; composes with the existing vacuum tint
+
+### Subtask 5.6.4: Pure validation — breach render + patch — Scope: S
+- [ ] `BreachHarness` (extend PowerHarness pressurization infra); `breach_renders_and_patches.json`
+
+### Subtask 5.6.5: DoD sweep + Phase 5 checkpoint — Scope: S
+- [ ] DebugHud node-selector switches all 5 node types; walk each: planetside (harvest / avoid creatures / suit required), wreck (salvage + haul back), trading (buy/sell for credits), defense (load ammo + weapons auto-fire + juggle power), maintenance (patch a hull breach); fire works across nodes
+- [ ] `./scripts/validate_all.ps1` both suites green, no regressions; game boots clean ≥13s zero ERROR; builds + csharpier both sides; **Checkpoint: Nodes** marked; `git push origin`
+
+**Checkpoint: Nodes** — 5 node types playable (Planetside, Wreck, Trading, Defense, Maintenance) + fire hazard, all debug-switchable via the DebugHud node selector. Phase 5 complete.
