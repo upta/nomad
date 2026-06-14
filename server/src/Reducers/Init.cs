@@ -21,6 +21,12 @@ public static partial class Module
         // (harvest now, crafting in 4.3).
         RescheduleChannelTick(ctx, GetHarvestConfig(ctx).TickMillis);
 
+        // Anchors the ship at the Quiet node and starts the repeating hazard
+        // tick (fire grow/spread/proximity damage). Both no-op until a node
+        // switch or an ignition happens.
+        GetNodeActivity(ctx);
+        RescheduleHazardTick(ctx, GetHazardConfig(ctx).TickMillis);
+
         // Seeds the ship's shared stores (biomass = three respawns).
         GetShipStores(ctx);
 
@@ -30,8 +36,9 @@ public static partial class Module
         // Seeds crafting tunables and bench input/output zone sizes.
         GetCraftingConfig(ctx);
 
-        // Placeholder harvestable nodes on the open east corridor floor. Shared
-        // with ResetWorld.
-        ReseedResourceNodes(ctx);
+        // Seeds the Quiet node's transient content — the placeholder harvest
+        // nodes on the open east corridor floor. Routed through the node
+        // dispatcher so Init, ResetWorld, and SetActiveNode share one path.
+        SeedNode(ctx, NodeKind.Quiet);
     }
 }

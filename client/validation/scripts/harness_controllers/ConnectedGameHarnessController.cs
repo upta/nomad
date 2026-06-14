@@ -323,6 +323,32 @@ public partial class ConnectedGameHarnessController : Node2D
         ["test_give_meal_slot0"] = conn =>
             conn.Reducers.GiveItem(SpacetimeDB.Types.ItemTypeId.Meal, 0),
         ["test_eat_slot0"] = conn => conn.Reducers.EatItem(0),
+        // Hazard/fire + node activity (Task 5.1). Fast single-hazard config (no
+        // spread) for the proximity-damage test; a spread config (MaxHazards 6)
+        // for the spread test. Tick/damage shrunk so fire scenarios stay short.
+        ["test_fast_hazards"] = conn => conn.Reducers.SetHazardConfig(200, 0.3f, 0.6f, 1, 4f, 56f),
+        ["test_fast_hazards_spread"] = conn =>
+            conn.Reducers.SetHazardConfig(150, 0.5f, 0.5f, 6, 0.5f, 40f),
+        // Ignite on the player's own cell (proximity test) — the spawn-at-player
+        // pattern keeps the fire in damage range without flaky navigation.
+        ["test_ignite_at_player"] = conn =>
+        {
+            if (PlayerEntityPos(conn) is { } pos)
+                conn.Reducers.IgniteHazardAt(SpacetimeDB.Types.HazardTypeId.Fire, pos.X, pos.Y);
+        },
+        // Ignite in the Reactor (slot 0), away from the corridor spawn — for the
+        // spread + node-persistence tests where the player must not be burned.
+        ["test_ignite_reactor"] = conn =>
+            conn.Reducers.IgniteHazard(SpacetimeDB.Types.HazardTypeId.Fire, 0),
+        ["test_extinguish_nearest"] = conn =>
+        {
+            if (FindNearestHazardId(conn) is { } id)
+                conn.Reducers.ExtinguishHazard(id);
+        },
+        ["test_set_node_planetside"] = conn =>
+            conn.Reducers.SetActiveNode(SpacetimeDB.Types.NodeKind.Planetside),
+        ["test_set_node_quiet"] = conn =>
+            conn.Reducers.SetActiveNode(SpacetimeDB.Types.NodeKind.Quiet),
     };
 
     private readonly Dictionary<string, bool> _bridgeState = [];
@@ -444,6 +470,8 @@ public partial class ConnectedGameHarnessController : Node2D
             ["nodes"] = BuildNodesState(),
             ["harvest"] = BuildHarvestState(),
             ["crafting"] = BuildCraftingState(),
+            ["hazards"] = BuildHazardsState(),
+            ["node"] = BuildNodeState(),
         };
 
         if (_puppet is { } puppet)
@@ -642,6 +670,28 @@ public partial class ConnectedGameHarnessController : Node2D
             {
                 nearestDistSq = distSq;
                 nearest = node.NodeId;
+            }
+        }
+
+        return nearest;
+    }
+
+    private static int? FindNearestHazardId(SpacetimeDB.Types.DbConnection conn)
+    {
+        if (PlayerEntityPos(conn) is not { } origin)
+            return null;
+
+        int? nearest = null;
+        var nearestDistSq = float.MaxValue;
+        foreach (var hazard in conn.Db.Hazards.Iter())
+        {
+            var distSq = origin.DistanceSquaredTo(
+                new Vector2(hazard.Position.X, hazard.Position.Y)
+            );
+            if (distSq < nearestDistSq)
+            {
+                nearestDistSq = distSq;
+                nearest = hazard.HazardId;
             }
         }
 
@@ -1091,6 +1141,58 @@ public partial class ConnectedGameHarnessController : Node2D
             };
         }
         state["benches"] = benches;
+
+        return state;
+    }
+
+    // Positioned hazards (fire) read straight off the public Hazards table, in
+    // stable HazardId order so scenarios can address hazards.list.0.type etc.
+    private Godot.Collections.Dictionary BuildHazardsState()
+    {
+        var state = new Godot.Collections.Dictionary
+        {
+            ["count"] = 0,
+            ["list"] = new Godot.Collections.Array(),
+        };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        var rows = new List<SpacetimeDB.Types.Hazard>();
+        foreach (var hazard in conn.Db.Hazards.Iter())
+            rows.Add(hazard);
+
+        state["count"] = rows.Count;
+
+        var list = new Godot.Collections.Array();
+        foreach (var hazard in rows.OrderBy(h => h.HazardId))
+        {
+            list.Add(
+                new Godot.Collections.Dictionary
+                {
+                    ["hazard_id"] = hazard.HazardId,
+                    ["type"] = hazard.HazardTypeId.ToString(),
+                    ["intensity"] = hazard.Intensity,
+                    ["x"] = hazard.Position.X,
+                    ["y"] = hazard.Position.Y,
+                    ["room_slot"] = hazard.RoomSlotIndex,
+                }
+            );
+        }
+        state["list"] = list;
+
+        return state;
+    }
+
+    private Godot.Collections.Dictionary BuildNodeState()
+    {
+        var state = new Godot.Collections.Dictionary { ["kind"] = "" };
+
+        if (!_dataReady || _dbManager?.Connection is not { } conn)
+            return state;
+
+        if (conn.Db.NodeActivities.Id.Find(0) is { } node)
+            state["kind"] = node.Kind.ToString();
 
         return state;
     }

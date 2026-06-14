@@ -2,9 +2,10 @@ public static partial class Module
 {
     // Dev/debug: wipe the shared world simulation back to the Init seed so a
     // playtester can restart a run without republishing the module. Clears all
-    // items (world, hotbar, bench, cargo), crafting jobs, and harvest channels;
-    // re-seeds rooms and resource nodes; restores ship stores, the power grid,
-    // and every player's vitals to their seed values.
+    // items (world, hotbar, bench, cargo), crafting jobs, harvest channels, and
+    // hazards (fire); re-seeds rooms and resource nodes; restores ship stores,
+    // the power grid, and every player's vitals to their seed values; returns to
+    // the Quiet node.
     //
     // Out of scope on purpose: player body positions (client-authoritative — the
     // client would just re-sync them back) and the *Config tunable rows /
@@ -21,6 +22,7 @@ public static partial class Module
         DeleteAllItems(ctx);
         DeleteAllCraftingJobs(ctx);
         DeleteAllActiveHarvests(ctx);
+        DeleteAllHazards(ctx);
 
         ReseedRooms(ctx);
         ResetShipStoresToSeed(ctx);
@@ -29,5 +31,15 @@ public static partial class Module
         RecomputePowerGrid(ctx);
         ReseedResourceNodes(ctx);
         ResetAllVitals(ctx);
+
+        // Back to the Quiet node (a clean run starts ship-in-space).
+        var node = GetNodeActivity(ctx);
+        ctx.Db.NodeActivities.Id.Update(
+            node with
+            {
+                Kind = NodeKind.Quiet,
+                ArrivedAt = ctx.Timestamp,
+            }
+        );
     }
 }

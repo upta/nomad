@@ -796,19 +796,23 @@ The foundation. Establishes node state, the ship-as-component / map-host seam, a
 - [x] **Acceptance met: 47 pure + 48 stdb scenarios green, zero regressions**; game boots clean ≥13s zero ERROR (DbManager connected, subscription applied, 8 room types loaded); rooms/terminals/breakers/suit-rack render identically (screenshot reviewed) + new dark space backdrop in the void.
 - [x] Only two harnesses embed Main.tscn (`ConnectedGameHarness`, `MultiplayerGameHarness`, both via `ConnectedGameHarnessController`); the other 9 instance `ShipGrid.tscn` directly and were untouched. Sole controller change: the `GetNodeOrNull<ShipGrid>("ShipGrid")` lookup → `_main.ShipGrid` accessor.
 
-### Subtask 5.1.2: Server — NodeActivity + hazard framework + fire reducers — Scope: M
-- [ ] `Types/NodeKind.cs` (Quiet, Planetside, Wreck, TradingPost, DefenseEvent), `Types/HazardTypeId.cs` (None, Fire)
-- [ ] `Tables/NodeActivity.cs` (Id 0 singleton: `NodeKind Kind`, `Timestamp ArrivedAt`), `Tables/Hazard.cs` (HazardId PK AutoInc, HazardTypeId, `DbVector2 Position`, `float Intensity`, `int RoomSlotIndex`, Public), `Tables/HazardConfig.cs` (TickMillis, IntensityPerTick, SpreadThreshold, MaxHazards, FireDamagePerTick, FireDamageRadius), `Tables/HazardTickTimer.cs` (scheduled, VitalsTickTimer pattern)
-- [ ] `Node/NodeRules.cs` — `SeedNode(ctx, kind)` / `ClearTransientNodeState(ctx)` dispatcher (per-node seeders land with 5.2–5.6; leaves ship hazards untouched)
-- [ ] `Hazard/HazardRules.cs` — deterministic spread (next un-ignited adjacent floor cell via `HullGeometry`), proximity-damage loop, reschedule helper
-- [ ] Reducers: `SetActiveNode(NodeKind)` (debug; clear+seed), `IgniteHazard(typeId, roomSlot)` (debug/event), `ExtinguishHazard(hazardId)` (known-player + alive + reach), `HazardTick` (grow intensity → deterministic spread under MaxHazards → proximity Fire damage via `ApplyDamage`)
-- [ ] `Init.cs` seeds NodeActivity(Quiet) + HazardConfig + HazardTickTimer; publish `--delete-data=always` + generate + builds
-- [ ] Acceptance (CLI): ignite seeds a Hazard row; tick grows intensity + spawns adjacent; player in radius loses health (Fire); extinguish clears
+### Subtask 5.1.2: Server — NodeActivity + hazard framework + fire reducers — Scope: M ✅
+- [x] `Types/NodeKind.cs` (Quiet, Planetside, Wreck, TradingPost, DefenseEvent), `Types/HazardTypeId.cs` (None, Fire) — `[SpacetimeDB.Type] enum : uint`
+- [x] `Tables/NodeActivity.cs` (Id 0 singleton, Public), `Tables/Hazard.cs` (HazardId PK AutoInc, HazardTypeId, `DbVector2 Position`, `float Intensity 0→1`, `int RoomSlotIndex`, Public), `Tables/HazardConfig.cs` (Public), `Tables/HazardTickTimer.cs` (scheduled)
+- [x] `Node/NodeRules.cs` — `GetNodeActivity`, `SeedNode(kind)` (Quiet → ReseedResourceNodes; other kinds stub for 5.2–5.6) / `ClearTransientNodeState` (deletes resource nodes; leaves ship hazards + persistent ship state)
+- [x] `Hazard/HazardRules.cs` — config getter/reschedule, `IgniteHazardAtCell` (dedup per cell), `TickHazards` (grow→spread→proximity damage), `SpreadFire` (lowest-(Y,X) un-ignited adjacent floor cell, deterministic), `ApplyHazardProximityDamage` (any-fire-in-radius → one Fire damage tick), `DeleteAllHazards`
+- [x] `Ship/HullGeometry.cs` — server floor-cell geometry mirroring the client's `BuildMap` (rooms + corridor + 14 doors, integer 14/8 offset), `WorldToCell`/`CellToWorld`/`SlotForCell`/`SlotCenterCell`/`Neighbors4`. `SlotCenterCell` routes through `SlotCenter` (review fix: keeps room-targeted ignition aligned with the float room center)
+- [x] Reducers: `SetActiveNode(NodeKind)` (clear+seed, hazards persist), `IgniteHazard(typeId, roomSlot)` (room-center) + `IgniteHazardAt(typeId, x, y)` (validation/spawn-at-player), `ExtinguishHazard(hazardId)` (known-player + alive + reach), `HazardTick`, `SetHazardConfig` (SetVitalsConfig pattern)
+- [x] `Init.cs` seeds NodeActivity(Quiet) + HazardConfig + HazardTickTimer + `SeedNode(Quiet)`; `ResetWorld.cs` clears hazards + resets to Quiet; published `--delete-data=always` + regenerated bindings + builds clean
+- [x] Adversarial multi-lens review (determinism/authority/geometry/tick-logic/regression) before publish: non-blocking, two "critical" findings confirmed false positives; the one real fix (SlotCenterCell alignment) applied
+- [x] Acceptance proven end-to-end by the stdb scenarios (stronger than CLI; debug reducers require a known player, which only the connected Godot client is)
 
-### Subtask 5.1.3: stdb validation — fire damage + node switch — Scope: S
-- [ ] `ConnectedGameHarnessController`: `hazards` observed (count + list type/intensity/pos), `node.kind` observed; test actions `test_ignite_at_player`/`test_extinguish_nearest`/`test_set_node_planetside`/`test_set_node_quiet`; fast hazard config
-- [ ] `scenarios_stdb/fire_proximity_damages_player.json` (ignite at player pos → health falls via Fire → extinguish → holds; assert_pipeline delta < 0 then == 0)
-- [ ] `scenarios_stdb/node_switch_clears_transient.json` (transient content cleared on switch; fire persists as a ship hazard across the switch)
+### Subtask 5.1.3: stdb validation — fire damage + node switch — Scope: S ✅
+- [x] `ConnectedGameHarnessController`: `hazards` observed (count + list id/type/intensity/pos/room_slot), `node.kind` observed; `FindNearestHazardId`; test actions `test_fast_hazards`(MaxHazards 1, no spread)/`test_fast_hazards_spread`(MaxHazards 6)/`test_ignite_at_player`/`test_ignite_reactor`/`test_extinguish_nearest`/`test_set_node_{planetside,quiet}`
+- [x] `scenarios_stdb/fire_proximity_damages_player.json` — ignite on player's cell → health falls via Fire (assert_pipeline delta < 0) → extinguish → count 0 + health holds (abs delta ≤ 0.5)
+- [x] `scenarios_stdb/fire_spreads_deterministically.json` (**added** — the plan under-specified spread, the review flagged it): teleport clear, ignite at Reactor, intensity crosses threshold → count grows 1→>1 bounded by MaxHazards, all Fire on real slots
+- [x] `scenarios_stdb/node_switch_clears_transient.json` — Quiet (4 nodes + fire) → Planetside clears resource nodes + fire persists → Quiet reseeds 4 nodes + fire still persists
+- [x] All 3 green; full suite **47 pure + 51 stdb**, no regressions; screenshots reviewed (ship intact, HP dropping from server-side fire, O2 held in corridor — fire *visual* lands in 5.1.4)
 
 ### Subtask 5.1.4: Client — fire rendering + extinguish — Scope: M
 - [ ] `client/game/Hazard/HazardType.cs` (`[GlobalClass]`: Color/Glyph/Label/HazardId) + `.tres` + `HazardTypeRegistry` (`[Export]` array, wired Main + harness scenes)
