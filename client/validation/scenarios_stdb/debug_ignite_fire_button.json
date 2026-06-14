@@ -1,0 +1,22 @@
+{
+  "scenario_id": "debug_ignite_fire_button",
+  "version": 3,
+  "description": "The DebugHud 'Ignite Fire' button starts a fire in the real game: pressing the actual Button fires IgniteFireRequested, Main calls IgniteHazardAt at the local player's position, and a Fire hazard appears on the player's corridor cell.",
+  "harness_scene": "res://validation/harnesses/ConnectedGameHarness.tscn",
+  "steps": [
+    { "op": "load_harness", "scene": "res://validation/harnesses/ConnectedGameHarness.tscn" },
+    { "op": "wait_until", "path": "harness_state.connection.data_ready", "comparator": "eq", "expected": true, "timeout_frames": 600 },
+    { "op": "wait_until", "path": "harness_state.game.player_exists", "comparator": "eq", "expected": true, "timeout_frames": 120 },
+    { "op": "wait_until", "path": "harness_state.vitals.current_slot", "comparator": "eq", "expected": 7, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "no_fire" },
+    { "op": "assert_value", "checkpoint": "no_fire", "path": "harness_state.hazards.count", "comparator": "eq", "expected": 0 },
+    { "op": "press_action", "action": "test_press_debug_ignite_fire" },
+    { "op": "wait_frames", "frames": 10 },
+    { "op": "release_action", "action": "test_press_debug_ignite_fire" },
+    { "op": "wait_until", "path": "harness_state.hazards.count", "comparator": "gte", "expected": 1, "timeout_frames": 300 },
+    { "op": "checkpoint", "name": "ignited" },
+    { "op": "assert_value", "checkpoint": "ignited", "path": "harness_state.hazards.list.0.type", "comparator": "eq", "expected": "Fire" },
+    { "op": "assert_value", "checkpoint": "ignited", "path": "harness_state.hazards.list.0.room_slot", "comparator": "eq", "expected": 7 },
+    { "op": "quit" }
+  ]
+}

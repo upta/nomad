@@ -8,15 +8,21 @@ using Chickensoft.GodotNodeInterfaces;
 using Chickensoft.Introspection;
 using Godot;
 
-// A floating dev affordance: a top-right "Reset World" button that asks the
-// server to wipe run state back to the Init seed. Main owns the reducer call —
-// this scene only surfaces the request as a C# event.
+// Floating dev affordances (top-right): "Reset World" wipes run state to the
+// Init seed; "Ignite Fire" starts a fire on the local player so the hazard
+// system is playable before in-game ignition sources (events/breaches) land.
+// Main owns the reducer calls — this scene only surfaces the requests as events.
 [Meta(typeof(IAutoNode))]
 public partial class DebugHud : CanvasLayer
 {
     public override void _Notification(int what) => this.Notify(what);
 
+    public event Action? IgniteFireRequested;
+
     public event Action? ResetRequested;
+
+    [Node]
+    public IButton IgniteFireButton { get; set; } = default!;
 
     [Node]
     public IButton ResetButton { get; set; } = default!;
@@ -24,12 +30,16 @@ public partial class DebugHud : CanvasLayer
     public void OnReady()
     {
         ResetButton.Pressed += OnResetPressed;
+        IgniteFireButton.Pressed += OnIgniteFirePressed;
     }
 
     public override void _ExitTree()
     {
         ResetButton.Pressed -= OnResetPressed;
+        IgniteFireButton.Pressed -= OnIgniteFirePressed;
     }
 
     private void OnResetPressed() => ResetRequested?.Invoke();
+
+    private void OnIgniteFirePressed() => IgniteFireRequested?.Invoke();
 }

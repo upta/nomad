@@ -124,6 +124,7 @@ public partial class Main
         HotbarHud.DropRequested += OnHotbarDropRequested;
         HotbarHud.UseRequested += OnHotbarUseRequested;
         DebugHud.ResetRequested += OnDebugResetRequested;
+        DebugHud.IgniteFireRequested += OnDebugIgniteFireRequested;
         _vitalsService.Changed += OnVitalsChanged;
 
         _powerGridService.SetRoomCatalog(RoomTypeRegistry.All);
@@ -222,6 +223,7 @@ public partial class Main
         HotbarHud.DropRequested -= OnHotbarDropRequested;
         HotbarHud.UseRequested -= OnHotbarUseRequested;
         DebugHud.ResetRequested -= OnDebugResetRequested;
+        DebugHud.IgniteFireRequested -= OnDebugIgniteFireRequested;
         _vitalsService.Changed -= OnVitalsChanged;
         _powerGridService.Unbind();
         _vitalsService.Unbind();
@@ -259,6 +261,18 @@ public partial class Main
         _powerGridService.RequestToggleBreaker(breaker.SlotIndex);
 
     private void OnDebugResetRequested() => _dbManager?.Connection?.Reducers.ResetWorld();
+
+    // Debug demo: ignite a fire on the local player's cell so the hazard system
+    // is playable before in-game ignition sources (events, breaches) land.
+    private void OnDebugIgniteFireRequested()
+    {
+        if (_localPlayer is { } player)
+            _dbManager?.Connection?.Reducers.IgniteHazardAt(
+                SpacetimeDB.Types.HazardTypeId.Fire,
+                player.GlobalPosition.X,
+                player.GlobalPosition.Y
+            );
+    }
 
     private void OnHotbarDropRequested() =>
         _inventoryService.RequestDrop(

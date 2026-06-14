@@ -413,6 +413,14 @@ public partial class ConnectedGameHarnessController : Node2D
                 ?.GetNodeOrNull<Button>("DebugHud/Root/ResetButton")
                 ?.EmitSignal(BaseButton.SignalName.Pressed);
 
+        // Presses the real DebugHud "Ignite Fire" button — exercises the
+        // button → IgniteFireRequested → IgniteHazardAt(player pos) path end to
+        // end, the way a playtester clicking it would.
+        _nodeActions["test_press_debug_ignite_fire"] = () =>
+            _main
+                ?.GetNodeOrNull<Button>("DebugHud/Root/IgniteFireButton")
+                ?.EmitSignal(BaseButton.SignalName.Pressed);
+
         // Opens the real Main's Fabricator modal on the Workshop slot directly
         // (no terminal navigation) so a scenario can press the actual Queue
         // button — the modal→RequestQueueCraft→reducer path that direct reducer

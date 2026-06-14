@@ -832,6 +832,8 @@ The foundation. Establishes node state, the ship-as-component / map-host seam, a
 
 **Task 5.1 complete** ✅ — Ship-as-component (`ShipBody`) + `MapHost` seam (regression-gated), `NodeActivity`/`SetActiveNode` + `NodeRules.SeedNode` dispatcher, and the hazard framework with **fire** whole: deterministic grow/spread, proximity damage via `DamageType.Fire`, walk-up extinguish, full client rendering. 49 pure + 51 stdb green.
 
+**Addendum (post-5.1, on request):** DebugHud "Ignite Fire" button (under "Reset World") → `IgniteFireRequested` → Main `IgniteHazardAt(player pos)`, so fire is playable before in-game ignition sources land. Validated by `scenarios_stdb/debug_ignite_fire_button.json` (presses the real button → Fire hazard at the player's corridor cell). 49 pure + 52 stdb green.
+
 ---
 
 ## Task 5.2: Planetside map + airlock system + creatures — Scope: L
